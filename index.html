@@ -27,12 +27,33 @@
   --blue-bg:#E9F1FC;
   --amber:#C98A18;
   --amber-bg:#FBF1DD;
+  --yellow:#D4A017;
   --red:#D6455B;
   --red-bg:#FBE7EA;
   --gray:#8A94A0;
   --gray-bg:#EEF0F2;
   --radius:14px;
 }
+[data-theme="dark"]{
+  --bg:#0B1420;
+  --card:#141F2E;
+  --ink:#EAF0F6;
+  --muted:#8B9AAD;
+  --line:#243244;
+  --gray-bg:#1B2635;
+  --green-bg:#123024;
+  --blue-bg:#0F2440;
+  --amber-bg:#332711;
+  --red-bg:#3A1620;
+}
+[data-theme="dark"] .brand-mark{ background:rgba(255,255,255,0.06); }
+[data-theme="dark"] .field input,[data-theme="dark"] .field select,[data-theme="dark"] .field textarea{
+  background:var(--card); color:var(--ink); border-color:var(--line);
+}
+[data-theme="dark"] .close-x{ color:var(--muted); }
+[data-theme="dark"] nav.bottom{ background:var(--card); border-color:var(--line); }
+[data-theme="dark"] .seg{ background:var(--gray-bg); }
+[data-theme="dark"] .seg button.active{ background:var(--card); }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -388,11 +409,19 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .phase-row:last-child{border-bottom:none;}
 .phase-row .lbl{font-size:12.5px;font-weight:600;}
 .phase-row .lbl.done{color:#1F9254;}
+.phase-row .lbl.na{color:var(--muted);text-decoration:line-through;font-weight:500;}
 .phase-check{
   width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff;
 }
 .phase-check.done{background:#1F9254;border-color:#1F9254;color:#fff;}
+.phase-check.disabled{background:var(--gray-bg);opacity:.5;pointer-events:none;}
+.phase-na-check{
+  width:32px;height:26px;border-radius:8px;border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff;
+  font-size:9.5px;font-weight:800;color:var(--muted);letter-spacing:.2px;cursor:pointer;
+}
+.phase-na-check.active{background:var(--gray);border-color:var(--gray);color:#fff;}
 .phase-date{font-size:10.5px;color:var(--muted);margin-left:8px;}
 .add-line-btn{display:flex;align-items:center;gap:6px;color:var(--cyan-dark);font-weight:700;font-size:12.5px;margin-top:8px;}
 .recon-cta{
@@ -403,7 +432,66 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .slider-wrap{padding:4px 2px 2px;}
 .slider-wrap input[type=range]{width:100%;accent-color:var(--navy);}
 .hint{font-size:11px;color:var(--muted);background:var(--gray-bg);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.4;}
+.report-hidden{ display:none; }
+.phase-report-row{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;
+}
+.phase-report-row.critical{ border-color:#F0B4A8; background:var(--red-bg); }
+.phase-report-row.no-estimate{ border:2px solid var(--red); background:var(--red-bg); }
+.phase-report-row .top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.phase-report-row .nm{font-weight:700;font-size:13.5px;}
+.phase-report-row .status{font-size:12px;font-weight:700;color:var(--navy);margin-top:4px;}
+.phase-report-row.critical .status{color:var(--red);}
+.phase-report-row .meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.crit-badge{background:var(--red);color:#fff;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:99px;text-transform:uppercase;letter-spacing:.3px;}
 
+@media print{
+  header.top, nav.bottom, .overlay{ display:none !important; }
+  .content{ padding-bottom:0 !important; }
+  body{ background:#fff !important; }
+  .stat-card-light, .report-row, .job-card, .team-row{ break-inside:avoid; }
+  #leadRangePresets, input[type=date], .export-btn, .seg, #jobsSearch, #reportPicker{ display:none !important; }
+  #printRangeSummary{ display:block !important; }
+  #printPageTitle{ display:block !important; }
+  .section-title{ margin-top:14px; }
+  [data-report]{ display:block !important; }
+  [data-report].report-hidden{ display:none !important; }
+
+  /* printing whichever modal (job profile or job report) is currently open */
+  body.printing-overlay #printPageTitle{ display:none !important; }
+  body.printing-overlay .overlay:not(.active){ display:none !important; }
+  body.printing-overlay .overlay.active{
+    position:static !important; display:block !important; background:none !important; padding:0 !important;
+  }
+  body.printing-overlay .overlay.active .sheet{
+    max-height:none !important; box-shadow:none !important; border-radius:0 !important;
+    overflow:visible !important; padding:0 !important; max-width:none !important;
+  }
+  body.printing-overlay .sheet-handle,
+  body.printing-overlay .stage-btns,
+  body.printing-overlay .slider-wrap,
+  body.printing-overlay .add-line-btn,
+  body.printing-overlay .sheet-head svg,
+  body.printing-overlay .sheet-head button{ display:none !important; }
+  body.printing-overlay #jdPrintTitle{ display:block !important; }
+}
+
+/* ===== job report (business document) ===== */
+.job-report-doc{ font-family:Georgia,'Times New Roman',serif; color:#1a1a1a; padding:4px 2px 20px; }
+.report-letterhead{ display:flex; align-items:center; gap:14px; border-bottom:3px solid var(--navy); padding-bottom:14px; margin-bottom:6px; }
+.report-letterhead img{ width:46px; height:46px; border-radius:10px; }
+.report-co-name{ font-size:15px; font-weight:700; color:var(--navy); font-family:-apple-system,sans-serif; }
+.report-doc-title{ font-size:12px; color:var(--muted); font-family:-apple-system,sans-serif; letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
+.report-meta{ font-size:11px; color:var(--muted); font-family:-apple-system,sans-serif; margin-bottom:18px; }
+.report-section{ margin-bottom:20px; break-inside:avoid; }
+.report-h{ font-size:14px; font-weight:700; color:var(--navy); border-bottom:1.5px solid var(--line); padding-bottom:5px; margin-bottom:8px; font-family:-apple-system,sans-serif; }
+.report-subh{ font-size:12px; font-weight:700; color:var(--ink); margin:12px 0 6px; font-family:-apple-system,sans-serif; }
+.job-report-doc ul{ margin:0; padding-left:20px; }
+.job-report-doc li{ font-size:12.5px; line-height:1.7; }
+.job-report-doc p{ font-size:12.5px; line-height:1.6; margin:0; }
+.report-timeline li{ list-style:none; border-left:2px solid var(--line); padding-left:14px; margin-bottom:4px; margin-left:0; }
+.report-tl-date{ font-weight:700; font-family:-apple-system,sans-serif; font-size:11px; color:var(--navy); }
+.report-footer{ margin-top:24px; padding-top:10px; border-top:1px solid var(--line); font-size:10px; color:var(--muted); font-family:-apple-system,sans-serif; text-align:center; }
 </style>
 </head>
 <body>
@@ -416,10 +504,20 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
         <div class="brand-sub">Cleaning &amp; Restoration &middot; Tucson</div>
       </div>
     </div>
-    <div class="sync-pill" onclick="loadData()" style="cursor:pointer;"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">Synced</span></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="printCurrentPage()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.08);border:none;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      </button>
+      <button id="themeToggle" onclick="toggleTheme()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.08);border:none;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">
+        <svg id="themeIconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg id="themeIconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <div class="sync-pill" onclick="loadData()" style="cursor:pointer;"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">Synced</span></div>
+    </div>
   </header>
 
   <main class="content">
+    <div id="printPageTitle" style="display:none;font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:700;"></div>
 
     <!-- HOME -->
     <div class="view active" id="view-home">
@@ -427,10 +525,11 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
         <div class="stat-card-light"><div class="n" id="kpiMitPipeline">0</div><div class="l">Mitigation pipeline</div></div>
         <div class="stat-card-light"><div class="n" id="kpiReconPipeline">0</div><div class="l">Reconstruction pipeline</div></div>
         <div class="stat-card-light"><div class="n" id="kpiActiveJobs">0</div><div class="l">Active jobs</div></div>
+        <div class="stat-card-light" onclick="goToJobs('AwaitingPayment')" style="cursor:pointer;"><div class="n" id="kpiAwaitingPay">0</div><div class="l">Awaiting payment</div></div>
         <div class="stat-card-light alert" id="kpiOwedCard"><div class="n" id="kpiOwed">$0</div><div class="l">Accounts Receivable</div></div>
       </div>
       <div class="hint" style="margin-bottom:14px;">
-        <b>Pipeline</b> = jobs still being worked (1&ndash;99% likely). <b>Active jobs</b> = landed (100%) &mdash; that's where billing &amp; contractor payments live. <b>Accounts Receivable</b> = what's still owed to Voda on active jobs.
+        <b>Pipeline</b> = jobs still being worked (1&ndash;99% likely). <b>Active jobs</b> = landed (100%), work still in progress. <b>Awaiting payment</b> = work's done, just waiting to collect. <b>Accounts Receivable</b> = what's still owed to Voda across both.
       </div>
 
       <div class="section-title">Quick actions</div>
@@ -440,20 +539,45 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
           <div class="t">New job</div>
           <div class="d">Build a customer &amp; start pipeline</div>
         </button>
-        <button class="quick-btn" onclick="switchView('pipeline')">
+        <button class="quick-btn primary" onclick="goToMorningReport()">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg></div>
+          <div class="t">Morning phase report</div>
+          <div class="d">What's stuck &amp; needs attention</div>
+        </button>
+        <button class="quick-btn" onclick="goToJobs('Pipeline')">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8 14 12.7l-3-3L7 13.5"/></svg></div>
           <div class="t">View pipeline</div>
           <div class="d">Jobs being worked</div>
         </button>
-        <button class="quick-btn" onclick="switchView('active')">
+        <button class="quick-btn" onclick="goToJobs('Active')">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
           <div class="t">Active jobs</div>
-          <div class="d">Landed &amp; in progress</div>
+          <div class="d">Landed, still in progress</div>
+        </button>
+        <button class="quick-btn" onclick="goToJobs('AwaitingPayment')">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          <div class="t">Awaiting payment</div>
+          <div class="d">Work done, waiting to collect</div>
         </button>
         <button class="quick-btn" onclick="openTeam()">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <div class="t">Manage team</div>
           <div class="d">Add or remove personnel</div>
+        </button>
+        <button class="quick-btn" onclick="openSearchAll()">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <div class="t">Search all jobs</div>
+          <div class="d">Any customer, any status</div>
+        </button>
+        <button class="quick-btn" onclick="goToJobs('Completed')">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="t">Completed jobs</div>
+          <div class="d">Finished, out of Active</div>
+        </button>
+        <button class="quick-btn" onclick="goToJobs('Archived')">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></div>
+          <div class="t">Archived jobs</div>
+          <div class="d">Restore or permanently delete</div>
         </button>
       </div>
 
@@ -461,53 +585,139 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
       <div id="homeAttention"></div>
     </div>
 
-    <!-- PIPELINE -->
-    <div class="view" id="view-pipeline">
-      <div class="seg" style="margin-bottom:14px;">
-        <button class="active" id="segPipeMit" onclick="setPipelineType('Mitigation')">Mitigation</button>
-        <button id="segPipeRecon" onclick="setPipelineType('Reconstruction')">Reconstruction</button>
+    <!-- JOBS (Pipeline / Active / Completed / Archived) -->
+    <div class="view" id="view-jobs">
+      <div class="seg" style="margin-bottom:10px;flex-wrap:wrap;" id="jobsStatusSeg">
+        <button class="active" data-status="Pipeline" onclick="setJobsStatus('Pipeline', this)">Pipeline</button>
+        <button data-status="Active" onclick="setJobsStatus('Active', this)">Active</button>
+        <button data-status="AwaitingPayment" onclick="setJobsStatus('AwaitingPayment', this)">Awaiting Pay</button>
+        <button data-status="Completed" onclick="setJobsStatus('Completed', this)">Completed</button>
+        <button data-status="Archived" onclick="setJobsStatus('Archived', this)">Archived</button>
+        <button data-status="All" onclick="setJobsStatus('All', this)">All</button>
       </div>
-      <div id="pipelineList"></div>
-    </div>
-
-    <!-- ACTIVE -->
-    <div class="view" id="view-active">
-      <div class="seg" style="margin-bottom:14px;">
-        <button class="active" id="segActiveMit" onclick="setActiveType('Mitigation')">Mitigation</button>
-        <button id="segActiveRecon" onclick="setActiveType('Reconstruction')">Reconstruction</button>
+      <div class="seg" style="margin-bottom:10px;" id="jobsTypeSeg">
+        <button class="active" onclick="setJobsType('Mitigation', this)">Mitigation</button>
+        <button onclick="setJobsType('Reconstruction', this)">Reconstruction</button>
       </div>
-      <div id="activeList"></div>
+      <input id="jobsSearch" placeholder="Search by customer name…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;margin-bottom:12px;" oninput="renderJobsList()">
+      <div id="jobsList"></div>
     </div>
 
     <!-- REPORTS -->
     <div class="view" id="view-reports">
       <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>Pipeline &amp; performance</span>
-        <button class="export-btn" onclick="exportCSV()">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export CSV
-        </button>
-      </div>
-      <div class="kpi-strip" id="reportKpis" style="margin-bottom:16px;"></div>
-
-      <div class="section-title">Pipeline value by stage</div>
-      <div id="reportByStage"></div>
-
-      <div class="section-title">Win rate by lead source</div>
-      <div id="reportBySource"></div>
-
-      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>Accounts Receivable</span>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <input type="date" id="arAsOfDate" style="font-size:11.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;" onchange="renderAR()">
-          <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="resetArDate()">Today</button>
+        <span>Reports</span>
+        <div style="display:flex;gap:6px;">
+          <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="printCurrentPage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print
+          </button>
+          <button class="export-btn" onclick="exportCSV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
         </div>
       </div>
-      <div class="kpi-strip" id="arKpis" style="margin-bottom:10px;"></div>
-      <div id="reportOwed"></div>
 
-      <div class="section-title">Contractor payouts outstanding</div>
-      <div id="reportContractor"></div>
+      <details id="reportPicker" style="margin-bottom:16px;">
+        <summary style="cursor:pointer;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-weight:700;font-size:13px;color:var(--ink);background:var(--card);list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <span id="reportPickerLabel">Choose reports to show &amp; print</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div style="border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:10px 14px;background:var(--card);display:flex;flex-direction:column;gap:9px;">
+          <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;padding-bottom:6px;border-bottom:1px solid var(--line);">
+            <input type="checkbox" value="all" checked onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> All reports
+          </label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="phasestatus" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> ⭐ Daily Phase Status (open jobs)</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="awaitingpayment" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Awaiting Payment</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="leadperf" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Lead Performance &amp; Trends</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="monthly" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Month by Month</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="lossreasons" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Reasons We Lost Jobs</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="sourceroi" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Lead Source ROI</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="bysource" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Win Rate by Lead Source</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="bystage" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Pipeline Value by Stage</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="ar" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Accounts Receivable</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="contractor" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Contractor Payouts Outstanding</label>
+        </div>
+      </details>
+
+      <div data-report="phasestatus">
+        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Daily phase status &mdash; open jobs</span>
+          <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="setPhaseStatusType(phaseStatusType==='Mitigation'?'Reconstruction':'Mitigation')" id="phaseStatusToggle">Mitigation</button>
+        </div>
+        <div class="hint" style="margin-bottom:10px;">Covers every job still in Pipeline or already Active. Any job missing its estimate is redlined and sorted to the top, above everything else — no estimate, no way to land it.</div>
+        <div id="reportPhaseStatus"></div>
+      </div>
+
+      <div data-report="leadperf">
+        <div class="seg" style="margin-bottom:8px;" id="leadRangePresets">
+          <button class="active" onclick="setLeadRangePreset('month', this)">This month</button>
+          <button onclick="setLeadRangePreset('lastmonth', this)">Last month</button>
+          <button onclick="setLeadRangePreset('year', this)">This year</button>
+          <button onclick="setLeadRangePreset('all', this)">All time</button>
+        </div>
+        <div id="printRangeSummary" style="display:none;font-size:12px;color:var(--muted);margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
+          <input type="date" id="leadRangeFrom" style="flex:1;font-size:11.5px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;" onchange="setLeadRangeCustom()">
+          <span style="color:var(--muted);font-size:11px;">to</span>
+          <input type="date" id="leadRangeTo" style="flex:1;font-size:11.5px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;" onchange="setLeadRangeCustom()">
+        </div>
+        <div class="section-title" style="margin-top:0;">Lead performance</div>
+        <div class="kpi-strip" id="leadKpis" style="margin-bottom:10px;"></div>
+        <div class="totals-mini" id="leadSecondaryKpis" style="margin-bottom:10px;"></div>
+        <div class="kpi-strip" id="leadKpis2" style="margin-bottom:16px;"></div>
+      </div>
+
+      <div data-report="monthly">
+        <div class="section-title">Month by month</div>
+        <div id="leadMonthly"></div>
+      </div>
+
+      <div data-report="lossreasons">
+        <div class="section-title">Reasons we lost jobs</div>
+        <div id="reportLossReasons"></div>
+      </div>
+
+      <div data-report="sourceroi">
+        <div class="section-title">Lead source ROI</div>
+        <div class="hint" style="margin-bottom:8px;">Cost of Lead is entered per Mitigation job. ROI compares revenue from won jobs against total lead spend for that source, in the selected date range.</div>
+        <div id="reportSourceROI"></div>
+      </div>
+
+      <div data-report="bysource">
+        <div class="section-title">Win rate by lead source</div>
+        <div id="reportBySource"></div>
+      </div>
+
+      <div data-report="bystage">
+        <div class="section-title">Pipeline value by stage</div>
+        <div id="reportByStage"></div>
+      </div>
+
+      <div data-report="ar">
+        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Accounts Receivable</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="date" id="arAsOfDate" style="font-size:11.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;" onchange="renderAR()">
+            <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="resetArDate()">Today</button>
+          </div>
+        </div>
+        <div class="kpi-strip" id="arKpis" style="margin-bottom:10px;"></div>
+        <div id="reportOwed"></div>
+      </div>
+
+      <div data-report="awaitingpayment">
+        <div class="section-title">Awaiting payment &mdash; work complete</div>
+        <div class="hint" style="margin-bottom:10px;">Jobs marked &ldquo;Work done, awaiting payment.&rdquo; Shows amount owed, phase completion, and how long it's been sitting so nothing gets forgotten about.</div>
+        <div class="kpi-strip" id="awaitingPayKpis" style="margin-bottom:10px;"></div>
+        <div id="reportAwaitingPayment"></div>
+      </div>
+
+      <div data-report="contractor">
+        <div class="section-title">Contractor payouts outstanding</div>
+        <div id="reportContractor"></div>
+      </div>
     </div>
 
   </main>
@@ -517,13 +727,9 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
       Home
     </button>
-    <button class="navbtn" data-view="pipeline" onclick="switchView('pipeline')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8 14 12.7l-3-3L7 13.5"/></svg>
-      Pipeline
-    </button>
-    <button class="navbtn" data-view="active" onclick="switchView('active')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      Active
+    <button class="navbtn" data-view="jobs" onclick="switchView('jobs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9m9 5h-9m9 5h-9M4 7h1m-1 5h1m-1 5h1"/></svg>
+      Jobs
     </button>
     <button class="navbtn" data-view="reports" onclick="switchView('reports')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
@@ -573,9 +779,49 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
       <div class="sheet-title" id="jdName">Customer</div>
       <div class="sheet-sub" id="jdSub">Phone &middot; Source</div>
     </div>
-    <button class="close-x" onclick="closeModal('modalJobDetail')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div style="display:flex;align-items:center;gap:13px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="printJobProfile()" style="cursor:pointer;" title="Print this profile"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openJobReport()" style="cursor:pointer;" title="Generate job report"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="openEditJob()" style="cursor:pointer;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="deleteJob()" style="cursor:pointer;"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+      <button class="close-x" onclick="closeModal('modalJobDetail')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
   </div>
+  <div id="jdPrintTitle" style="display:none;font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:700;"></div>
   <div id="jdBody"></div>
+</div></div>
+
+<!-- Job Report (business document) -->
+<div class="overlay" id="modalJobReport"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Job Report</div><div class="sheet-sub">Business summary &amp; timeline</div></div>
+    <div style="display:flex;align-items:center;gap:13px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="printJobReport()" style="cursor:pointer;" title="Print report"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <button class="close-x" onclick="closeModal('modalJobReport')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  </div>
+  <div id="jobReportBody" class="job-report-doc"></div>
+</div></div>
+
+<!-- Edit Job -->
+<div class="overlay" id="modalEditJob"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Edit job info</div><div class="sheet-sub">Customer &amp; job details</div></div>
+    <button class="close-x" onclick="closeModal('modalEditJob')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="field"><label>Customer name</label><input id="ejName"></div>
+  <div class="jd-field-row">
+    <div class="field"><label>Phone</label><input id="ejPhone"></div>
+    <div class="field"><label>Date received</label><input id="ejDate" type="date"></div>
+  </div>
+  <div class="field"><label>Property address</label><input id="ejAddress"></div>
+  <div class="jd-field-row">
+    <div class="field"><label>Lead source</label><select id="ejSource"></select></div>
+    <div class="field"><label>Assigned to</label><input id="ejAssigned" list="teamListEJ"><datalist id="teamListEJ"></datalist></div>
+  </div>
+  <div class="btn-row"><button class="btn btn-primary" onclick="confirmEditJob()">Save changes</button></div>
 </div></div>
 
 <!-- Add / edit line item -->
@@ -637,6 +883,18 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmLostReason()">Mark as lost</button></div>
 </div></div>
 
+<!-- Search All Jobs -->
+<div class="overlay" id="modalSearchAll"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Search all jobs</div><div class="sheet-sub">Any customer, any status</div></div>
+    <button class="close-x" onclick="closeModal('modalSearchAll')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <input id="searchAllInput" placeholder="Customer name…" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;margin-bottom:12px;" oninput="renderSearchAll()" autofocus>
+  <div id="searchAllResults"></div>
+</div></div>
+
+
 <!-- Manage Team -->
 <div class="overlay" id="modalTeam"><div class="sheet">
   <div class="sheet-handle"></div>
@@ -670,6 +928,7 @@ const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !
 const REFRESH_INTERVAL_MS = 20000;
 
 const KNOWN_TECHS = ["Cruz","Angela Hupp","Alyssa Miles","Julia Couch","Arturo Hoyos","Joe","Daniel","Miguel Perez"];
+const MARK_B64 = "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";
 const LEAD_SOURCES = ["Referral","BNI Referral","Van/Website","Google","Angi","eLocal","Service Direct","Thumbtack","33 Mile","Inquirly","Yelp","Other"];
 const PAYER_TYPES = ["Self Pay","Wisetack","Insurance"];
 const LOSS_REASONS = ["Lost to Competitor","Bogus Lead","No Damage Found","No Response","Turned Down / Self-Repair","Denied by Insurance","Canceled Before Arrival","Other"];
@@ -698,13 +957,36 @@ const PHASES = {
     {key:'fiveStarReview', label:'5-Star Review'}
   ]
 };
+function getEffectivePhases(job, type){
+  if(type==='Mitigation'){
+    const reconActive = job.scopes.reconstruction && job.scopes.reconstruction.active;
+    return [...PHASES.Mitigation, ...(reconActive ? [] : [{key:'fiveStarReviewMit', label:'5-Star Review Request'}])];
+  }
+  const mitActive = !!job.scopes.mitigation;
+  if(mitActive) return PHASES.Reconstruction;
+  // reconstruction-only job: fold in the mitigation-side checkpoints (minus
+  // "Mitigation In Progress", since no mitigation work is being performed)
+  return [
+    {key:'workAuth', label:'Work Auth'},
+    {key:'estimate', label:'Estimate'},
+    {key:'certOfSatisfactionMit', label:'Certificate of Satisfaction (Initial)'},
+    {key:'billingDate', label:'Billing'},
+    ...PHASES.Reconstruction
+  ];
+}
+// Excludes phases marked N/A for this job from both the done-count and the total.
+function phaseProgress(sc, phases){
+  const applicable = phases.filter(p=>!sc.phaseNA[p.key]);
+  const done = applicable.filter(p=>sc.phases[p.key]).length;
+  return { done, total: applicable.length, applicable };
+}
 
 /* ============ STATE ============ */
 let jobs = [];
 let personnel = [...KNOWN_TECHS];
 let currentView = 'home';
-let pipelineType = 'Mitigation';
-let activeType = 'Mitigation';
+let jobsStatusFilter = 'Pipeline';
+let jobsTypeFilter = 'Mitigation';
 let currentJobId = null;
 let currentScopeType = null; // 'Mitigation' | 'Reconstruction' — scope currently open in Job Detail actions
 let editingLineItemId = null;
@@ -712,7 +994,20 @@ let pendingLostScope = null; // {jobId, scopeType}
 
 /* ============ UTIL ============ */
 function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,9); }
+function visibleJobs(){ return jobs.filter(j=>!j.archived); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
+function ageDays(dateStr){
+  if(!dateStr) return 0;
+  const d = new Date(dateStr.slice(0,10)+'T00:00:00');
+  if(isNaN(d)) return 0;
+  return Math.max(0, Math.floor((new Date() - d) / 86400000));
+}
+function ageColor(days){
+  if(days < 30) return 'var(--blue)';
+  if(days < 60) return 'var(--green)';
+  if(days < 90) return 'var(--yellow)';
+  return 'var(--red)';
+}
 function fmtDate(s){
   if(!s) return "—";
   const d = new Date(s+"T00:00:00");
@@ -725,6 +1020,23 @@ function fmtMoney(n){
   const abs = Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
   return (neg?'-':'') + '$' + abs;
 }
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  document.getElementById('themeIconSun').style.display = isDark ? 'block' : 'none';
+  document.getElementById('themeIconMoon').style.display = isDark ? 'none' : 'block';
+  try{ localStorage.setItem('voda-jobs-theme', next); }catch(e){ /* storage unavailable, session-only */ }
+}
+function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('voda-jobs-theme'); }catch(e){ /* storage unavailable */ }
+  if(saved==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    document.getElementById('themeIconSun').style.display = 'none';
+    document.getElementById('themeIconMoon').style.display = 'block';
+  }
+}
 function showToast(msg){
   const t = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
@@ -736,7 +1048,7 @@ function openModal(id){ document.getElementById(id).classList.add('active'); }
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 
 /* ============ SCOPE HELPERS ============ */
-function newScope(){
+function newScope(createdAt){
   return {
     active: true,
     probability: 50,
@@ -749,7 +1061,11 @@ function newScope(){
     contractor: { name:'', bidAmount:0, payments:[] },
     materialsCost: 0,
     phases: {},
-    landedAt: null
+    phaseNA: {},
+    landedAt: null,
+    createdAt: createdAt || todayStr(),
+    claimNumber: '', adjusterName: '', adjusterPhone: '',
+    costOfLead: 0
   };
 }
 function migrateLineItem(li){
@@ -784,14 +1100,15 @@ function scopeTotals(scope){
   const potentialTotal = totalEstimated;
 
   const materialsCost = Number(scope.materialsCost)||0;
-  const totalCost = costOfContractors + materialsCost;
+  const costOfLead = Number(scope.costOfLead)||0;
+  const totalCost = costOfContractors + materialsCost + costOfLead;
   const profit = totalBilled - totalCost;
   const profitMarginPct = totalBilled ? (profit/totalBilled*100) : 0;
 
   return {
     totalEstimated, totalAgreed, totalBilled, estToBilledDiff, estToBilledPct,
     totalReceived, owed, contractorPaid, costOfContractors, contractorOwed,
-    potentialTotal, materialsCost, totalCost, profit, profitMarginPct
+    potentialTotal, materialsCost, costOfLead, totalCost, profit, profitMarginPct
   };
 }
 function getJob(id){ return jobs.find(j=>j.id===id); }
@@ -842,12 +1159,25 @@ async function loadData(silent){
     const data = await apiGetAll();
     jobs = data.jobs || [];
     jobs.forEach(j=>{
+      if(j.completed===undefined){
+        // migrate any old per-scope completed flags up to the job level
+        const wasCompleted = (j.scopes.mitigation && j.scopes.mitigation.completed) || (j.scopes.reconstruction && j.scopes.reconstruction.completed);
+        j.completed = !!wasCompleted;
+        j.completedAt = wasCompleted ? (j.scopes.mitigation?.completedAt || j.scopes.reconstruction?.completedAt || j.updatedAt) : null;
+      }
+      if(!j.scopes.mitigation && j.mitigationNA===undefined){
+        // any pre-existing job missing a mitigation scope only got that way
+        // via the reconstruction-only intake path, so treat it as N/A
+        j.mitigationNA = true;
+      }
+      if(j.workComplete===undefined){ j.workComplete = false; j.workCompleteAt = null; }
       ['mitigation','reconstruction'].forEach(k=>{
         const sc = j.scopes && j.scopes[k];
         if(sc && sc.probability>=100 && !sc.landedAt){
           sc.landedAt = j.updatedAt || j.createdAt || todayStr();
         }
         if(sc && sc.materialsCost===undefined) sc.materialsCost = 0;
+        if(sc && !sc.phaseNA) sc.phaseNA = {};
       });
     });
     personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
@@ -898,24 +1228,42 @@ function switchView(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('nav .navbtn[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  updatePrintTitle(v);
   renderAll();
+}
+function updatePrintTitle(v){
+  const statusLabel = jobsStatusFilter==='AwaitingPayment' ? 'Awaiting Payment' : jobsStatusFilter;
+  const titleMap = { home:'Home overview', jobs:'Jobs — '+statusLabel };
+  const el = document.getElementById('printPageTitle');
+  if(!el) return;
+  el.textContent = v==='reports' ? '' : `Voda Job Tracker — ${titleMap[v]||v} — printed ${fmtDate(todayStr())}`;
+}
+function printCurrentPage(){
+  updatePrintTitle(currentView);
+  window.print();
 }
 function renderAll(){
   renderHome();
-  renderPipeline();
-  renderActive();
+  renderJobsList();
   renderReports();
   renderTeam();
 }
 
 /* ============ RENDER: HOME ============ */
 function renderHome(){
-  const mitPipeline = jobs.filter(j=>scopeStatus(j.scopes.mitigation)==='Pipeline');
-  const reconPipeline = jobs.filter(j=>scopeStatus(j.scopes.reconstruction)==='Pipeline');
-  const activeJobs = jobs.filter(j=>scopeStatus(j.scopes.mitigation)==='Landed' || scopeStatus(j.scopes.reconstruction)==='Landed');
+  const mitPipeline = visibleJobs().filter(j=>scopeStatus(j.scopes.mitigation)==='Pipeline');
+  const reconPipeline = visibleJobs().filter(j=>scopeStatus(j.scopes.reconstruction)==='Pipeline');
+  const activeJobs = visibleJobs().filter(j=>
+    !j.completed && !j.workComplete &&
+    (scopeStatus(j.scopes.mitigation)==='Landed' || scopeStatus(j.scopes.reconstruction)==='Landed')
+  );
+  const awaitingPaymentJobs = visibleJobs().filter(j=>
+    !j.completed && !!j.workComplete &&
+    (scopeStatus(j.scopes.mitigation)==='Landed' || scopeStatus(j.scopes.reconstruction)==='Landed')
+  );
 
   let owed = 0;
-  jobs.forEach(j=>{
+  visibleJobs().forEach(j=>{
     ['mitigation','reconstruction'].forEach(k=>{
       const sc = j.scopes[k];
       if(sc && scopeStatus(sc)==='Landed'){ owed += scopeTotals(sc).owed; }
@@ -925,11 +1273,12 @@ function renderHome(){
   document.getElementById('kpiMitPipeline').textContent = mitPipeline.length;
   document.getElementById('kpiReconPipeline').textContent = reconPipeline.length;
   document.getElementById('kpiActiveJobs').textContent = activeJobs.length;
+  document.getElementById('kpiAwaitingPay').textContent = awaitingPaymentJobs.length;
   document.getElementById('kpiOwed').textContent = fmtMoney(owed);
 
   // Needs attention: landed jobs with money owed > 0, or pipeline jobs stale 14+ days
   const attn = [];
-  jobs.forEach(j=>{
+  visibleJobs().forEach(j=>{
     ['mitigation','reconstruction'].forEach(k=>{
       const sc = j.scopes[k];
       if(!sc) return;
@@ -955,68 +1304,153 @@ function renderHome(){
 }
 
 /* ============ RENDER: PIPELINE ============ */
-function setPipelineType(t){
-  pipelineType = t;
-  document.getElementById('segPipeMit').classList.toggle('active', t==='Mitigation');
-  document.getElementById('segPipeRecon').classList.toggle('active', t==='Reconstruction');
-  renderPipeline();
+/* ============ RENDER: JOBS HUB (Pipeline / Active / Completed / Archived) ============ */
+function goToMorningReport(){
+  switchView('reports');
+  selectOnlyReport('phasestatus');
 }
-function renderPipeline(){
-  const wrap = document.getElementById('pipelineList');
-  const key = pipelineType==='Mitigation' ? 'mitigation' : 'reconstruction';
-  const list = jobs
-    .filter(j=>scopeStatus(j.scopes[key])==='Pipeline')
-    .sort((a,b)=> b.scopes[key].probability - a.scopes[key].probability);
+function goToJobs(status){
+  switchView('jobs');
+  const btn = document.querySelector(`#jobsStatusSeg button[data-status="${status}"]`);
+  setJobsStatus(status, btn);
+}
+function setJobsStatus(status, btn){
+  jobsStatusFilter = status;
+  document.querySelectorAll('#jobsStatusSeg button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('jobsTypeSeg').style.display = (status==='Archived' || status==='All') ? 'none' : 'flex';
+  updatePrintTitle('jobs');
+  renderJobsList();
+}
+function setJobsType(type, btn){
+  jobsTypeFilter = type;
+  document.querySelectorAll('#jobsTypeSeg button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderJobsList();
+}
+function ageLegendHtml(){
+  return `<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-bottom:10px;">
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--blue);margin-right:4px;"></span>New (&lt;30d)</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--green);margin-right:4px;"></span>30&ndash;60d</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--yellow);margin-right:4px;"></span>60&ndash;90d</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--red);margin-right:4px;"></span>90d+</span>
+  </div>`;
+}
+function renderJobsList(){
+  const wrap = document.getElementById('jobsList');
+  if(!wrap) return;
+  const q = (document.getElementById('jobsSearch')?.value || '').trim().toLowerCase();
 
-  if(list.length===0){
-    wrap.innerHTML = `<div class="empty">No ${pipelineType.toLowerCase()} jobs currently between 1&ndash;99%. Jobs that already hit 100% moved to the Active tab.</div>`;
+  if(jobsStatusFilter==='Archived'){
+    let archived = jobs.filter(j=>j.archived).sort((a,b)=>(b.archivedAt||'').localeCompare(a.archivedAt||''));
+    if(q) archived = archived.filter(j=>j.customerName.toLowerCase().includes(q));
+    if(archived.length===0){
+      wrap.innerHTML = `<div class="empty">${q? `No matches for "${q}".` : 'No archived jobs.'}</div>`;
+      return;
+    }
+    wrap.innerHTML = archived.map(j=>`
+      <div class="team-row">
+        <div class="nm">${j.customerName}<span style="color:var(--muted);font-weight:500;font-size:11.5px;"> &middot; archived ${fmtDate((j.archivedAt||'').slice(0,10))}</span></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="restoreJob('${j.id}')" style="cursor:pointer;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          <button class="del-btn" onclick="permanentlyDeleteJob('${j.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+        </div>
+      </div>`).join('');
     return;
   }
-  wrap.innerHTML = list.map(j=>{
-    const sc = j.scopes[key];
-    const t = scopeTotals(sc);
-    return `<div class="job-card" onclick="openJobDetail('${j.id}')">
-      <div class="top">
-        <div class="nm">${j.customerName}</div>
-        <div class="amt">${fmtMoney(t.potentialTotal)}</div>
-      </div>
-      <div class="sub">${j.leadSource||'—'} ${sc.forecastCloseMonth? ' &middot; expects '+sc.forecastCloseMonth:''}</div>
-      <div class="prob-bar-wrap"><div class="prob-bar" style="width:${sc.probability}%;"></div></div>
-      <div class="prob-row">
-        <span class="prob-pct">${sc.probability}% likely</span>
-        <span class="prob-stage">${j.assignedTo||'Unassigned'}</span>
-      </div>
-    </div>`;
-  }).join('');
-}
 
-/* ============ RENDER: ACTIVE ============ */
-function setActiveType(t){
-  activeType = t;
-  document.getElementById('segActiveMit').classList.toggle('active', t==='Mitigation');
-  document.getElementById('segActiveRecon').classList.toggle('active', t==='Reconstruction');
-  renderActive();
-}
-function renderActive(){
-  const wrap = document.getElementById('activeList');
-  const key = activeType==='Mitigation' ? 'mitigation' : 'reconstruction';
-  const list = jobs.filter(j=>scopeStatus(j.scopes[key])==='Landed');
-
-  if(list.length===0){
-    wrap.innerHTML = `<div class="empty">No active ${activeType.toLowerCase()} jobs yet.</div>`;
+  if(jobsStatusFilter==='All'){
+    let all = visibleJobs().slice().sort((a,b)=>(b.dateReceived||'').localeCompare(a.dateReceived||''));
+    if(q) all = all.filter(j=>j.customerName.toLowerCase().includes(q));
+    if(all.length===0){
+      wrap.innerHTML = `<div class="empty">${q? `No matches for "${q}".` : 'No jobs yet.'}</div>`;
+      return;
+    }
+    wrap.innerHTML = all.map(j=>{
+      const chips = [];
+      ['mitigation','reconstruction'].forEach(k=>{
+        const sc = j.scopes[k];
+        const st = scopeStatus(sc);
+        if(!st) return;
+        const label = k==='mitigation'?'Mitigation':'Reconstruction';
+        const display = (st==='Landed' && j.completed) ? 'Completed' : st;
+        const cls = st==='Landed' ? (j.completed?'chip-sm':'chip-landed') : st==='Lost'?'chip-lost':(k==='mitigation'?'chip-mit':'chip-recon');
+        chips.push(`<span class="chip-sm ${cls}">${label} &middot; ${display}</span>`);
+      });
+      return `<div class="job-card" onclick="openJobDetail('${j.id}')">
+        <div class="top">
+          <div class="nm">${j.customerName}</div>
+          <div class="sub" style="margin:0;">${fmtDate(j.dateReceived)}</div>
+        </div>
+        <div class="sub">${j.leadSource||'—'}${j.assignedTo?' &middot; '+j.assignedTo:''}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">${chips.join('')}</div>
+      </div>`;
+    }).join('');
     return;
   }
-  wrap.innerHTML = list.map(j=>{
+
+  const key = jobsTypeFilter==='Mitigation' ? 'mitigation' : 'reconstruction';
+
+  if(jobsStatusFilter==='Pipeline'){
+    let list = visibleJobs()
+      .filter(j=>scopeStatus(j.scopes[key])==='Pipeline')
+      .sort((a,b)=> b.scopes[key].probability - a.scopes[key].probability);
+    if(q) list = list.filter(j=>j.customerName.toLowerCase().includes(q));
+    if(list.length===0){
+      wrap.innerHTML = q
+        ? `<div class="empty">No matches for "${q}".</div>`
+        : `<div class="empty">No ${jobsTypeFilter.toLowerCase()} jobs currently between 1&ndash;99%. Jobs that already hit 100% moved to Active.</div>`;
+      return;
+    }
+    wrap.innerHTML = ageLegendHtml() + list.map(j=>{
+      const sc = j.scopes[key];
+      const t = scopeTotals(sc);
+      const days = ageDays(sc.createdAt || j.dateReceived);
+      return `<div class="job-card" style="border-left:4px solid ${ageColor(days)};" onclick="openJobDetail('${j.id}')">
+        <div class="top">
+          <div class="nm">${j.customerName}</div>
+          <div class="amt">${fmtMoney(t.potentialTotal)}</div>
+        </div>
+        <div class="sub">${j.leadSource||'—'} ${sc.forecastCloseMonth? ' &middot; expects '+sc.forecastCloseMonth:''} &middot; ${days}d old</div>
+        <div class="prob-bar-wrap"><div class="prob-bar" style="width:${sc.probability}%;"></div></div>
+        <div class="prob-row">
+          <span class="prob-pct">${sc.probability}% likely</span>
+          <span class="prob-stage">${j.assignedTo||'Unassigned'}</span>
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // Active, Awaiting Payment, or Completed
+  let list = visibleJobs().filter(j=>{
+    if(scopeStatus(j.scopes[key])!=='Landed') return false;
+    if(jobsStatusFilter==='Completed') return !!j.completed;
+    if(jobsStatusFilter==='AwaitingPayment') return !j.completed && !!j.workComplete;
+    return !j.completed && !j.workComplete; // Active
+  });
+  if(q) list = list.filter(j=>j.customerName.toLowerCase().includes(q));
+  if(list.length===0){
+    const label = jobsStatusFilter==='Completed'?'completed':jobsStatusFilter==='AwaitingPayment'?'awaiting payment':'active';
+    wrap.innerHTML = q
+      ? `<div class="empty">No matches for "${q}".</div>`
+      : `<div class="empty">No ${label} ${jobsTypeFilter.toLowerCase()} jobs${jobsStatusFilter==='Active'?' yet':''}.</div>`;
+    return;
+  }
+  wrap.innerHTML = ageLegendHtml() + list.map(j=>{
     const sc = j.scopes[key];
     const t = scopeTotals(sc);
-    const phases = PHASES[activeType];
-    const doneCount = phases.filter(p=>sc.phases[p.key]).length;
-    return `<div class="job-card" onclick="openJobDetail('${j.id}')">
+    const phases = getEffectivePhases(j, jobsTypeFilter);
+    const prog = phaseProgress(sc, phases);
+    const refDate = jobsStatusFilter==='Completed' ? j.completedAt : jobsStatusFilter==='AwaitingPayment' ? j.workCompleteAt : sc.landedAt;
+    const days = ageDays(refDate);
+    const sinceLabel = jobsStatusFilter==='Completed' ? 'since completed' : jobsStatusFilter==='AwaitingPayment' ? 'since work done' : 'since landed';
+    return `<div class="job-card" style="border-left:4px solid ${ageColor(days)};" onclick="openJobDetail('${j.id}')">
       <div class="top">
         <div class="nm">${j.customerName}</div>
         <span class="chip-sm ${t.owed>0?'chip-lost':'chip-landed'}">${t.owed>0? fmtMoney(t.owed)+' owed' : 'Paid in full'}</span>
       </div>
-      <div class="sub">${sc.contractor.name? 'Contractor: '+sc.contractor.name : 'No contractor assigned'} &middot; ${doneCount}/${phases.length} phases done</div>
+      <div class="sub">${sc.contractor.name? 'Contractor: '+sc.contractor.name : 'No contractor assigned'} &middot; ${prog.done}/${prog.total} phases done &middot; ${days}d ${sinceLabel}</div>
     </div>`;
   }).join('');
 }
@@ -1050,10 +1484,17 @@ async function confirmNewJob(){
     notes: document.getElementById('njNotes').value.trim(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    completed: false, completedAt: null,
+    workComplete: false, workCompleteAt: null,
+    mitigationNA: false,
     scopes: { mitigation: null, reconstruction: null }
   };
-  if(scopeType==='Mitigation') job.scopes.mitigation = newScope();
-  else job.scopes.reconstruction = newScope();
+  if(scopeType==='Mitigation'){
+    job.scopes.mitigation = newScope(job.dateReceived);
+  } else {
+    job.scopes.reconstruction = newScope(job.dateReceived);
+    job.mitigationNA = true;
+  }
 
   jobs.unshift(job);
   const assigned = document.getElementById('njAssigned').value.trim();
@@ -1073,6 +1514,196 @@ function openJobDetail(jobId){
   renderJobDetail();
   openModal('modalJobDetail');
 }
+
+/* ============ PRINT: job profile & job report ============ */
+function printActiveModal(){
+  document.body.classList.add('printing-overlay');
+  window.print();
+  window.onafterprint = ()=>{ document.body.classList.remove('printing-overlay'); };
+  setTimeout(()=>document.body.classList.remove('printing-overlay'), 1000);
+}
+function printJobProfile(){
+  const job = getJob(currentJobId);
+  const el = document.getElementById('jdPrintTitle');
+  if(el) el.textContent = `Voda Job Tracker — Job Profile: ${job? job.customerName : ''} — printed ${fmtDate(todayStr())}`;
+  printActiveModal();
+}
+function printJobReport(){
+  printActiveModal();
+}
+function openJobReport(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  document.getElementById('jobReportBody').innerHTML = generateJobReportHtml(job);
+  closeModal('modalJobDetail');
+  openModal('modalJobReport');
+}
+function generateJobReportHtml(job){
+  const scopes = [];
+  if(job.scopes.mitigation) scopes.push({ type:'Mitigation', sc: job.scopes.mitigation });
+  if(job.scopes.reconstruction) scopes.push({ type:'Reconstruction', sc: job.scopes.reconstruction });
+
+  const overallStatus = job.completed
+    ? `Completed ${fmtDate((job.completedAt||'').slice(0,10))}`
+    : job.workComplete
+      ? `Work complete, awaiting payment since ${fmtDate((job.workCompleteAt||'').slice(0,10))}`
+      : 'In progress';
+
+  let html = `
+    <div class="report-letterhead">
+      <img src="data:image/png;base64,${MARK_B64}" alt="Voda">
+      <div>
+        <div class="report-co-name">Voda Cleaning &amp; Restoration of Tucson</div>
+        <div class="report-doc-title">Job Report</div>
+      </div>
+    </div>
+    <div class="report-meta">Generated ${fmtDate(todayStr())}</div>
+
+    <div class="report-section">
+      <div class="report-h">Customer &amp; Job Information</div>
+      <ul>
+        <li><b>Customer:</b> ${escapeHtml(job.customerName)}</li>
+        <li><b>Phone:</b> ${escapeHtml(job.phone||'—')}</li>
+        <li><b>Address:</b> ${escapeHtml(job.address||'—')}</li>
+        <li><b>Lead source:</b> ${escapeHtml(job.leadSource||'—')}</li>
+        <li><b>Assigned to:</b> ${escapeHtml(job.assignedTo||'Unassigned')}</li>
+        <li><b>Date received:</b> ${fmtDate(job.dateReceived)}</li>
+        <li><b>Overall status:</b> ${overallStatus}</li>
+      </ul>
+    </div>`;
+
+  if(job.mitigationNA){
+    html += `<div class="report-section"><div class="report-h">Mitigation</div><p>Not applicable &mdash; this job is reconstruction only.</p></div>`;
+  }
+
+  scopes.forEach(({type, sc})=>{
+    const status = scopeStatus(sc);
+    const t = scopeTotals(sc);
+    html += `<div class="report-section"><div class="report-h">${type}</div><ul>`;
+    html += `<li><b>Status:</b> ${status}${status==='Lost' && sc.lossReason ? ' &mdash; '+escapeHtml(sc.lossReason) : ''}</li>`;
+    html += `<li><b>Payer:</b> ${escapeHtml(sc.payerType)}${sc.payerType==='Insurance' && sc.insuranceCompany ? ' &mdash; '+escapeHtml(sc.insuranceCompany) : ''}</li>`;
+    if(sc.claimNumber || sc.adjusterName){
+      html += `<li><b>Insurance claim:</b> ${sc.claimNumber? 'Claim #'+escapeHtml(sc.claimNumber) : ''}${sc.adjusterName? ' &mdash; Adjuster: '+escapeHtml(sc.adjusterName) : ''}${sc.adjusterPhone? ' ('+escapeHtml(sc.adjusterPhone)+')' : ''}</li>`;
+    }
+    html += `</ul>`;
+
+    html += `<div class="report-subh">Financial Summary</div><ul>`;
+    html += `<li>Estimated: ${fmtMoney(t.totalEstimated)}</li>`;
+    html += `<li>Agreed: ${fmtMoney(t.totalAgreed)}</li>`;
+    html += `<li>Billed: ${fmtMoney(t.totalBilled)}</li>`;
+    html += `<li>Received: ${fmtMoney(t.totalReceived)}</li>`;
+    html += `<li>Owed: ${fmtMoney(t.owed)}</li>`;
+    if(type==='Reconstruction'){
+      html += `<li>Contractor cost: ${fmtMoney(t.costOfContractors)}</li>`;
+      html += `<li>Materials cost: ${fmtMoney(t.materialsCost)}</li>`;
+      html += `<li>Profit margin: ${fmtMoney(t.profit)} (${t.profitMarginPct.toFixed(1)}%)</li>`;
+    } else if(t.costOfLead){
+      html += `<li>Cost of lead: ${fmtMoney(t.costOfLead)}</li>`;
+    }
+    html += `</ul>`;
+
+    const events = [];
+    events.push({ date: sc.createdAt || job.dateReceived, label: type==='Mitigation' ? 'Lead received' : 'Reconstruction opportunity opened' });
+    const phases = getEffectivePhases(job, type);
+    phases.forEach(p=>{
+      if(sc.phases[p.key]) events.push({ date: sc.phases[p.key], label: `${p.label} completed` });
+      else if(sc.phaseNA[p.key]) events.push({ date: sc.createdAt || job.dateReceived, label: `${p.label} &mdash; not applicable for this job` });
+    });
+    if(sc.landedAt) events.push({ date: sc.landedAt, label: `${type} landed (won)` });
+    sc.payments.forEach(p=> events.push({ date: p.date, label: `Payment received: ${fmtMoney(p.amount)}${p.note? ' &mdash; '+escapeHtml(p.note) : ''}` }));
+    events.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+
+    if(events.length){
+      html += `<div class="report-subh">Timeline</div><ul class="report-timeline">`;
+      events.forEach(e=>{
+        html += `<li><span class="report-tl-date">${fmtDate((e.date||'').slice(0,10))}</span> &mdash; ${e.label}</li>`;
+      });
+      html += `</ul>`;
+    }
+    html += `</div>`;
+  });
+
+  if(job.workComplete || job.completed){
+    html += `<div class="report-section"><div class="report-h">Completion</div><ul>`;
+    if(job.workComplete) html += `<li>Work completed: ${fmtDate((job.workCompleteAt||'').slice(0,10))}</li>`;
+    if(job.completed) html += `<li>Job finalized: ${fmtDate((job.completedAt||'').slice(0,10))}</li>`;
+    html += `</ul></div>`;
+  }
+
+  if(job.notes){
+    html += `<div class="report-section"><div class="report-h">Notes</div><p>${escapeHtml(job.notes)}</p></div>`;
+  }
+
+  html += `<div class="report-footer">Generated by Voda Job Tracker &middot; ${fmtDate(todayStr())}</div>`;
+  return html;
+}
+
+function openEditJob(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  document.getElementById('ejName').value = job.customerName || '';
+  document.getElementById('ejPhone').value = job.phone || '';
+  document.getElementById('ejDate').value = job.dateReceived || '';
+  document.getElementById('ejAddress').value = job.address || '';
+  document.getElementById('ejAssigned').value = job.assignedTo || '';
+  const srcSel = document.getElementById('ejSource');
+  srcSel.innerHTML = LEAD_SOURCES.map(s=>`<option value="${s}" ${s===job.leadSource?'selected':''}>${s}</option>`).join('');
+  document.getElementById('teamListEJ').innerHTML = personnel.map(p=>`<option value="${p}">`).join('');
+  openModal('modalEditJob');
+}
+async function confirmEditJob(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  const name = document.getElementById('ejName').value.trim();
+  if(!name){ showToast('Customer name is required'); return; }
+  job.customerName = name;
+  job.phone = document.getElementById('ejPhone').value.trim();
+  job.dateReceived = document.getElementById('ejDate').value || job.dateReceived;
+  job.address = document.getElementById('ejAddress').value.trim();
+  job.leadSource = document.getElementById('ejSource').value;
+  const assigned = document.getElementById('ejAssigned').value.trim();
+  job.assignedTo = assigned;
+  if(assigned && !personnel.some(p=>p.toLowerCase()===assigned.toLowerCase())){
+    personnel.push(assigned); await savePersonnel();
+  }
+  job.updatedAt = new Date().toISOString();
+  await saveJobs();
+  closeModal('modalEditJob');
+  renderJobDetail();
+  renderAll();
+  showToast('Job info updated');
+}
+async function deleteJob(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  if(!confirm(`Archive ${job.customerName}? It'll disappear from Pipeline, Active, Search, and Reports, but you can restore it anytime from Archived jobs.`)) return;
+  job.archived = true;
+  job.archivedAt = new Date().toISOString();
+  await saveJobs();
+  closeModal('modalJobDetail');
+  renderAll();
+  showToast(`${job.customerName} archived`);
+}
+async function restoreJob(id){
+  const job = getJob(id);
+  if(!job) return;
+  job.archived = false;
+  job.archivedAt = null;
+  await saveJobs();
+  renderJobsList();
+  renderAll();
+  showToast(`${job.customerName} restored`);
+}
+async function permanentlyDeleteJob(id){
+  const job = getJob(id);
+  if(!job) return;
+  if(!confirm(`Permanently delete ${job.customerName}? This can't be undone.`)) return;
+  jobs = jobs.filter(j=>j.id!==id);
+  await saveJobs();
+  renderJobsList();
+  renderAll();
+  showToast(`${job.customerName} permanently deleted`);
+}
 function renderJobDetail(){
   const job = getJob(currentJobId);
   if(!job) return;
@@ -1089,7 +1720,24 @@ function renderJobDetail(){
   document.getElementById('contractorListDL').innerHTML = [...contractorsKnown].map(c=>`<option value="${c}">`).join('');
 
   let html = '';
-  html += scopeSectionHtml(job, 'Mitigation');
+  if(job.scopes.mitigation){
+    html += scopeSectionHtml(job, 'Mitigation');
+  } else if(job.mitigationNA){
+    html += `<div class="jd-section">
+      <div class="jd-section-head"><div class="h">Mitigation <span class="chip-sm" style="margin-left:6px;background:var(--gray-bg);color:var(--muted);">N/A</span></div></div>
+      <div class="hint">No mitigation opportunity for this job &mdash; reconstruction only.</div>
+      <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);margin-top:8px;" onclick="addMitigationScope()">Actually, this does have mitigation</button>
+    </div>`;
+  } else {
+    html += `<div class="jd-section recon-cta">
+      <div style="font-weight:700;color:var(--ink);margin-bottom:2px;">No mitigation scope yet</div>
+      <div style="font-size:12px;">Most jobs start here. If this customer only wants reconstruction, mark it N/A instead.</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-cyan" style="width:auto;padding:0 16px;" onclick="addMitigationScope()">+ Add mitigation scope</button>
+        <button class="btn" style="width:auto;padding:0 16px;background:var(--gray-bg);color:var(--ink);" onclick="markMitigationNA()">Mark N/A</button>
+      </div>
+    </div>`;
+  }
   if(job.scopes.reconstruction){
     html += scopeSectionHtml(job, 'Reconstruction');
   } else {
@@ -1099,12 +1747,68 @@ function renderJobDetail(){
       <button class="btn btn-cyan" style="width:auto;padding:0 18px;margin-top:10px;" onclick="addReconScope()">+ Add reconstruction scope</button>
     </div>`;
   }
+  html += completeSectionHtml(job);
   html += `<div class="jd-section">
     <div class="jd-section-head"><div class="h">Job notes</div></div>
     <textarea rows="2" style="width:100%;" onchange="updateJobNotes(this.value)">${escapeHtml(job.notes||'')}</textarea>
   </div>`;
 
   document.getElementById('jdBody').innerHTML = html;
+}
+function completeSectionHtml(job){
+  const mit = job.scopes.mitigation, recon = job.scopes.reconstruction;
+  const mitStatus = scopeStatus(mit), reconStatus = scopeStatus(recon);
+  let revenue = 0, profit = 0, owed = 0;
+  [mit, recon].forEach(sc=>{
+    if(sc && scopeStatus(sc)==='Landed'){
+      const t = scopeTotals(sc);
+      revenue += t.totalBilled; profit += t.profit; owed += t.owed;
+    }
+  });
+  const anyOpen = (mitStatus==='Pipeline') || (reconStatus==='Pipeline');
+
+  if(job.completed){
+    return `<div class="jd-section">
+      <div class="jd-section-head">
+        <div class="h">Complete</div>
+        <span class="chip-sm chip-landed">Completed ${fmtDate((job.completedAt||'').slice(0,10))}</span>
+      </div>
+      <div class="hint">Still counted in Reports &amp; Accounts Receivable &mdash; just out of the Active list.</div>
+      <div class="btn-row"><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="reopenJob()">Reopen job</button></div>
+    </div>`;
+  }
+
+  if(job.workComplete){
+    return `<div class="jd-section">
+      <div class="jd-section-head">
+        <div class="h">Complete</div>
+        <span class="chip-sm" style="background:var(--blue-bg);color:var(--blue);">Awaiting Payment</span>
+      </div>
+      <div class="hint">Work finished ${fmtDate((job.workCompleteAt||'').slice(0,10))}. Just waiting to collect &mdash; still shows in Active until you finalize.</div>
+      <div class="totals-mini" style="margin-top:8px;">
+        <div>Still owed<br><b style="color:${owed>0?'var(--red)':'inherit'}">${fmtMoney(owed)}</b></div>
+        <div>Total revenue<br><b>${fmtMoney(revenue)}</b></div>
+      </div>
+      <div class="btn-row" style="gap:8px;display:flex;">
+        <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="undoWorkComplete()">Undo</button>
+        <button class="btn btn-primary" onclick="markJobComplete()">Finalize &amp; mark job complete</button>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="jd-section">
+    <div class="jd-section-head"><div class="h">Complete</div></div>
+    <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
+      <div style="flex:1 1 33%;">Total revenue<br><b>${fmtMoney(revenue)}</b></div>
+      <div style="flex:1 1 33%;">Total profit<br><b style="color:${profit<0?'var(--red)':'#1F9254'}">${fmtMoney(profit)}</b></div>
+      <div style="flex:1 1 33%;">Still owed<br><b style="color:${owed>0?'var(--red)':'inherit'}">${fmtMoney(owed)}</b></div>
+    </div>
+    ${anyOpen ? `<div class="hint">Heads up: this job still has a scope sitting in Pipeline (not yet won or lost). Completing it now won't touch that scope's status.</div>` : ''}
+    <div class="btn-row" style="gap:8px;display:flex;flex-wrap:wrap;">
+      ${owed>0 ? `<button class="btn" style="background:var(--blue-bg);color:var(--blue);flex:1 1 auto;" onclick="markWorkComplete()">Work done &mdash; awaiting payment</button>` : ''}
+      <button class="btn btn-primary" style="flex:1 1 auto;" onclick="markJobComplete()">Finalize &amp; mark job complete</button>
+    </div>
+  </div>`;
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -1148,15 +1852,34 @@ function scopeSectionHtml(job, type){
         <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeContractorPayment('${type}','${p.id}')"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
       </div>`).join('');
 
-  const phases = PHASES[type];
-  const phasesHtml = phases.map(p=>{
+  const mitActive = !!job.scopes.mitigation;
+  const phases = getEffectivePhases(job, type);
+
+  const showClaimInfo = type==='Mitigation' || (type==='Reconstruction' && !mitActive);
+  const claimInfoHtml = showClaimInfo ? `
+    <div class="phase-row" style="display:block;padding:10px 0;">
+      <div class="lbl" style="margin-bottom:8px;">Insurance claim information</div>
+      <div class="jd-field-row" style="margin-bottom:6px;">
+        <div class="field" style="margin-bottom:0;"><label>Claim #</label><input value="${escapeHtml(sc.claimNumber||'')}" onchange="updateScopeField('${type}','claimNumber', this.value)"></div>
+        <div class="field" style="margin-bottom:0;"><label>Adjuster name</label><input value="${escapeHtml(sc.adjusterName||'')}" onchange="updateScopeField('${type}','adjusterName', this.value)"></div>
+      </div>
+      <div class="field" style="margin-bottom:0;"><label>Adjuster phone</label><input value="${escapeHtml(sc.adjusterPhone||'')}" onchange="updateScopeField('${type}','adjusterPhone', this.value)"></div>
+    </div>` : '';
+
+  const phasesHtml = phases.map((p,idx)=>{
     const done = !!sc.phases[p.key];
-    return `<div class="phase-row">
-      <div class="lbl ${done?'done':''}">${p.label}${done?`<span class="phase-date">${fmtDate(sc.phases[p.key])}</span>`:''}</div>
-      <div class="phase-check ${done?'done':''}" onclick="togglePhase('${type}','${p.key}')">
-        ${done? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+    const na = !!sc.phaseNA[p.key];
+    const row = `<div class="phase-row">
+      <div class="lbl ${done?'done':''} ${na?'na':''}">${p.label}${done?`<span class="phase-date">${fmtDate(sc.phases[p.key])}</span>`:''}${na?`<span class="phase-date">N/A for this job</span>`:''}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <div class="phase-check ${done?'done':''} ${na?'disabled':''}" onclick="${na?'':`togglePhase('${type}','${p.key}')`}">
+          ${done? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+        </div>
+        <div class="phase-na-check ${na?'active':''}" onclick="togglePhaseNA('${type}','${p.key}')" title="Not applicable for this job">N/A</div>
       </div>
     </div>`;
+    // insert insurance claim info block right after Work Auth
+    return (showClaimInfo && p.key==='workAuth') ? row + claimInfoHtml : row;
   }).join('');
 
   const stageBtns = [0,25,50,75,100].map(v=>{
@@ -1207,18 +1930,18 @@ function scopeSectionHtml(job, type){
       <div>% of estimate<br><b style="color:${t.estToBilledDiff<0?'var(--red)':'inherit'}">${t.estToBilledPct>=0?'+':''}${t.estToBilledPct.toFixed(1)}%</b></div>
     </div>
 
-    ${type==='Reconstruction' ? `
     <div class="jd-section-head" style="margin-top:16px;"><div class="h" style="font-size:13px;">Job profitability</div></div>
+    ${type==='Mitigation' ? `<div class="field"><label>Cost of lead</label><input type="number" step="0.01" value="${sc.costOfLead||0}" onchange="updateScopeField('${type}','costOfLead', parseFloat(this.value)||0)"></div>` : ''}
     <div class="field"><label>Materials cost (if applicable)</label><input type="number" step="0.01" value="${sc.materialsCost||0}" onchange="updateScopeField('${type}','materialsCost', parseFloat(this.value)||0)"></div>
     <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
       <div style="flex:1 1 33%;">Billed out<br><b>${fmtMoney(t.totalBilled)}</b></div>
       <div style="flex:1 1 33%;">Contractor cost<br><b>${fmtMoney(t.costOfContractors)}</b></div>
-      <div style="flex:1 1 33%;">Materials cost<br><b>${fmtMoney(t.materialsCost)}</b></div>
+      ${type==='Mitigation' ? `<div style="flex:1 1 33%;">Cost of lead<br><b>${fmtMoney(t.costOfLead)}</b></div>` : `<div style="flex:1 1 33%;">Materials cost<br><b>${fmtMoney(t.materialsCost)}</b></div>`}
     </div>
     <div class="totals-mini" style="margin-top:6px;">
       <div>Profit margin ($)<br><b style="color:${t.profit<0?'var(--red)':'#1F9254'}">${fmtMoney(t.profit)}</b></div>
       <div>Profit margin (%)<br><b style="color:${t.profit<0?'var(--red)':'#1F9254'}">${t.profitMarginPct>=0?'+':''}${t.profitMarginPct.toFixed(1)}%</b></div>
-    </div>` : ''}
+    </div>
 
     <div class="jd-section-head" style="margin-top:16px;"><div class="h" style="font-size:13px;">Billing &amp; receivables</div></div>
     <div class="totals-mini">
@@ -1275,6 +1998,25 @@ function addReconScope(){
   renderAll();
   showToast('Reconstruction scope added');
 }
+function addMitigationScope(){
+  const job = getJob(currentJobId);
+  job.scopes.mitigation = newScope();
+  job.mitigationNA = false;
+  job.updatedAt = new Date().toISOString();
+  saveJobs();
+  renderJobDetail();
+  renderAll();
+  showToast('Mitigation scope added');
+}
+function markMitigationNA(){
+  const job = getJob(currentJobId);
+  job.mitigationNA = true;
+  job.updatedAt = new Date().toISOString();
+  saveJobs();
+  renderJobDetail();
+  renderAll();
+  showToast('Mitigation marked N/A');
+}
 
 function setProbability(type, value, fromSlider){
   const job = getJob(currentJobId);
@@ -1293,7 +2035,7 @@ function setProbability(type, value, fromSlider){
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
-  if(!fromSlider) renderAll(); else { renderPipeline(); renderActive(); renderHome(); }
+  if(!fromSlider) renderAll(); else { renderJobsList(); renderHome(); }
   if(value===100) showToast(`${type} landed! Moved to Active`);
 }
 function cancelLost(){ pendingLostScope=null; closeModal('modalLostReason'); renderJobDetail(); }
@@ -1438,21 +2180,116 @@ function removeContractorPayment(type, id){
   renderAll();
 }
 
-/* ---- phases ---- */
+/* ---- complete / reopen (whole job) ---- */
+async function markWorkComplete(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  job.workComplete = true;
+  job.workCompleteAt = new Date().toISOString();
+  job.updatedAt = new Date().toISOString();
+  await saveJobs();
+  renderJobDetail();
+  renderJobsList();
+  renderHome();
+  showToast(`${job.customerName} marked work done — awaiting payment`);
+}
+async function undoWorkComplete(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  job.workComplete = false;
+  job.workCompleteAt = null;
+  job.updatedAt = new Date().toISOString();
+  await saveJobs();
+  renderJobDetail();
+  renderJobsList();
+  renderHome();
+  showToast(`${job.customerName} back to active`);
+}
+async function markJobComplete(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  job.completed = true;
+  job.completedAt = new Date().toISOString();
+  job.updatedAt = new Date().toISOString();
+  await saveJobs();
+  renderJobDetail();
+  renderJobsList();
+  renderHome();
+  showToast(`${job.customerName} marked complete`);
+}
+async function reopenJob(){
+  const job = getJob(currentJobId);
+  if(!job) return;
+  job.completed = false;
+  job.completedAt = null;
+  job.updatedAt = new Date().toISOString();
+  await saveJobs();
+  renderJobDetail();
+  renderJobsList();
+  renderHome();
+  showToast(`${job.customerName} reopened`);
+}
 function togglePhase(type, key){
   const job = getJob(currentJobId);
   const sc = getScope(job, type);
   sc.phases[key] = sc.phases[key] ? null : todayStr();
+  if(sc.phases[key]) sc.phaseNA[key] = false;
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
-  renderActive();
+  renderJobsList();
+}
+function togglePhaseNA(type, key){
+  const job = getJob(currentJobId);
+  const sc = getScope(job, type);
+  sc.phaseNA[key] = !sc.phaseNA[key];
+  if(sc.phaseNA[key]) sc.phases[key] = null; // mutually exclusive with "done"
+  job.updatedAt = new Date().toISOString();
+  saveJobs();
+  renderJobDetail();
+  renderJobsList();
 }
 
 /* ============ TEAM ============ */
 function initials(name){
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || '?';
+}
+/* ============ SEARCH ALL JOBS ============ */
+function openSearchAll(){
+  document.getElementById('searchAllInput').value = '';
+  renderSearchAll();
+  openModal('modalSearchAll');
+  setTimeout(()=>document.getElementById('searchAllInput').focus(), 150);
+}
+function renderSearchAll(){
+  const q = document.getElementById('searchAllInput').value.trim().toLowerCase();
+  const wrap = document.getElementById('searchAllResults');
+  if(!q){
+    wrap.innerHTML = `<div class="empty">Start typing a customer name.</div>`;
+    return;
+  }
+  const matches = visibleJobs().filter(j=>j.customerName.toLowerCase().includes(q) || (j.phone||'').includes(q));
+  if(matches.length===0){
+    wrap.innerHTML = `<div class="empty">No matches for "${q}".</div>`;
+    return;
+  }
+  wrap.innerHTML = matches.map(j=>{
+    const chips = [];
+    ['mitigation','reconstruction'].forEach(k=>{
+      const sc = j.scopes[k];
+      const st = scopeStatus(sc);
+      if(!st) return;
+      const label = k==='mitigation'?'Mitigation':'Reconstruction';
+      const cls = st==='Landed'?'chip-landed':st==='Lost'?'chip-lost':(k==='mitigation'?'chip-mit':'chip-recon');
+      chips.push(`<span class="chip-sm ${cls}">${label} · ${st}</span>`);
+    });
+    return `<div class="job-card" onclick="closeModal('modalSearchAll');openJobDetail('${j.id}')">
+      <div class="top"><div class="nm">${j.customerName}</div></div>
+      <div class="sub">${j.phone||'—'}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">${chips.join('')}</div>
+    </div>`;
+  }).join('');
 }
 function openTeam(){
   document.getElementById('teamNameInput').value = '';
@@ -1471,7 +2308,7 @@ function renderTeam(){
   }
   const sorted = [...personnel].sort((a,b)=>a.localeCompare(b));
   list.innerHTML = sorted.map(name=>{
-    const activeCount = jobs.filter(j=>j.assignedTo===name).length;
+    const activeCount = visibleJobs().filter(j=>j.assignedTo===name).length;
     return `<div class="team-row">
       <div class="nm"><div class="avatar">${initials(name)}</div>${name}${activeCount? ` <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${activeCount} jobs)</span>`:''}</div>
       <button class="del-btn" onclick="removePersonnel('${name.replace(/'/g,"\\'")}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -1511,7 +2348,7 @@ function renderAR(){
   const isToday = asOf === todayStr();
 
   const allScopes = [];
-  jobs.forEach(j=>{
+  visibleJobs().forEach(j=>{
     if(j.scopes.mitigation) allScopes.push({job:j, type:'Mitigation', sc:j.scopes.mitigation});
     if(j.scopes.reconstruction) allScopes.push({job:j, type:'Reconstruction', sc:j.scopes.reconstruction});
   });
@@ -1551,30 +2388,239 @@ function renderAR(){
   }
 }
 
-function renderReports(){
-  const kpiWrap = document.getElementById('reportKpis');
-  if(!kpiWrap) return;
+let leadRangeInitialized = false;
+let phaseStatusType = 'Mitigation';
 
-  const allScopes = [];
-  jobs.forEach(j=>{
-    if(j.scopes.mitigation) allScopes.push({job:j, type:'Mitigation', sc:j.scopes.mitigation});
-    if(j.scopes.reconstruction) allScopes.push({job:j, type:'Reconstruction', sc:j.scopes.reconstruction});
+const REPORT_KEYS = ['phasestatus','awaitingpayment','leadperf','monthly','lossreasons','sourceroi','bysource','bystage','ar','contractor'];
+
+function onReportCheckboxChange(cb){
+  const allCb = document.querySelector('#reportPicker input[value="all"]');
+  if(cb.value==='all'){
+    document.querySelectorAll('#reportPicker input[type=checkbox]').forEach(other=>{ if(other!==cb) other.checked = cb.checked; });
+  } else if(!cb.checked){
+    allCb.checked = false;
+  } else {
+    const allChecked = REPORT_KEYS.every(k=>document.querySelector(`#reportPicker input[value="${k}"]`).checked);
+    if(allChecked) allCb.checked = true;
+  }
+  applyReportSelection();
+}
+function applyReportSelection(){
+  const allCb = document.querySelector('#reportPicker input[value="all"]');
+  const showAll = allCb.checked;
+  const checkedKeys = REPORT_KEYS.filter(k=>document.querySelector(`#reportPicker input[value="${k}"]`).checked);
+  document.querySelectorAll('[data-report]').forEach(el=>{
+    el.classList.toggle('report-hidden', !showAll && !checkedKeys.includes(el.dataset.report));
   });
-  const landed = allScopes.filter(x=>scopeStatus(x.sc)==='Landed');
-  const lost = allScopes.filter(x=>scopeStatus(x.sc)==='Lost');
-  const resolved = landed.length + lost.length;
-  const winRate = resolved ? Math.round(landed.length/resolved*100) : 0;
-  const pipelineValue = allScopes.filter(x=>scopeStatus(x.sc)==='Pipeline').reduce((s,x)=>s+scopeTotals(x.sc).potentialTotal,0);
-  const totalRevenue = landed.reduce((s,x)=>s+scopeTotals(x.sc).totalBilled,0);
+  const label = document.getElementById('reportPickerLabel');
+  if(label){
+    label.textContent = showAll ? 'Choose reports to show & print'
+      : checkedKeys.length===0 ? 'No reports selected'
+      : `${checkedKeys.length} report${checkedKeys.length!==1?'s':''} selected`;
+  }
+}
+function selectOnlyReport(key){
+  document.querySelector('#reportPicker input[value="all"]').checked = false;
+  REPORT_KEYS.forEach(k=>{
+    document.querySelector(`#reportPicker input[value="${k}"]`).checked = (k===key);
+  });
+  applyReportSelection();
+}
+function setPhaseStatusType(type){
+  phaseStatusType = type;
+  document.getElementById('phaseStatusToggle').textContent = type;
+  renderPhaseStatus();
+}
+const CRITICAL_PHASE_KEYS = { Mitigation: ['workAuth'], Reconstruction: [] };
+function renderPhaseStatus(){
+  const wrap = document.getElementById('reportPhaseStatus');
+  if(!wrap) return;
+  const key = phaseStatusType==='Mitigation' ? 'mitigation' : 'reconstruction';
+  const critKeys = CRITICAL_PHASE_KEYS[phaseStatusType] || [];
 
-  kpiWrap.innerHTML = `
-    <div class="stat-card-light"><div class="n">${winRate}%</div><div class="l">Win rate</div></div>
-    <div class="stat-card-light"><div class="n">${fmtMoney(pipelineValue)}</div><div class="l">Open pipeline value</div></div>
-    <div class="stat-card-light"><div class="n">${landed.length}</div><div class="l">Jobs landed</div></div>
-    <div class="stat-card-light"><div class="n">${fmtMoney(totalRevenue)}</div><div class="l">Total revenue landed</div></div>
+  const openJobs = visibleJobs().filter(j=>{
+    const sc = j.scopes[key];
+    if(!sc || j.completed) return false;
+    const st = scopeStatus(sc);
+    return st==='Landed' || st==='Pipeline';
+  });
+
+  if(openJobs.length===0){
+    wrap.innerHTML = `<div class="empty">No open ${phaseStatusType.toLowerCase()} jobs right now.</div>`;
+    return;
+  }
+
+  const rows = openJobs.map(j=>{
+    const sc = j.scopes[key];
+    const st = scopeStatus(sc);
+    const isPipeline = st==='Pipeline';
+    const phases = getEffectivePhases(j, phaseStatusType);
+    const nextPhase = phases.find(p=>!sc.phases[p.key] && !sc.phaseNA[p.key]);
+    // "the estimate" is the generic Estimate phase for Mitigation (and for
+    // reconstruction-only jobs, which fold it in) — for a normal Reconstruction
+    // scope that already has its own Mitigation, it's the Recon. Estimate.
+    const estimateKey = phaseStatusType==='Mitigation' ? 'estimate' : (j.scopes.mitigation ? 'reconEst' : 'estimate');
+    const estimateMissing = !sc.phases[estimateKey] && !sc.phaseNA[estimateKey];
+    const isCritical = !estimateMissing && !isPipeline && nextPhase && critKeys.includes(nextPhase.key);
+    const refDate = isPipeline ? (sc.createdAt || j.dateReceived) : sc.landedAt;
+    const days = ageDays(refDate);
+    const prog = phaseProgress(sc, phases);
+    return { j, sc, st, isPipeline, nextPhase, isCritical, estimateMissing, refDate, days, doneCount: prog.done, phaseTotal: prog.total };
+  }).sort((a,b)=>{
+    if(a.estimateMissing !== b.estimateMissing) return a.estimateMissing ? -1 : 1;
+    if(a.isCritical !== b.isCritical) return a.isCritical ? -1 : 1;
+    return b.days - a.days;
+  });
+
+  const noEstimateCount = rows.filter(r=>r.estimateMissing).length;
+  const noEstimatePipelineCount = rows.filter(r=>r.estimateMissing && r.isPipeline).length;
+  const criticalCount = rows.filter(r=>r.isCritical).length;
+
+  let banner = '';
+  if(noEstimateCount>0){
+    banner += `<div class="hint" style="background:var(--red);color:#fff;font-weight:800;margin-bottom:10px;font-size:12.5px;">⚠ ${noEstimateCount} job${noEstimateCount!==1?'s':''} sitting with NO ESTIMATE &mdash; get ${noEstimateCount!==1?'these':'this'} out first, before anything else.${noEstimatePipelineCount>0? ` (${noEstimatePipelineCount} still in pipeline &mdash; can't land without it.)` : ''}</div>`;
+  }
+  if(criticalCount>0){
+    banner += `<div class="hint" style="background:var(--red-bg);color:var(--red);font-weight:700;margin-bottom:10px;">${criticalCount} more job${criticalCount!==1?'s':''} flagged critical.</div>`;
+  }
+
+  wrap.innerHTML = banner + rows.map(r=>{
+    const statusLabel = r.nextPhase ? r.nextPhase.label : 'All phases done';
+    const rowClass = r.estimateMissing ? 'no-estimate' : (r.isCritical ? 'critical' : '');
+    const badge = r.estimateMissing ? '<span class="crit-badge no-est-badge">No Estimate</span>' : (r.isCritical ? '<span class="crit-badge">Critical</span>' : '');
+    const stageChip = r.isPipeline
+      ? `<span class="chip-sm" style="background:var(--blue-bg);color:var(--blue);margin-left:6px;">Pipeline &middot; ${r.sc.probability}%</span>`
+      : `<span class="chip-sm chip-landed" style="margin-left:6px;">Active</span>`;
+    return `<div class="phase-report-row ${rowClass}" onclick="openJobDetail('${r.j.id}')" style="cursor:pointer;">
+      <div class="top">
+        <div class="nm">${r.j.customerName}${stageChip}${badge? ' '+badge : ''}</div>
+        <div class="meta">${r.doneCount}/${r.phaseTotal} done</div>
+      </div>
+      ${r.estimateMissing ? `<div class="status" style="color:var(--red);">NO ESTIMATE ON FILE</div>` : ''}
+      <div class="status" style="${r.estimateMissing?'font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;':''}">${r.estimateMissing?'Progression: ':'Current status: '}${statusLabel}</div>
+      <div class="meta">${r.isPipeline?'Lead since':'Job start'}: ${fmtDate(r.refDate)} &middot; ${r.days}d &middot; ${r.j.assignedTo||'Unassigned'}</div>
+    </div>`;
+  }).join('');
+}
+
+function getAllScopesList(){
+  const list = [];
+  visibleJobs().forEach(j=>{
+    if(j.scopes.mitigation) list.push({job:j, type:'Mitigation', sc:j.scopes.mitigation});
+    if(j.scopes.reconstruction) list.push({job:j, type:'Reconstruction', sc:j.scopes.reconstruction});
+  });
+  return list;
+}
+function scopeCreatedDate(x){ return (x.sc.createdAt || x.job.dateReceived || '').slice(0,10); }
+function getLeadRangeScopes(){
+  const fromVal = document.getElementById('leadRangeFrom')?.value || '';
+  const toVal = document.getElementById('leadRangeTo')?.value || '';
+  return getAllScopesList().filter(x=>{
+    const d = scopeCreatedDate(x);
+    if(!d) return false;
+    if(fromVal && d < fromVal) return false;
+    if(toVal && d > toVal) return false;
+    return true;
+  });
+}
+function setLeadRangePreset(kind, btn){
+  const today = new Date();
+  let from, to;
+  if(kind==='month'){ from = new Date(today.getFullYear(), today.getMonth(), 1); to = today; }
+  else if(kind==='lastmonth'){ from = new Date(today.getFullYear(), today.getMonth()-1, 1); to = new Date(today.getFullYear(), today.getMonth(), 0); }
+  else if(kind==='year'){ from = new Date(today.getFullYear(), 0, 1); to = today; }
+  else { from = null; to = null; }
+  document.getElementById('leadRangeFrom').value = from ? from.toISOString().slice(0,10) : '';
+  document.getElementById('leadRangeTo').value = to ? to.toISOString().slice(0,10) : '';
+  document.querySelectorAll('#leadRangePresets button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderLeadPerformance();
+  renderSourceAndStage();
+}
+function setLeadRangeCustom(){
+  document.querySelectorAll('#leadRangePresets button').forEach(b=>b.classList.remove('active'));
+  renderLeadPerformance();
+  renderSourceAndStage();
+}
+function renderLeadPerformance(){
+  const fromVal = document.getElementById('leadRangeFrom')?.value || '';
+  const toVal = document.getElementById('leadRangeTo')?.value || '';
+  const summaryEl = document.getElementById('printRangeSummary');
+  if(summaryEl){
+    summaryEl.textContent = `Voda Job Tracker — Lead Performance Report — ${fromVal? fmtDate(fromVal):'All time'}${toVal? ' to '+fmtDate(toVal) : ''} — printed ${fmtDate(todayStr())}`;
+  }
+  const inRange = getLeadRangeScopes();
+  const won = inRange.filter(x=>scopeStatus(x.sc)==='Landed');
+  const lost = inRange.filter(x=>scopeStatus(x.sc)==='Lost');
+  const limbo = inRange.filter(x=>scopeStatus(x.sc)==='Pipeline');
+  const resolved = won.length + lost.length;
+  const winRate = resolved ? Math.round(won.length/resolved*100) : 0;
+
+  document.getElementById('leadKpis').innerHTML = `
+    <div class="stat-card-light"><div class="n">${inRange.length}</div><div class="l">Total leads</div></div>
+    <div class="stat-card-light"><div class="n">${won.length}</div><div class="l">Won</div></div>
+    <div class="stat-card-light"><div class="n">${lost.length}</div><div class="l">Lost</div></div>
+    <div class="stat-card-light"><div class="n">${limbo.length}</div><div class="l">Still selling</div></div>
   `;
 
-  // by stage
+  const avgDaysToClose = won.length ? Math.round(won.reduce((s,x)=>{
+    const created = new Date(scopeCreatedDate(x)+'T00:00:00');
+    const landed = new Date((x.sc.landedAt||'').slice(0,10)+'T00:00:00');
+    if(isNaN(created)||isNaN(landed)) return s;
+    return s + Math.max(0,(landed-created)/86400000);
+  },0)/won.length) : 0;
+  const avgDealSize = won.length ? won.reduce((s,x)=>s+scopeTotals(x.sc).totalBilled,0)/won.length : 0;
+
+  document.getElementById('leadSecondaryKpis').innerHTML = `
+    <div>Win rate (resolved)<br><b>${winRate}%</b></div>
+    <div>Avg days to close<br><b>${avgDaysToClose}d</b></div>
+    <div>Avg deal size<br><b>${fmtMoney(avgDealSize)}</b></div>
+  `;
+
+  const totalRevenue = won.reduce((s,x)=>s+scopeTotals(x.sc).totalBilled,0);
+  const totalProfit = won.reduce((s,x)=>s+scopeTotals(x.sc).profit,0);
+
+  const mitLandedInRange = inRange.filter(x=>x.type==='Mitigation' && scopeStatus(x.sc)==='Landed');
+  const mitWithRecon = mitLandedInRange.filter(x=>x.job.scopes.reconstruction && x.job.scopes.reconstruction.active);
+  const reconConversionRate = mitLandedInRange.length ? Math.round(mitWithRecon.length/mitLandedInRange.length*100) : null;
+
+  document.getElementById('leadKpis2').innerHTML = `
+    <div class="stat-card-light"><div class="n">${fmtMoney(totalRevenue)}</div><div class="l">Revenue (won)</div></div>
+    <div class="stat-card-light"><div class="n" style="color:${totalProfit<0?'var(--red)':'inherit'}">${fmtMoney(totalProfit)}</div><div class="l">Profit (won)</div></div>
+    <div class="stat-card-light"><div class="n">${reconConversionRate===null?'—':reconConversionRate+'%'}</div><div class="l">Recon conversion rate</div></div>
+    <div class="stat-card-light"><div class="n">${mitWithRecon.length}/${mitLandedInRange.length}</div><div class="l">Mit jobs that added recon</div></div>
+  `;
+
+  const byMonth = {};
+  inRange.forEach(x=>{
+    const m = scopeCreatedDate(x).slice(0,7);
+    byMonth[m] = byMonth[m] || {total:0, won:0, lost:0, limbo:0};
+    byMonth[m].total++;
+    const st = scopeStatus(x.sc);
+    if(st==='Landed') byMonth[m].won++;
+    else if(st==='Lost') byMonth[m].lost++;
+    else byMonth[m].limbo++;
+  });
+  const months = Object.keys(byMonth).sort().reverse();
+  const monthlyWrap = document.getElementById('leadMonthly');
+  if(months.length===0){
+    monthlyWrap.innerHTML = `<div class="empty">No leads in this range.</div>`;
+  } else {
+    monthlyWrap.innerHTML = months.map(m=>{
+      const d = byMonth[m];
+      const res = d.won+d.lost;
+      const rate = res? Math.round(d.won/res*100) : 0;
+      const label = new Date(m+'-01T00:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+      return `<div class="report-row"><div class="report-row-head" style="cursor:default;">
+        <div class="nm">${label}</div>
+        <div class="ct">${d.total} in &middot; ${d.won} won &middot; ${d.lost} lost &middot; ${d.limbo} selling &middot; ${rate}% win rate</div>
+      </div></div>`;
+    }).join('');
+  }
+}
+function renderSourceAndStage(){
+  const allScopes = getAllScopesList();
+
   const stages = [
     {label:'0–25%', min:0, max:25},
     {label:'26–50%', min:26, max:50},
@@ -1592,9 +2638,9 @@ function renderReports(){
     </div></div>`;
   }).join('');
 
-  // by source
+  const inRange = getLeadRangeScopes();
   const bySource = {};
-  allScopes.forEach(x=>{
+  inRange.forEach(x=>{
     if(scopeStatus(x.sc)!=='Landed' && scopeStatus(x.sc)!=='Lost') return;
     const src = x.job.leadSource || 'Unknown';
     bySource[src] = bySource[src] || {won:0, lost:0};
@@ -1603,7 +2649,7 @@ function renderReports(){
   const sourceWrap = document.getElementById('reportBySource');
   const sourceNames = Object.keys(bySource).sort((a,b)=>(bySource[b].won+bySource[b].lost)-(bySource[a].won+bySource[a].lost));
   if(sourceNames.length===0){
-    sourceWrap.innerHTML = `<div class="empty">No resolved jobs yet.</div>`;
+    sourceWrap.innerHTML = `<div class="empty">No resolved leads in this range.</div>`;
   } else {
     sourceWrap.innerHTML = sourceNames.map(src=>{
       const d = bySource[src];
@@ -1615,6 +2661,118 @@ function renderReports(){
       </div></div>`;
     }).join('');
   }
+
+  // loss reasons
+  const lossWrap = document.getElementById('reportLossReasons');
+  const lostInRange = inRange.filter(x=>scopeStatus(x.sc)==='Lost');
+  const byReason = {};
+  lostInRange.forEach(x=>{
+    const r = x.sc.lossReason || 'No reason recorded';
+    byReason[r] = (byReason[r]||0) + 1;
+  });
+  const reasonNames = Object.keys(byReason).sort((a,b)=>byReason[b]-byReason[a]);
+  if(reasonNames.length===0){
+    lossWrap.innerHTML = `<div class="empty">No lost jobs in this range.</div>`;
+  } else {
+    lossWrap.innerHTML = reasonNames.map(r=>{
+      const count = byReason[r];
+      const pct = Math.round(count/lostInRange.length*100);
+      return `<div class="report-row"><div class="report-row-head" style="cursor:default;">
+        <div class="nm">${r}</div>
+        <div class="ct">${count} job${count!==1?'s':''} &middot; ${pct}% of losses</div>
+      </div></div>`;
+    }).join('');
+  }
+
+  // lead source ROI
+  const roiWrap = document.getElementById('reportSourceROI');
+  const bySourceROI = {};
+  inRange.forEach(x=>{
+    const src = x.job.leadSource || 'Unknown';
+    bySourceROI[src] = bySourceROI[src] || {leads:0, cost:0, revenue:0};
+    bySourceROI[src].leads++;
+    bySourceROI[src].cost += scopeTotals(x.sc).costOfLead;
+    if(scopeStatus(x.sc)==='Landed') bySourceROI[src].revenue += scopeTotals(x.sc).totalBilled;
+  });
+  const roiNames = Object.keys(bySourceROI).sort((a,b)=>bySourceROI[b].revenue-bySourceROI[a].revenue);
+  if(roiNames.length===0){
+    roiWrap.innerHTML = `<div class="empty">No leads in this range.</div>`;
+  } else {
+    roiWrap.innerHTML = roiNames.map(src=>{
+      const d = bySourceROI[src];
+      const roi = d.cost>0 ? Math.round((d.revenue-d.cost)/d.cost*100) : null;
+      return `<div class="report-row"><div class="report-row-head" style="cursor:default;">
+        <div class="nm">${src}</div>
+        <div class="ct">${d.leads} leads &middot; ${fmtMoney(d.cost)} spent &middot; ${fmtMoney(d.revenue)} revenue ${roi===null?'':' &middot; '+(roi>=0?'+':'')+roi+'% ROI'}</div>
+      </div></div>`;
+    }).join('');
+  }
+}
+function renderAwaitingPaymentReport(){
+  const wrap = document.getElementById('reportAwaitingPayment');
+  const kpiWrap = document.getElementById('awaitingPayKpis');
+  if(!wrap || !kpiWrap) return;
+
+  const jobsAwaiting = visibleJobs().filter(j=>j.workComplete && !j.completed);
+
+  const rows = jobsAwaiting.map(j=>{
+    let owed = 0, revenue = 0;
+    const phaseSummaries = [];
+    ['mitigation','reconstruction'].forEach(k=>{
+      const sc = j.scopes[k];
+      if(sc && scopeStatus(sc)==='Landed'){
+        const t = scopeTotals(sc);
+        owed += t.owed; revenue += t.totalBilled;
+        const type = k==='mitigation' ? 'Mitigation' : 'Reconstruction';
+        const phases = getEffectivePhases(j, type);
+        const prog = phaseProgress(sc, phases);
+        phaseSummaries.push(`${type} ${prog.done}/${prog.total}`);
+      }
+    });
+    const days = ageDays(j.workCompleteAt);
+    return { j, owed, revenue, phaseSummaries, days };
+  }).sort((a,b)=> b.days - a.days);
+
+  const totalOwed = rows.reduce((s,r)=>s+r.owed,0);
+  const reminderCount = rows.filter(r=>r.days>14 && r.owed>0).length;
+
+  kpiWrap.innerHTML = `
+    <div class="stat-card-light"><div class="n">${rows.length}</div><div class="l">Awaiting payment</div></div>
+    <div class="stat-card-light ${totalOwed>0?'alert':''}"><div class="n">${fmtMoney(totalOwed)}</div><div class="l">Total owed</div></div>
+    <div class="stat-card-light ${reminderCount>0?'alert':''}"><div class="n">${reminderCount}</div><div class="l">14+ days &mdash; send reminder</div></div>
+  `;
+
+  if(rows.length===0){
+    wrap.innerHTML = `<div class="empty">Nothing awaiting payment right now.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = rows.map(r=>{
+    const needsReminder = r.days>14 && r.owed>0;
+    return `<div class="report-row" onclick="openJobDetail('${r.j.id}')" style="cursor:pointer;${needsReminder?'border-color:#F0B4A8;background:var(--red-bg);border-radius:12px;':''}">
+      <div class="report-row-head" style="cursor:pointer;">
+        <div class="nm">${r.j.customerName}${needsReminder?' <span class="crit-badge" style="margin-left:6px;">Reminder</span>':''}</div>
+        <div class="ct" style="color:${r.owed>0?'var(--red)':'inherit'};">${fmtMoney(r.owed)} owed</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;padding:0 2px 2px;">${r.phaseSummaries.join(' &middot; ')} &middot; work done ${fmtDate(r.j.workCompleteAt)} &middot; ${r.days}d ago</div>
+    </div>`;
+  }).join('');
+}
+
+function renderReports(){
+  if(!document.getElementById('leadKpis')) return;
+  renderPhaseStatus();
+  renderAwaitingPaymentReport();
+  if(!leadRangeInitialized){
+    leadRangeInitialized = true;
+    setLeadRangePreset('month', document.querySelector('#leadRangePresets button'));
+  } else {
+    renderLeadPerformance();
+    renderSourceAndStage();
+  }
+
+  const allScopes = getAllScopesList();
+  const landed = allScopes.filter(x=>scopeStatus(x.sc)==='Landed');
 
   renderAR();
 
@@ -1636,9 +2794,9 @@ function exportCSV(){
   const cols = ['Customer','Phone','Lead Source','Assigned To','Date Received','Scope','Status','Probability',
     'Payer','Insurance Co','Estimated','Agreed','Billed','Adjustment $','Adjustment %',
     'Received','Owed','Contractor','Bid Amount','Contractor Paid','Contractor Owed',
-    'Materials Cost','Total Cost','Profit Margin ($)','Profit Margin (%)','Loss Reason'];
+    'Materials Cost','Cost of Lead','Total Cost','Profit Margin ($)','Profit Margin (%)','Loss Reason'];
   const rows = [];
-  jobs.forEach(j=>{
+  visibleJobs().forEach(j=>{
     ['mitigation','reconstruction'].forEach(k=>{
       const sc = j.scopes[k];
       if(!sc) return;
@@ -1650,7 +2808,7 @@ function exportCSV(){
         t.totalEstimated, t.totalAgreed, t.totalBilled, t.estToBilledDiff, t.estToBilledPct.toFixed(1)+'%',
         t.totalReceived, t.owed,
         sc.contractor.name, sc.contractor.bidAmount, t.contractorPaid, t.contractorOwed,
-        t.materialsCost, t.totalCost, t.profit, t.profitMarginPct.toFixed(1)+'%',
+        t.materialsCost, t.costOfLead, t.totalCost, t.profit, t.profitMarginPct.toFixed(1)+'%',
         sc.lossReason
       ]);
     });
@@ -1670,5 +2828,6 @@ function exportCSV(){
 }
 
 /* ============ INIT ============ */
+initTheme();
 loadData();
 </script>
