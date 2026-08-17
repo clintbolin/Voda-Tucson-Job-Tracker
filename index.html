@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,7 +53,11 @@
 [data-theme="dark"] .close-x{ color:var(--muted); }
 [data-theme="dark"] nav.bottom{ background:var(--card); border-color:var(--line); }
 [data-theme="dark"] .seg{ background:var(--gray-bg); }
-[data-theme="dark"] .seg button.active{ background:var(--card); }
+[data-theme="dark"] .seg button.active{ background:var(--card); color:var(--cyan); }
+[data-theme="dark"] nav.bottom .navbtn.active{ color:var(--cyan); }
+[data-theme="dark"] nav.bottom .navbtn.active svg{ stroke:var(--cyan); }
+[data-theme="dark"] .stat-card-light .n{ color:var(--cyan); }
+[data-theme="dark"] .stat-card-light.alert .n{ color:var(--red); }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -147,7 +150,7 @@ header.top::after{
 }
 .quick-btn .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
 .quick-btn .ic svg{width:18px;height:18px;}
-.quick-btn .t{font-weight:700;font-size:13.5px;}
+.quick-btn .t{font-weight:700;font-size:13.5px;color:var(--ink);}
 .quick-btn .d{font-size:11px;color:var(--muted);}
 .quick-btn.primary{background:var(--navy);border-color:var(--navy);}
 .quick-btn.primary .t,.quick-btn.primary .d{color:#fff;}
@@ -460,6 +463,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 
   /* printing whichever modal (job profile or job report) is currently open */
   body.printing-overlay #printPageTitle{ display:none !important; }
+  body.printing-overlay main.content{ display:none !important; }
   body.printing-overlay .overlay:not(.active){ display:none !important; }
   body.printing-overlay .overlay.active{
     position:static !important; display:block !important; background:none !important; padding:0 !important;
@@ -547,6 +551,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 
   <main class="content">
     <div id="printPageTitle" style="display:none;font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:700;"></div>
+    <div id="globalGenerated" style="font-size:11px;color:var(--muted);margin-bottom:10px;"></div>
 
     <!-- HOME -->
     <div class="view active" id="view-home">
@@ -1128,8 +1133,17 @@ function showToast(msg){
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
-function openModal(id){ document.getElementById(id).classList.add('active'); }
-function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+let _openModalCount = 0;
+function openModal(id){
+  document.getElementById(id).classList.add('active');
+  _openModalCount++;
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('active');
+  _openModalCount = Math.max(0, _openModalCount - 1);
+  if(_openModalCount === 0) document.body.style.overflow = '';
+}
 
 /* ============ SCOPE HELPERS ============ */
 function newScope(createdAt){
@@ -1502,6 +1516,8 @@ function printCurrentPage(){
   window.print();
 }
 function renderAll(){
+  const genEl = document.getElementById('globalGenerated');
+  if(genEl) genEl.textContent = 'Generated ' + fmtDate(todayStr()) + ' ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
   renderHome();
   renderJobsList();
   renderReports();
@@ -1687,6 +1703,11 @@ function renderJobsList(){
     if(jobsStatusFilter==='Completed') return !!j.completed;
     if(jobsStatusFilter==='AwaitingPayment') return !j.completed && !!j.workComplete;
     return !j.completed && !j.workComplete; // Active
+  });
+  list.sort((a,b)=>{
+    const da = jobsStatusFilter==='Completed' ? a.completedAt : jobsStatusFilter==='AwaitingPayment' ? a.workCompleteAt : (a.scopes[key].landedAt||a.dateReceived);
+    const db = jobsStatusFilter==='Completed' ? b.completedAt : jobsStatusFilter==='AwaitingPayment' ? b.workCompleteAt : (b.scopes[key].landedAt||b.dateReceived);
+    return (db||'').localeCompare(da||'');
   });
   if(q) list = list.filter(j=>j.customerName.toLowerCase().includes(q));
   if(list.length===0){
@@ -1881,6 +1902,34 @@ function generateJobReportHtml(job){
     html += `</div>`;
   });
 
+  if(job.scopes.mitigation && job.scopes.reconstruction){
+    const tm = scopeTotals(job.scopes.mitigation, 'Mitigation');
+    const tr = scopeTotals(job.scopes.reconstruction, 'Reconstruction');
+    const sum = (k)=> (tm[k]||0) + (tr[k]||0);
+    const totalBilled = sum('totalBilled');
+    const totalCost = sum('totalCost');
+    const profit = totalBilled - totalCost;
+    const profitMarginPct = totalBilled ? (profit/totalBilled*100) : 0;
+
+    html += `<div class="report-section"><div class="report-h">Total Financial Summary</div>`;
+    html += `<div class="report-doc-title" style="margin-bottom:8px;">Mitigation + Reconstruction combined</div><ul>`;
+    html += `<li>Estimated: ${fmtMoney(sum('totalEstimated'))}</li>`;
+    html += `<li>Billed: ${fmtMoney(totalBilled)}</li>`;
+    html += `<li>Received: ${fmtMoney(sum('totalReceived'))}</li>`;
+    html += `<li>Owed: ${fmtMoney(sum('owed'))}</li>`;
+    html += `<li>Contractor cost: ${fmtMoney(sum('costOfContractors'))}</li>`;
+    html += `<li>Materials cost: ${fmtMoney(sum('materialsCost'))}</li>`;
+    html += `<li>Cost of lead: ${fmtMoney(sum('costOfLead'))}</li>`;
+    if(sum('laborCost')) html += `<li>Labor cost: ${fmtMoney(sum('laborCost'))}</li>`;
+    if(sum('miscCost')) html += `<li>Miscellaneous cost: ${fmtMoney(sum('miscCost'))}</li>`;
+    html += `<li>Royalty fees: ${fmtMoney(sum('royaltyFee'))}</li>`;
+    html += `<li>Total cost: ${fmtMoney(totalCost)}</li>`;
+    html += `<li>Paid to contractors: ${fmtMoney(sum('contractorPaid'))}</li>`;
+    html += `<li>Owed to contractors: ${fmtMoney(sum('contractorOwed'))}</li>`;
+    html += `<li>Profit margin: ${fmtMoney(profit)} (${profitMarginPct.toFixed(1)}%)</li>`;
+    html += `</ul></div>`;
+  }
+
   if(job.workComplete || job.completed){
     html += `<div class="report-section"><div class="report-h">Completion</div><ul>`;
     if(job.workComplete) html += `<li>Work completed: ${fmtDate((job.workCompleteAt||'').slice(0,10))}</li>`;
@@ -2005,6 +2054,9 @@ function renderJobDetail(){
       <button class="btn btn-cyan" style="width:auto;padding:0 18px;margin-top:10px;" onclick="addReconScope()">+ Add reconstruction scope</button>
     </div>`;
   }
+  if(job.scopes.mitigation && job.scopes.reconstruction){
+    html += totalFinancialSummaryHtml(job);
+  }
   html += completeSectionHtml(job);
   html += `<div class="jd-section">
     <div class="jd-section-head"><div class="h">Job notes</div></div>
@@ -2070,6 +2122,56 @@ function completeSectionHtml(job){
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+function totalFinancialSummaryHtml(job){
+  const mit = job.scopes.mitigation, recon = job.scopes.reconstruction;
+  const tm = scopeTotals(mit, 'Mitigation');
+  const tr = scopeTotals(recon, 'Reconstruction');
+  const sum = (k)=> (tm[k]||0) + (tr[k]||0);
+  const totalBilled = sum('totalBilled');
+  const totalCost = sum('totalCost');
+  const profit = totalBilled - totalCost;
+  const profitMarginPct = totalBilled ? (profit/totalBilled*100) : 0;
+
+  return `<div class="jd-section" style="background:var(--blue-bg);border-color:var(--blue);">
+    <div class="jd-section-head"><div class="h">Total Financial Summary <span class="chip-sm" style="margin-left:6px;background:var(--card);color:var(--blue);">Mitigation + Reconstruction</span></div></div>
+    <div class="hint" style="margin-bottom:10px;">Combined totals across both scopes on this job.</div>
+
+    <div class="jd-section-head" style="margin-top:4px;"><div class="h" style="font-size:13px;">Estimate &rarr; Billed</div></div>
+    <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
+      <div style="flex:1 1 50%;">Estimated<br><b>${fmtMoney(sum('totalEstimated'))}</b></div>
+      <div style="flex:1 1 50%;">Billed<br><b>${fmtMoney(totalBilled)}</b></div>
+    </div>
+
+    <div class="jd-section-head" style="margin-top:14px;"><div class="h" style="font-size:13px;">Job profitability</div></div>
+    <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
+      <div style="flex:1 1 33%;">Billed out<br><b>${fmtMoney(totalBilled)}</b></div>
+      <div style="flex:1 1 33%;">Contractor cost<br><b>${fmtMoney(sum('costOfContractors'))}</b></div>
+      <div style="flex:1 1 33%;">Cost of lead<br><b>${fmtMoney(sum('costOfLead'))}</b></div>
+      <div style="flex:1 1 33%;">Materials cost<br><b>${fmtMoney(sum('materialsCost'))}</b></div>
+      <div style="flex:1 1 33%;">Labor cost<br><b>${fmtMoney(sum('laborCost'))}</b></div>
+      <div style="flex:1 1 33%;">Misc. cost<br><b>${fmtMoney(sum('miscCost'))}</b></div>
+      <div style="flex:1 1 33%;">Royalty fees<br><b>${fmtMoney(sum('royaltyFee'))}</b></div>
+    </div>
+    <div class="totals-mini" style="margin-top:6px;">
+      <div>Total cost<br><b>${fmtMoney(totalCost)}</b></div>
+      <div>Profit margin ($)<br><b style="color:${profit<0?'var(--red)':'#1F9254'}">${fmtMoney(profit)}</b></div>
+      <div>Profit margin (%)<br><b style="color:${profit<0?'var(--red)':'#1F9254'}">${profitMarginPct>=0?'+':''}${profitMarginPct.toFixed(1)}%</b></div>
+    </div>
+
+    <div class="jd-section-head" style="margin-top:14px;"><div class="h" style="font-size:13px;">Billing &amp; receivables</div></div>
+    <div class="totals-mini">
+      <div>Total billed<br><b>${fmtMoney(totalBilled)}</b></div>
+      <div>Received<br><b>${fmtMoney(sum('totalReceived'))}</b></div>
+      <div>Owed<br><b style="color:${sum('owed')>0?'var(--red)':'inherit'}">${fmtMoney(sum('owed'))}</b></div>
+    </div>
+
+    <div class="jd-section-head" style="margin-top:14px;"><div class="h" style="font-size:13px;">Contractor</div></div>
+    <div class="totals-mini">
+      <div>Paid to contractor<br><b>${fmtMoney(sum('contractorPaid'))}</b></div>
+      <div>Owed to contractor<br><b style="color:${sum('contractorOwed')>0?'var(--red)':'inherit'}">${fmtMoney(sum('contractorOwed'))}</b></div>
+    </div>
+  </div>`;
+}
 function scopeSectionHtml(job, type){
   const key = type==='Mitigation' ? 'mitigation' : 'reconstruction';
   const sc = job.scopes[key];
