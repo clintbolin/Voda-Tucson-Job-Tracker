@@ -627,12 +627,12 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     <!-- JOBS (Pipeline / Active / Completed / Archived) -->
     <div class="view" id="view-jobs">
       <div class="seg" style="margin-bottom:10px;flex-wrap:wrap;" id="jobsStatusSeg">
-        <button class="active" data-status="Pipeline" onclick="setJobsStatus('Pipeline', this)">Pipeline</button>
+        <button data-status="Pipeline" onclick="setJobsStatus('Pipeline', this)">Pipeline</button>
         <button data-status="Active" onclick="setJobsStatus('Active', this)">Active</button>
         <button data-status="AwaitingPayment" onclick="setJobsStatus('AwaitingPayment', this)">Awaiting Pay</button>
         <button data-status="Completed" onclick="setJobsStatus('Completed', this)">Completed</button>
         <button data-status="Archived" onclick="setJobsStatus('Archived', this)">Archived</button>
-        <button data-status="All" onclick="setJobsStatus('All', this)">All</button>
+        <button class="active" data-status="All" onclick="setJobsStatus('All', this)">All</button>
       </div>
       <div class="seg" style="margin-bottom:10px;" id="jobsTypeSeg">
         <button class="active" onclick="setJobsType('Mitigation', this)">Mitigation</button>
@@ -1074,7 +1074,7 @@ function phaseProgress(sc, phases){
 let jobs = [];
 let personnel = [...KNOWN_TECHS];
 let currentView = 'home';
-let jobsStatusFilter = 'Pipeline';
+let jobsStatusFilter = 'All';
 let jobsTypeFilter = 'Mitigation';
 let currentJobId = null;
 let currentScopeType = null; // 'Mitigation' | 'Reconstruction' — scope currently open in Job Detail actions
