@@ -758,6 +758,43 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
         <div class="section-title">Contractor payouts outstanding</div>
         <div id="reportContractor"></div>
       </div>
+
+      <div class="hint" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;">
+        <span>Looking for a plain, one-row-per-job spreadsheet view instead?</span>
+        <button class="export-btn" style="flex-shrink:0;" onclick="switchView('alljobs')">Open All Jobs List &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ALL JOBS LIST (SPREADSHEET VIEW) -->
+    <div class="view" id="view-alljobs">
+      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>All jobs list</span>
+        <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="printCurrentPage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print
+        </button>
+      </div>
+      <div class="hint" style="margin-bottom:10px;">Every job, one row each, newest first. Billed &amp; Paid are totaled across both scopes; the last three columns are specific to the Reconstruction contractor.</div>
+      <input id="allJobsSearch" placeholder="Search by customer name…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;margin-bottom:12px;" oninput="renderAllJobsReport()">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table id="allJobsTable" style="border-collapse:collapse;width:100%;min-width:920px;font-size:12px;">
+          <thead>
+            <tr style="background:var(--navy);color:#fff;">
+              <th style="padding:8px 10px;text-align:left;white-space:nowrap;">Date</th>
+              <th style="padding:8px 10px;text-align:left;white-space:nowrap;">Client</th>
+              <th style="padding:8px 10px;text-align:left;white-space:nowrap;">Current Phase Status</th>
+              <th style="padding:8px 10px;text-align:left;white-space:nowrap;">Lead Type</th>
+              <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Billed</th>
+              <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Paid</th>
+              <th style="padding:8px 10px;text-align:left;white-space:nowrap;">Recon. Contractor</th>
+              <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Agreed</th>
+              <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Paid to Contractor</th>
+            </tr>
+          </thead>
+          <tbody id="allJobsTableBody"></tbody>
+          <tfoot id="allJobsTableFoot"></tfoot>
+        </table>
+      </div>
     </div>
 
   </main>
@@ -774,6 +811,10 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     <button class="navbtn" data-view="reports" onclick="switchView('reports')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
       Reports
+    </button>
+    <button class="navbtn" data-view="alljobs" onclick="switchView('alljobs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/><line x1="15" y1="9" x2="15" y2="21"/></svg>
+      All Jobs
     </button>
   </nav>
 </div>
@@ -1506,7 +1547,7 @@ function switchView(v){
 }
 function updatePrintTitle(v){
   const statusLabel = jobsStatusFilter==='AwaitingPayment' ? 'Awaiting Payment' : jobsStatusFilter;
-  const titleMap = { home:'Home overview', jobs:'Jobs — '+statusLabel };
+  const titleMap = { home:'Home overview', jobs:'Jobs — '+statusLabel, alljobs:'All Jobs List' };
   const el = document.getElementById('printPageTitle');
   if(!el) return;
   el.textContent = v==='reports' ? '' : `Voda Job Tracker — ${titleMap[v]||v} — printed ${fmtDate(todayStr())}`;
@@ -1521,6 +1562,7 @@ function renderAll(){
   renderHome();
   renderJobsList();
   renderReports();
+  renderAllJobsReport();
   renderTeam();
 }
 
@@ -1686,7 +1728,7 @@ function renderJobsList(){
           <div class="nm">${j.customerName}</div>
           <div class="amt">${fmtMoney(t.potentialTotal)}</div>
         </div>
-        <div class="sub">${j.leadSource||'—'} ${sc.forecastCloseMonth? ' &middot; expects '+sc.forecastCloseMonth:''} &middot; ${days}d old</div>
+        <div class="sub">${j.leadSource||'—'} ${sc.forecastCloseMonth? ' &middot; expects '+sc.forecastCloseMonth:''} &middot; ${days}d old &middot; received ${fmtDate(j.dateReceived)}</div>
         <div class="prob-bar-wrap"><div class="prob-bar" style="width:${sc.probability}%;"></div></div>
         <div class="prob-row">
           <span class="prob-pct">${sc.probability}% likely</span>
@@ -1730,7 +1772,7 @@ function renderJobsList(){
         <div class="nm">${j.customerName}</div>
         <span class="chip-sm ${t.totalBilled===0?'':(t.owed>0?'chip-lost':'chip-landed')}" ${t.totalBilled===0?'style="background:var(--gray-bg);color:var(--muted);"':''}>${t.totalBilled===0?'Not billed yet':(t.owed>0? fmtMoney(t.owed)+' owed' : 'Paid in full')}</span>
       </div>
-      <div class="sub">${sc.contractor.name? 'Contractor: '+sc.contractor.name : 'No contractor assigned'} &middot; ${prog.done}/${prog.total} phases done &middot; ${days}d ${sinceLabel}</div>
+      <div class="sub">${sc.contractor.name? 'Contractor: '+sc.contractor.name : 'No contractor assigned'} &middot; ${prog.done}/${prog.total} phases done &middot; ${days}d ${sinceLabel} &middot; received ${fmtDate(j.dateReceived)}</div>
     </div>`;
   }).join('');
 }
@@ -1752,6 +1794,15 @@ function openNewJob(){
 async function confirmNewJob(){
   const name = document.getElementById('njName').value.trim();
   if(!name){ showToast('Enter a customer name'); return; }
+
+  const dup = jobs.find(j=>j.customerName.trim().toLowerCase()===name.toLowerCase());
+  if(dup){
+    const proceed1 = confirm(`A job for "${dup.customerName}" already exists (received ${fmtDate(dup.dateReceived)}). Create another job with the same name anyway?`);
+    if(!proceed1) return;
+    const proceed2 = confirm(`Since there's already a job under this name, consider adding something like "(2)" or "(b)" to the end so they're easy to tell apart later \u2014 for example "${name} (2)".\n\nClick OK to create it exactly as typed, or Cancel to go back and edit the name first.`);
+    if(!proceed2) return;
+  }
+
   const scopeType = document.getElementById('njScope').value;
   const job = {
     id: uid('J'),
@@ -3264,6 +3315,73 @@ function renderReports(){
         <div class="nm">${x.sc.contractor.name||'Unnamed contractor'} <span style="color:var(--muted);font-weight:500;">— ${x.job.customerName}</span></div>
         <div class="ct" style="color:var(--red);">${fmtMoney(scopeTotals(x.sc).contractorOwed)}</div>
       </div></div>`).join('');
+  }
+}
+function currentPhaseStatusText(job){
+  const parts = [];
+  ['mitigation','reconstruction'].forEach(k=>{
+    const sc = job.scopes[k];
+    if(!sc) return;
+    const type = k==='mitigation' ? 'Mitigation' : 'Reconstruction';
+    const st = scopeStatus(sc);
+    if(st==='Lost'){ parts.push(`${type}: Lost`); return; }
+    const phases = getEffectivePhases(job, type);
+    const next = phases.find(p=>!sc.phases[p.key] && !sc.phaseNA[p.key]);
+    parts.push(next ? `${type}: ${next.label}` : `${type}: All phases done`);
+  });
+  return parts.length ? parts.join(' / ') : '—';
+}
+function renderAllJobsReport(){
+  const tbody = document.getElementById('allJobsTableBody');
+  const tfoot = document.getElementById('allJobsTableFoot');
+  if(!tbody) return;
+  const q = (document.getElementById('allJobsSearch')?.value || '').trim().toLowerCase();
+  let all = visibleJobs().slice().sort((a,b)=>(b.dateReceived||'').localeCompare(a.dateReceived||''));
+  if(q) all = all.filter(j=>j.customerName.toLowerCase().includes(q));
+
+  if(all.length===0){
+    tbody.innerHTML = `<tr><td colspan="9" style="padding:16px;text-align:center;color:var(--muted);">${q? `No matches for "${q}".` : 'No jobs yet.'}</td></tr>`;
+    if(tfoot) tfoot.innerHTML = '';
+    return;
+  }
+
+  let totalBilled=0, totalPaid=0, totalAgreed=0, totalPaidContractor=0;
+  tbody.innerHTML = all.map((j,i)=>{
+    let billed=0, paid=0;
+    ['mitigation','reconstruction'].forEach(k=>{
+      const sc = j.scopes[k];
+      if(!sc) return;
+      const t = scopeTotals(sc, k==='mitigation'?'Mitigation':'Reconstruction');
+      billed += t.totalBilled; paid += t.totalReceived;
+    });
+    const rc = j.scopes.reconstruction;
+    const contractorName = rc && rc.contractor.name ? rc.contractor.name : '—';
+    const agreed = rc ? (Number(rc.contractor.bidAmount)||0) : 0;
+    const paidToContractor = rc ? scopeTotals(rc,'Reconstruction').contractorPaid : 0;
+    totalBilled += billed; totalPaid += paid; totalAgreed += agreed; totalPaidContractor += paidToContractor;
+    const bg = i%2===0 ? 'transparent' : 'var(--gray-bg)';
+    return `<tr style="background:${bg};cursor:pointer;" onclick="openJobDetail('${j.id}')">
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);">${fmtDate(j.dateReceived)}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);font-weight:700;">${escapeHtml(j.customerName)}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);">${currentPhaseStatusText(j)}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);">${escapeHtml(j.leadSource||'—')}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);text-align:right;">${fmtMoney(billed)}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);text-align:right;">${fmtMoney(paid)}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);">${escapeHtml(contractorName)}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);text-align:right;">${agreed?fmtMoney(agreed):'—'}</td>
+      <td style="padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--line);text-align:right;">${paidToContractor?fmtMoney(paidToContractor):'—'}</td>
+    </tr>`;
+  }).join('');
+
+  if(tfoot){
+    tfoot.innerHTML = `<tr style="background:var(--navy);color:#fff;font-weight:700;">
+      <td style="padding:8px 10px;white-space:nowrap;" colspan="4">Totals${q? ` (${all.length} matching)` : ` (${all.length} job${all.length!==1?'s':''})`}</td>
+      <td style="padding:8px 10px;white-space:nowrap;text-align:right;">${fmtMoney(totalBilled)}</td>
+      <td style="padding:8px 10px;white-space:nowrap;text-align:right;">${fmtMoney(totalPaid)}</td>
+      <td style="padding:8px 10px;white-space:nowrap;"></td>
+      <td style="padding:8px 10px;white-space:nowrap;text-align:right;">${fmtMoney(totalAgreed)}</td>
+      <td style="padding:8px 10px;white-space:nowrap;text-align:right;">${fmtMoney(totalPaidContractor)}</td>
+    </tr>`;
   }
 }
 
