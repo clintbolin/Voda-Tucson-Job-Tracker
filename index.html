@@ -1047,6 +1047,19 @@ const CONFIG = {
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
 
+/* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
+   different Sheet, different Apps Script deployment). When a Mitigation
+   scope lands, we hand its customer name + address over so it's already
+   known there — ready to autofill the moment equipment gets checked out
+   to that customer, no retyping. This talks to the exact same
+   "saveClientInfo" action the Equipment Tracker's own app already uses,
+   so no backend changes are needed on that side.
+   If this URL is ever wrong (Equipment Tracker redeployed to a new
+   address), update it here — Apps Script > Deploy > Manage deployments
+   > pencil icon > the Web app URL shown there. */
+const EQUIPMENT_API_URL = "https://script.google.com/macros/s/AKfycbxvehWk_3kZ6qRx6z9aY_m-zpKiA48NBK5_48uXYts5izeZz-OoeDcuIEBtVVQpIJzL/exec";
+const EQUIPMENT_SYNC_READY = EQUIPMENT_API_URL && EQUIPMENT_API_URL.indexOf('REPLACE_WITH') !== 0;
+
 const AUTH_CONFIG = {
   AUTH_API_URL: "REPLACE_WITH_YOUR_AUTH_APPS_SCRIPT_URL",
   GOOGLE_CLIENT_ID: "REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID",
@@ -1711,7 +1724,7 @@ function renderJobsList(){
   if(jobsStatusFilter==='Pipeline'){
     let list = visibleJobs()
       .filter(j=>scopeStatus(j.scopes[key])==='Pipeline')
-      .sort((a,b)=> b.scopes[key].probability - a.scopes[key].probability);
+      .sort((a,b)=> ((b.scopes[key].createdAt||b.dateReceived)||'').localeCompare((a.scopes[key].createdAt||a.dateReceived)||''));
     if(q) list = list.filter(j=>j.customerName.toLowerCase().includes(q));
     if(list.length===0){
       wrap.innerHTML = q
@@ -2465,13 +2478,36 @@ function setProbability(type, value, fromSlider){
   }
   sc.probability = value;
   if(value>0) sc.lossReason = '';
-  if(value===100 && !sc.landedAt) sc.landedAt = new Date().toISOString();
+  if(value===100 && !sc.landedAt){
+    sc.landedAt = new Date().toISOString();
+    if(type==='Mitigation') syncMitigationLandedToEquipmentTracker(job);
+  }
   if(value<100) sc.landedAt = null;
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
   if(!fromSlider) renderAll(); else { renderJobsList(); renderHome(); }
   if(value===100) showToast(`${type} landed! Moved to Active`);
+}
+async function syncMitigationLandedToEquipmentTracker(job){
+  if(!EQUIPMENT_SYNC_READY || !job.customerName) return;
+  try{
+    const getRes = await fetch(`${EQUIPMENT_API_URL}?action=getAll`);
+    const getData = await getRes.json();
+    const clients = (getData.clients || []).slice(); // full current list — saveClientInfo replaces the whole sheet, so we must merge, never send a partial list
+    const idx = clients.findIndex(c => c.name && c.name.trim().toLowerCase() === job.customerName.trim().toLowerCase());
+    if(idx >= 0){
+      if(job.address && !clients[idx].address) clients[idx].address = job.address; // fill in a blank address only — never overwrite one Equipment Tracker staff already set
+    } else {
+      clients.push({ name: job.customerName, address: job.address || '' });
+    }
+    await fetch(EQUIPMENT_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveClientInfo', data: clients })
+    });
+  }catch(e){
+    console.error('Equipment Tracker sync failed (job still landed normally in Job Tracker):', e);
+  }
 }
 function cancelLost(){ pendingLostScope=null; closeModal('modalLostReason'); renderJobDetail(); }
 function confirmLostReason(){
