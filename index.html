@@ -560,7 +560,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
         <div class="stat-card-light"><div class="n" id="kpiReconPipeline">0</div><div class="l">Reconstruction pipeline</div></div>
         <div class="stat-card-light"><div class="n" id="kpiActiveJobs">0</div><div class="l">Active jobs</div></div>
         <div class="stat-card-light" onclick="goToJobs('AwaitingPayment')" style="cursor:pointer;"><div class="n" id="kpiAwaitingPay">0</div><div class="l">Awaiting payment</div></div>
-        <div class="stat-card-light alert" id="kpiOwedCard"><div class="n" id="kpiOwed">$0</div><div class="l">Accounts Receivable</div></div>
+        <div class="stat-card-light alert" id="kpiOwedCard" onclick="switchView('collections')" style="cursor:pointer;"><div class="n" id="kpiOwed">$0</div><div class="l">Accounts Receivable</div></div>
       </div>
       <div class="hint" style="margin-bottom:14px;">
         <b>Pipeline</b> = jobs still being worked (1&ndash;99% likely). <b>Active jobs</b> = landed (100%), work still in progress. <b>Awaiting payment</b> = work's done, just waiting to collect. <b>Accounts Receivable</b> = what's still owed to Voda across both.
@@ -578,20 +578,10 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
           <div class="t">Morning phase report</div>
           <div class="d">What's stuck &amp; needs attention</div>
         </button>
-        <button class="quick-btn" onclick="goToJobs('Pipeline')">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8 14 12.7l-3-3L7 13.5"/></svg></div>
-          <div class="t">View pipeline</div>
-          <div class="d">Jobs being worked</div>
-        </button>
-        <button class="quick-btn" onclick="goToJobs('Active')">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-          <div class="t">Active jobs</div>
-          <div class="d">Landed, still in progress</div>
-        </button>
-        <button class="quick-btn" onclick="goToJobs('AwaitingPayment')">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-          <div class="t">Awaiting payment</div>
-          <div class="d">Work done, waiting to collect</div>
+        <button class="quick-btn primary" onclick="switchView('collections')">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div class="t">Collections tracker</div>
+          <div class="d">Who owes what, and how overdue</div>
         </button>
         <button class="quick-btn" onclick="openTeam()">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
@@ -602,16 +592,6 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
           <div class="t">Search all jobs</div>
           <div class="d">Any customer, any status</div>
-        </button>
-        <button class="quick-btn" onclick="goToJobs('Completed')">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-          <div class="t">Completed jobs</div>
-          <div class="d">Finished, out of Active</div>
-        </button>
-        <button class="quick-btn" onclick="goToJobs('Archived')">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></div>
-          <div class="t">Archived jobs</div>
-          <div class="d">Restore or permanently delete</div>
         </button>
         <button class="quick-btn" onclick="openManageUsers()">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M23 21l-2-2M17 8l2 2 4-4"/></svg></div>
@@ -640,6 +620,27 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
       </div>
       <input id="jobsSearch" placeholder="Search by customer name…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;margin-bottom:12px;" oninput="renderJobsList()">
       <div id="jobsList"></div>
+    </div>
+
+    <!-- COLLECTIONS TRACKER -->
+    <div class="view" id="view-collections">
+      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Collections tracker</span>
+        <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="switchView('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>
+          Home
+        </button>
+      </div>
+      <div class="hint" style="margin-bottom:10px;">Every landed job with a balance still owed, aged off its due date (billed date + payment terms) — not off when it was billed or landed.</div>
+      <div class="kpi-strip" id="collectionsKpis" style="margin-bottom:10px;"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-bottom:10px;">
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--blue);margin-right:4px;"></span>Not yet due</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--green);margin-right:4px;"></span>0&ndash;15d overdue</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--yellow);margin-right:4px;"></span>16&ndash;30d</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--amber);margin-right:4px;"></span>31&ndash;60d</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--red);margin-right:4px;"></span>60d+</span>
+      </div>
+      <div id="collectionsList"></div>
     </div>
 
     <!-- REPORTS -->
@@ -1074,6 +1075,8 @@ const KNOWN_TECHS = ["Cruz","Angela Hupp","Alyssa Miles","Julia Couch","Arturo H
 const MARK_B64 = "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";
 const LEAD_SOURCES = ["Referral","BNI Referral","Van/Website","Google","Angi","eLocal","Service Direct","Thumbtack","33 Mile","Inquirly","Yelp","Other"];
 const PAYER_TYPES = ["Self Pay","Wisetack","Insurance"];
+const PAYMENT_TERMS = ["Due on Receipt","Net 15","Net 30","Net 45","Net 60"];
+const TERMS_DAYS = { 'Due on Receipt':0, 'Net 15':15, 'Net 30':30, 'Net 45':45, 'Net 60':60 };
 const LOSS_REASONS = ["Lost to Competitor","Bogus Lead","No Damage Found","No Response","Turned Down / Self-Repair","Denied by Insurance","Canceled Before Arrival","Other"];
 const LINE_TYPES = {
   Mitigation: ["Water","Mold","Bio/Biohazard","Fire/Smoke","Odor Removal","Pack Out","Pack Back","Storage","Misc"],
@@ -1205,6 +1208,7 @@ function newScope(createdAt){
     active: true,
     probability: 50,
     payerType: 'Self Pay',
+    paymentTerms: 'Due on Receipt',
     insuranceCompany: '',
     lossReason: '',
     forecastCloseMonth: '',
@@ -1275,11 +1279,39 @@ function getScope(job, type){
 function setScope(job, type, scope){
   if(type==='Mitigation') job.scopes.mitigation = scope; else job.scopes.reconstruction = scope;
 }
-// AR contribution of one scope as of a given date (approximation: assumes the
-// full current billed amount was outstanding from the moment the job landed).
+// Latest billedDate among line items that actually carry a billed amount —
+// a scope's overall "billed" anchor, since different line items (Water,
+// Mold, Pack Out, etc.) can be billed on different days.
+function scopeBilledDate(scope){
+  scope.lineItems.forEach(migrateLineItem);
+  const dated = scope.lineItems.filter(li=>(Number(li.billed)||0) > 0 && li.billedDate);
+  if(dated.length===0) return null;
+  return dated.reduce((latest,li)=> li.billedDate > latest ? li.billedDate : latest, dated[0].billedDate);
+}
+function scopeDueDate(scope){
+  const billedDate = scopeBilledDate(scope);
+  if(!billedDate) return null;
+  const days = TERMS_DAYS[scope.paymentTerms] || 0;
+  if(days===0) return billedDate;
+  const d = new Date(billedDate+'T00:00:00');
+  d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+function overdueColor(days){
+  if(days < 0) return 'var(--blue)';      // not yet due
+  if(days <= 15) return 'var(--green)';
+  if(days <= 30) return 'var(--yellow)';
+  if(days <= 60) return 'var(--amber)';
+  return 'var(--red)';
+}
+// AR contribution of one scope as of a given date, aged off the DUE DATE
+// (billed date + payment terms) rather than when the job landed — a Net 30
+// commercial job isn't "overdue" the moment it's billed, and a job that sat
+// in pipeline a while before landing shouldn't inherit that delay either.
 function scopeArAsOf(scope, asOfDate){
   if(!scope || scopeStatus(scope)!=='Landed') return 0;
-  if(!scope.landedAt || scope.landedAt.slice(0,10) > asOfDate) return 0;
+  const billedDate = scopeBilledDate(scope);
+  if(!billedDate || billedDate > asOfDate) return 0;
   const t = scopeTotals(scope);
   const paidByThen = scope.payments
     .filter(p=>p.date && p.date<=asOfDate)
@@ -1505,6 +1537,7 @@ async function loadData(silent){
         }
         if(sc && sc.materialsCost===undefined) sc.materialsCost = 0;
         if(sc && !sc.phaseNA) sc.phaseNA = {};
+        if(sc && !sc.paymentTerms) sc.paymentTerms = 'Due on Receipt';
       });
     });
     personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
@@ -1560,7 +1593,7 @@ function switchView(v){
 }
 function updatePrintTitle(v){
   const statusLabel = jobsStatusFilter==='AwaitingPayment' ? 'Awaiting Payment' : jobsStatusFilter;
-  const titleMap = { home:'Home overview', jobs:'Jobs — '+statusLabel, alljobs:'All Jobs List' };
+  const titleMap = { home:'Home overview', jobs:'Jobs — '+statusLabel, alljobs:'All Jobs List', collections:'Collections Tracker' };
   const el = document.getElementById('printPageTitle');
   if(!el) return;
   el.textContent = v==='reports' ? '' : `Voda Job Tracker — ${titleMap[v]||v} — printed ${fmtDate(todayStr())}`;
@@ -1574,6 +1607,7 @@ function renderAll(){
   if(genEl) genEl.textContent = 'Generated ' + fmtDate(todayStr()) + ' ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
   renderHome();
   renderJobsList();
+  renderCollections();
   renderReports();
   renderAllJobsReport();
   renderTeam();
@@ -1631,6 +1665,59 @@ function renderHome(){
         <div class="sub">${a.msg}</div>
       </div>`).join('');
   }
+}
+
+/* ============ RENDER: COLLECTIONS TRACKER ============ */
+function renderCollections(){
+  const kpiWrap = document.getElementById('collectionsKpis');
+  const listWrap = document.getElementById('collectionsList');
+  if(!kpiWrap || !listWrap) return;
+
+  const rows = [];
+  visibleJobs().forEach(j=>{
+    ['mitigation','reconstruction'].forEach(k=>{
+      const sc = j.scopes[k];
+      if(!sc || scopeStatus(sc)!=='Landed') return;
+      const t = scopeTotals(sc, k==='mitigation'?'Mitigation':'Reconstruction');
+      if(t.owed<=0) return;
+      const dueDate = scopeDueDate(sc);
+      const daysOverdue = dueDate ? Math.floor((new Date(todayStr()) - new Date(dueDate)) / 86400000) : null;
+      rows.push({ job:j, type: k==='mitigation'?'Mitigation':'Reconstruction', owed: t.owed, terms: sc.paymentTerms||'Due on Receipt', dueDate, daysOverdue });
+    });
+  });
+
+  const totalOwed = rows.reduce((s,r)=>s+r.owed,0);
+  const notYetDue = rows.filter(r=>r.daysOverdue===null || r.daysOverdue<0).reduce((s,r)=>s+r.owed,0);
+  const overdue1to30 = rows.filter(r=>r.daysOverdue!==null && r.daysOverdue>=0 && r.daysOverdue<=30).reduce((s,r)=>s+r.owed,0);
+  const overdue30plus = rows.filter(r=>r.daysOverdue!==null && r.daysOverdue>30).reduce((s,r)=>s+r.owed,0);
+
+  kpiWrap.innerHTML = `
+    <div class="stat-card-light"><div class="n">${fmtMoney(totalOwed)}</div><div class="l">Total owed</div></div>
+    <div class="stat-card-light"><div class="n">${fmtMoney(notYetDue)}</div><div class="l">Not yet due</div></div>
+    <div class="stat-card-light ${overdue1to30>0?'alert':''}"><div class="n">${fmtMoney(overdue1to30)}</div><div class="l">1&ndash;30d overdue</div></div>
+    <div class="stat-card-light ${overdue30plus>0?'alert':''}"><div class="n">${fmtMoney(overdue30plus)}</div><div class="l">31d+ overdue</div></div>
+  `;
+
+  if(rows.length===0){
+    listWrap.innerHTML = `<div class="empty">Nothing outstanding right now.</div>`;
+    return;
+  }
+
+  rows.sort((a,b)=>(b.daysOverdue===null?-9999:b.daysOverdue) - (a.daysOverdue===null?-9999:a.daysOverdue));
+  listWrap.innerHTML = rows.map(r=>{
+    const color = r.daysOverdue===null ? 'var(--blue)' : overdueColor(r.daysOverdue);
+    const statusText = r.daysOverdue===null ? 'No billed date on file yet'
+      : r.daysOverdue<0 ? `Due ${fmtDate(r.dueDate)} (${Math.abs(r.daysOverdue)}d away)`
+      : r.daysOverdue===0 ? 'Due today'
+      : `${r.daysOverdue}d overdue &middot; due ${fmtDate(r.dueDate)}`;
+    return `<div class="job-card" style="border-left:4px solid ${color};" onclick="openJobDetail('${r.job.id}')">
+      <div class="top">
+        <div class="nm">${r.job.customerName} <span class="chip-sm ${r.type==='Mitigation'?'chip-mit':'chip-recon'}">${r.type}</span></div>
+        <div class="amt" style="color:${color};">${fmtMoney(r.owed)}</div>
+      </div>
+      <div class="sub">${r.terms} &middot; ${statusText}</div>
+    </div>`;
+  }).join('');
 }
 
 /* ============ RENDER: PIPELINE ============ */
@@ -2342,6 +2429,16 @@ function scopeSectionHtml(job, type){
         </select>
       </div>
     </div>
+    <div class="jd-field-row">
+      <div class="field"><label>Payment terms</label>
+        <select onchange="updateScopeField('${type}','paymentTerms', this.value)">
+          ${PAYMENT_TERMS.map(pt=>`<option value="${pt}" ${pt===(sc.paymentTerms||'Due on Receipt')?'selected':''}>${pt}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Due date</label>
+        <input value="${scopeDueDate(sc)? fmtDate(scopeDueDate(sc)) : '— (no billed amount yet)'}" disabled style="background:var(--gray-bg);color:var(--muted);">
+      </div>
+    </div>
     ${sc.payerType==='Insurance' ? `<div class="field"><label>Insurance company</label><input value="${escapeHtml(sc.insuranceCompany||'')}" onchange="updateScopeField('${type}','insuranceCompany', this.value)"></div>` : ''}
     ${status==='Lost' && sc.lossReason ? `<div class="hint">Lost reason: ${sc.lossReason}</div>` : ''}
 
@@ -2563,7 +2660,11 @@ function confirmLineItem(){
   };
   if(editingLineItemId){
     const li = sc.lineItems.find(x=>x.id===editingLineItemId);
-    if(li) Object.assign(li, vals);
+    if(li){
+      const billedChanged = (Number(li.billed)||0) !== vals.billed;
+      Object.assign(li, vals);
+      if(billedChanged) li.billedDate = todayStr(); // re-anchor collections aging whenever the billed amount is revised (e.g. insurance comes back with a different number)
+    }
   } else {
     sc.lineItems.push({ id: uid('LI'), billedDate: todayStr(), ...vals });
   }
@@ -2895,8 +2996,8 @@ function renderAR(){
 
   const buckets = { current:0, d30:0, d60:0, d90:0 };
   withAr.forEach(x=>{
-    const landedDate = x.sc.landedAt.slice(0,10);
-    const days = Math.floor((new Date(asOf) - new Date(landedDate)) / 86400000);
+    const dueDate = scopeDueDate(x.sc) || x.sc.landedAt.slice(0,10);
+    const days = Math.max(0, Math.floor((new Date(asOf) - new Date(dueDate)) / 86400000));
     if(days<=30) buckets.current += x.ar;
     else if(days<=60) buckets.d30 += x.ar;
     else if(days<=90) buckets.d60 += x.ar;
@@ -2905,8 +3006,9 @@ function renderAR(){
 
   document.getElementById('arKpis').innerHTML = `
     <div class="stat-card-light"><div class="n">${fmtMoney(totalAr)}</div><div class="l">${isToday?'AR today':'AR as of '+fmtDate(asOf)}</div></div>
-    <div class="stat-card-light"><div class="n">${fmtMoney(buckets.current)}</div><div class="l">0–30 days</div></div>
-    <div class="stat-card-light ${buckets.d60+buckets.d90>0?'alert':''}"><div class="n">${fmtMoney(buckets.d60)}</div><div class="l">61–90 days</div></div>
+    <div class="stat-card-light"><div class="n">${fmtMoney(buckets.current)}</div><div class="l">0&ndash;30 days</div></div>
+    <div class="stat-card-light ${buckets.d30>0?'alert':''}"><div class="n">${fmtMoney(buckets.d30)}</div><div class="l">31&ndash;60 days</div></div>
+    <div class="stat-card-light ${buckets.d60>0?'alert':''}"><div class="n">${fmtMoney(buckets.d60)}</div><div class="l">61&ndash;90 days</div></div>
     <div class="stat-card-light ${buckets.d90>0?'alert':''}"><div class="n">${fmtMoney(buckets.d90)}</div><div class="l">90+ days</div></div>
   `;
 
