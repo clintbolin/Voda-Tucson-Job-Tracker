@@ -614,6 +614,10 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
         <button data-status="Archived" onclick="setJobsStatus('Archived', this)">Archived</button>
         <button class="active" data-status="All" onclick="setJobsStatus('All', this)">All</button>
       </div>
+      <button id="completedReportBtn" class="export-btn" style="display:none;width:100%;justify-content:center;margin-bottom:10px;" onclick="openCompletedReport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+        Completed Jobs Report
+      </button>
       <div class="seg" style="margin-bottom:10px;" id="jobsTypeSeg">
         <button class="active" onclick="setJobsType('Mitigation', this)">Mitigation</button>
         <button onclick="setJobsType('Reconstruction', this)">Reconstruction</button>
@@ -1004,6 +1008,47 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   <div id="searchAllResults"></div>
 </div></div>
 
+<!-- Completed Jobs Report -->
+<div class="overlay" id="modalCompletedReport"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title">Completed Jobs Report</div><div class="sheet-sub">Totals &amp; averages across finished jobs</div></div>
+    <div style="display:flex;align-items:center;gap:13px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="printActiveModal()" style="cursor:pointer;" title="Print this report"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <button class="close-x" onclick="closeModal('modalCompletedReport')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  </div>
+
+  <div class="field"><label>Scope</label>
+    <div class="seg" id="crScopeSeg">
+      <button data-scope="Mitigation" onclick="setCrScope('Mitigation', this)">Mitigation</button>
+      <button data-scope="Reconstruction" onclick="setCrScope('Reconstruction', this)">Reconstruction</button>
+      <button class="active" data-scope="Combined" onclick="setCrScope('Combined', this)">Combined</button>
+    </div>
+  </div>
+
+  <div class="field"><label>Date range (job completed on)</label>
+    <div class="seg" style="margin-bottom:8px;" id="crRangePresets">
+      <button onclick="setCrRangePreset('month', this)">This month</button>
+      <button onclick="setCrRangePreset('lastmonth', this)">Last month</button>
+      <button onclick="setCrRangePreset('year', this)">This year</button>
+      <button class="active" onclick="setCrRangePreset('all', this)">All time</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="date" id="crRangeFrom" style="flex:1;font-size:11.5px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;" onchange="setCrRangeCustom()">
+      <span style="color:var(--muted);font-size:11px;">to</span>
+      <input type="date" id="crRangeTo" style="flex:1;font-size:11.5px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;" onchange="setCrRangeCustom()">
+    </div>
+  </div>
+
+  <div class="field"><label>Job / client (optional)</label>
+    <input id="crCustomerFilter" list="crCustomerList" placeholder="Leave blank for all completed jobs" oninput="renderCompletedReport()">
+    <datalist id="crCustomerList"></datalist>
+  </div>
+
+  <div class="hint" id="crSummary" style="margin-bottom:10px;"></div>
+  <div id="crResults"></div>
+</div></div>
 
 <!-- Manage Users (login access & roles) -->
 <div class="overlay" id="modalManageUsers"><div class="sheet">
@@ -1773,6 +1818,7 @@ function setJobsStatus(status, btn){
   document.querySelectorAll('#jobsStatusSeg button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   document.getElementById('jobsTypeSeg').style.display = (status==='Archived' || status==='All') ? 'none' : 'flex';
+  document.getElementById('completedReportBtn').style.display = (status==='Completed') ? 'flex' : 'none';
   updatePrintTitle('jobs');
   renderJobsList();
 }
@@ -1781,6 +1827,134 @@ function setJobsType(type, btn){
   document.querySelectorAll('#jobsTypeSeg button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   renderJobsList();
+}
+
+/* ============ COMPLETED JOBS REPORT ============ */
+let crScope = 'Combined'; // 'Mitigation' | 'Reconstruction' | 'Combined'
+function openCompletedReport(){
+  const names = [...new Set(visibleJobs().filter(j=>j.completed).map(j=>j.customerName))].sort((a,b)=>a.localeCompare(b));
+  document.getElementById('crCustomerList').innerHTML = names.map(n=>`<option value="${n}">`).join('');
+  document.getElementById('crCustomerFilter').value = '';
+  openModal('modalCompletedReport');
+  renderCompletedReport();
+}
+function setCrScope(scope, btn){
+  crScope = scope;
+  document.querySelectorAll('#crScopeSeg button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCompletedReport();
+}
+function setCrRangePreset(kind, btn){
+  const today = new Date();
+  let from, to;
+  if(kind==='month'){ from = new Date(today.getFullYear(), today.getMonth(), 1); to = today; }
+  else if(kind==='lastmonth'){ from = new Date(today.getFullYear(), today.getMonth()-1, 1); to = new Date(today.getFullYear(), today.getMonth(), 0); }
+  else if(kind==='year'){ from = new Date(today.getFullYear(), 0, 1); to = today; }
+  else { from = null; to = null; }
+  document.getElementById('crRangeFrom').value = from ? from.toISOString().slice(0,10) : '';
+  document.getElementById('crRangeTo').value = to ? to.toISOString().slice(0,10) : '';
+  document.querySelectorAll('#crRangePresets button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCompletedReport();
+}
+function setCrRangeCustom(){
+  document.querySelectorAll('#crRangePresets button').forEach(b=>b.classList.remove('active'));
+  renderCompletedReport();
+}
+// Financial totals for one job under the chosen scope mode. Returns null if
+// the job has no data for that scope (e.g. Mitigation mode on a job with no
+// mitigation scope) so it's correctly excluded rather than counted as a zero.
+const CR_CATS = ['totalEstimated','totalBilled','costOfContractors','costOfLead','materialsCost','laborCost','miscCost','royaltyFee','profit'];
+function completedReportEntryTotals(job, scopeMode){
+  const mit = job.scopes.mitigation, recon = job.scopes.reconstruction;
+  if(scopeMode==='Mitigation'){
+    if(!mit) return null;
+    return scopeTotals(mit, 'Mitigation');
+  }
+  if(scopeMode==='Reconstruction'){
+    if(!recon) return null;
+    return scopeTotals(recon, 'Reconstruction');
+  }
+  // Combined
+  if(!mit && !recon) return null;
+  const tm = mit ? scopeTotals(mit, 'Mitigation') : null;
+  const tr = recon ? scopeTotals(recon, 'Reconstruction') : null;
+  const combined = {};
+  CR_CATS.forEach(c=> combined[c] = (tm?tm[c]:0) + (tr?tr[c]:0) );
+  combined.profitMarginPct = combined.totalBilled ? (combined.profit/combined.totalBilled*100) : 0;
+  return combined;
+}
+function renderCompletedReport(){
+  const summaryEl = document.getElementById('crSummary');
+  const resultsEl = document.getElementById('crResults');
+  if(!summaryEl || !resultsEl) return;
+
+  const fromVal = document.getElementById('crRangeFrom')?.value || '';
+  const toVal = document.getElementById('crRangeTo')?.value || '';
+  const nameFilter = (document.getElementById('crCustomerFilter')?.value || '').trim().toLowerCase();
+
+  let completedJobs = visibleJobs().filter(j=>j.completed);
+  if(fromVal) completedJobs = completedJobs.filter(j=>(j.completedAt||'').slice(0,10) >= fromVal);
+  if(toVal) completedJobs = completedJobs.filter(j=>(j.completedAt||'').slice(0,10) <= toVal);
+  if(nameFilter) completedJobs = completedJobs.filter(j=>j.customerName.toLowerCase().includes(nameFilter));
+
+  const sums = {}; CR_CATS.forEach(c=>sums[c]=0);
+  let pctSum = 0, count = 0;
+  completedJobs.forEach(j=>{
+    const t = completedReportEntryTotals(j, crScope);
+    if(!t) return;
+    CR_CATS.forEach(c=>sums[c]+=t[c]);
+    pctSum += t.profitMarginPct;
+    count++;
+  });
+  const totalPct = sums.totalBilled ? (sums.profit/sums.totalBilled*100) : 0;
+  const avgPct = count ? (pctSum/count) : 0;
+
+  const scopeNote = crScope==='Combined' ? 'Mitigation + Reconstruction combined per job' : crScope+' scope only';
+  summaryEl.textContent = `${count} job${count!==1?'s':''} included (of ${completedJobs.length} completed job${completedJobs.length!==1?'s':''} matching filters) — ${scopeNote}.`;
+
+  if(count===0){
+    resultsEl.innerHTML = `<div class="empty">No completed jobs match these filters.</div>`;
+    return;
+  }
+
+  const rows = [
+    ['Estimate', sums.totalEstimated, sums.totalEstimated/count],
+    ['Billed', sums.totalBilled, sums.totalBilled/count],
+    ['Contractor Cost', sums.costOfContractors, sums.costOfContractors/count],
+    ['Cost of Lead', sums.costOfLead, sums.costOfLead/count],
+    ['Materials', sums.materialsCost, sums.materialsCost/count],
+    ['Labor', sums.laborCost, sums.laborCost/count],
+    ['Misc', sums.miscCost, sums.miscCost/count],
+    ["Royalty Fee's", sums.royaltyFee, sums.royaltyFee/count],
+    ['Profit Margin ($)', sums.profit, sums.profit/count]
+  ];
+
+  resultsEl.innerHTML = `
+    <table style="border-collapse:collapse;width:100%;font-size:12.5px;">
+      <thead>
+        <tr style="background:var(--navy);color:#fff;">
+          <th style="padding:8px 10px;text-align:left;">Category</th>
+          <th style="padding:8px 10px;text-align:right;">Total</th>
+          <th style="padding:8px 10px;text-align:right;">Average</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(([label,total,avg],i)=>`
+          <tr style="background:${i%2===0?'transparent':'var(--gray-bg)'};">
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line);">${label}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;${total<0?'color:var(--red);':''}">${fmtMoney(total)}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;${avg<0?'color:var(--red);':''}">${fmtMoney(avg)}</td>
+          </tr>`).join('')}
+        <tr style="background:var(--blue-bg);font-weight:700;">
+          <td style="padding:7px 10px;">Profit Margin (%)</td>
+          <td style="padding:7px 10px;text-align:right;color:${totalPct<0?'var(--red)':'inherit'};">${totalPct>=0?'+':''}${totalPct.toFixed(1)}%</td>
+          <td style="padding:7px 10px;text-align:right;color:${avgPct<0?'var(--red)':'inherit'};">${avgPct>=0?'+':''}${avgPct.toFixed(1)}%</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="hint" style="margin-top:8px;">Total = sum across included jobs, then this scope's overall margin. Average = per-job mean &mdash; useful for spotting whether a few large jobs are skewing the totals.</div>
+  `;
 }
 function ageLegendHtml(){
   return `<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-bottom:10px;">
