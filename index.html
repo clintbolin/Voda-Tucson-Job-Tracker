@@ -1261,6 +1261,16 @@ function migrateLineItem(li){
   }
   return li;
 }
+// Display label for a line item. Supplement line items are numbered by their
+// order among the scope's Supplement items — first one unnumbered
+// ("Supplement"), the rest numbered starting at 2 ("Supplement 2", etc.) —
+// matching the numbering used for the Supplement Submitted/Approval phase
+// checks, so the line item list and the phase checklist always agree.
+function lineItemLabel(sc, li){
+  if(li.type!=='Supplement') return li.type;
+  const idx = sc.lineItems.filter(x=>x.type==='Supplement').findIndex(x=>x.id===li.id) + 1;
+  return idx<=1 ? 'Supplement' : 'Supplement '+idx;
+}
 function scopeStatus(scope){
   if(!scope || !scope.active) return null;
   if(scope.probability >= 100) return 'Landed';
@@ -2363,7 +2373,7 @@ function scopeSectionHtml(job, type){
     : sc.lineItems.map(li=>`
       <div class="li-row">
         <div style="cursor:pointer;flex:1;" onclick="editLineItem('${type}','${li.id}')">
-          <div class="t">${li.type}</div>
+          <div class="t">${lineItemLabel(sc, li)}</div>
           <div class="amts">Est. ${fmtMoney(li.estimated)} &middot; Billed ${fmtMoney(li.billed)}</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
@@ -2708,7 +2718,7 @@ function removeLineItem(type, id){
   const job = getJob(currentJobId);
   const sc = getScope(job, type);
   const li = sc.lineItems.find(x=>x.id===id);
-  if(!confirm(`Delete this ${li? li.type : ''} line item${li? ' ('+fmtMoney(li.billed)+' billed)' : ''}? This can't be undone.`)) return;
+  if(!confirm(`Delete this ${li? lineItemLabel(sc, li) : ''} line item${li? ' ('+fmtMoney(li.billed)+' billed)' : ''}? This can't be undone.`)) return;
   sc.lineItems = sc.lineItems.filter(li=>li.id!==id);
   job.updatedAt = new Date().toISOString();
   saveJobs();
