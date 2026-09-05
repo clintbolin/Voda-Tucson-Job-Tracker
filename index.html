@@ -1108,17 +1108,44 @@ function getEffectivePhases(job, type){
     const reconActive = job.scopes.reconstruction && job.scopes.reconstruction.active;
     return [...PHASES.Mitigation, ...(reconActive ? [] : [{key:'fiveStarReviewMit', label:'5-Star Review Request'}])];
   }
+  const supPhases = supplementPhases(job);
   const mitActive = !!job.scopes.mitigation;
-  if(mitActive) return PHASES.Reconstruction;
+  if(mitActive) return insertPhasesAfter(PHASES.Reconstruction, 'insuranceEstApproval', supPhases);
   // reconstruction-only job: fold in the mitigation-side checkpoints (minus
   // "Mitigation In Progress", since no mitigation work is being performed)
-  return [
+  return insertPhasesAfter([
     {key:'workAuth', label:'Work Auth'},
     {key:'estimate', label:'Estimate'},
     {key:'certOfSatisfactionMit', label:'Certificate of Satisfaction (Initial)'},
     {key:'billingDate', label:'Billing'},
     ...PHASES.Reconstruction
-  ];
+  ], 'insuranceEstApproval', supPhases);
+}
+// Builds Submitted/Approval phase checkpoints for each Supplement line item on
+// the Reconstruction scope. The first supplement is unnumbered ("Supplement
+// Submitted" / "Supplement Approval"); additional supplements are numbered
+// starting at 2 ("Supplement 2 Submitted" / "Supplement 2 Approval", etc.) so
+// each one gets its own pair of checks for however many the job needs.
+function supplementPhases(job){
+  const sc = job.scopes.reconstruction;
+  if(!sc) return [];
+  const count = sc.lineItems.filter(li=>li.type==='Supplement').length;
+  const phases = [];
+  for(let i=1;i<=count;i++){
+    const n = i===1 ? '' : ' '+i;
+    phases.push({key:'supplementSubmitted'+(i===1?'':i), label:'Supplement'+n+' Submitted'});
+    phases.push({key:'supplementApproval'+(i===1?'':i), label:'Supplement'+n+' Approval'});
+  }
+  return phases;
+}
+// Inserts a set of phases right after the phase with the given key (appended
+// to the end if that key isn't present). Used to splice the dynamic
+// supplement checks into the fixed Reconstruction phase list.
+function insertPhasesAfter(phases, afterKey, toInsert){
+  if(toInsert.length===0) return phases;
+  const idx = phases.findIndex(p=>p.key===afterKey);
+  if(idx===-1) return [...phases, ...toInsert];
+  return [...phases.slice(0,idx+1), ...toInsert, ...phases.slice(idx+1)];
 }
 // Excludes phases marked N/A for this job from both the done-count and the total.
 function phaseProgress(sc, phases){
@@ -2680,11 +2707,14 @@ function confirmLineItem(){
 function removeLineItem(type, id){
   const job = getJob(currentJobId);
   const sc = getScope(job, type);
+  const li = sc.lineItems.find(x=>x.id===id);
+  if(!confirm(`Delete this ${li? li.type : ''} line item${li? ' ('+fmtMoney(li.billed)+' billed)' : ''}? This can't be undone.`)) return;
   sc.lineItems = sc.lineItems.filter(li=>li.id!==id);
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
   renderAll();
+  showToast('Line item deleted');
 }
 
 /* ---- payments received ---- */
@@ -2711,11 +2741,14 @@ function confirmPayment(){
 function removePayment(type, id){
   const job = getJob(currentJobId);
   const sc = getScope(job, type);
+  const p = sc.payments.find(x=>x.id===id);
+  if(!confirm(`Delete this payment of ${p? fmtMoney(p.amount) : 'this amount'}? This can't be undone.`)) return;
   sc.payments = sc.payments.filter(p=>p.id!==id);
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
   renderAll();
+  showToast('Payment deleted');
 }
 
 /* ---- contractor payments ---- */
@@ -2742,11 +2775,14 @@ function confirmContractorPayment(){
 function removeContractorPayment(type, id){
   const job = getJob(currentJobId);
   const sc = getScope(job, type);
+  const p = sc.contractor.payments.find(x=>x.id===id);
+  if(!confirm(`Delete this contractor payment of ${p? fmtMoney(p.amount) : 'this amount'}? This can't be undone.`)) return;
   sc.contractor.payments = sc.contractor.payments.filter(p=>p.id!==id);
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
   renderAll();
+  showToast('Contractor payment deleted');
 }
 
 /* ---- labor cost ---- */
@@ -2774,11 +2810,14 @@ function confirmLaborCost(){
 function removeLaborCost(type, id){
   const job = getJob(currentJobId);
   const sc = getScope(job, type);
+  const p = (sc.laborCosts||[]).find(x=>x.id===id);
+  if(!confirm(`Delete this labor cost of ${p? fmtMoney(p.amount) : 'this amount'}? This can't be undone.`)) return;
   sc.laborCosts = (sc.laborCosts||[]).filter(p=>p.id!==id);
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
   renderAll();
+  showToast('Labor cost deleted');
 }
 
 /* ---- misc cost ---- */
@@ -2808,11 +2847,14 @@ function confirmMiscCost(){
 function removeMiscCost(type, id){
   const job = getJob(currentJobId);
   const sc = getScope(job, type);
+  const p = (sc.miscCosts||[]).find(x=>x.id===id);
+  if(!confirm(`Delete this miscellaneous cost of ${p? fmtMoney(p.amount) : 'this amount'}${p&&p.note? ' ('+p.note+')' : ''}? This can't be undone.`)) return;
   sc.miscCosts = (sc.miscCosts||[]).filter(p=>p.id!==id);
   job.updatedAt = new Date().toISOString();
   saveJobs();
   renderJobDetail();
   renderAll();
+  showToast('Miscellaneous cost deleted');
 }
 
 /* ---- complete / reopen (whole job) ---- */
