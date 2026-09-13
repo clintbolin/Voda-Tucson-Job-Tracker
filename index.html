@@ -836,7 +836,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   </div>
   <div class="field"><label>Customer name</label><input id="njName" placeholder="e.g. Sarah Delgado"></div>
   <div class="jd-field-row">
-    <div class="field"><label>Phone</label><input id="njPhone" placeholder="(520) 555-0100"></div>
+    <div class="field"><label>Phone</label><input id="njPhone" placeholder="(520) 555-0100" oninput="formatPhoneInput(this)"></div>
     <div class="field"><label>Date received</label><input id="njDate" type="date"></div>
   </div>
   <div class="field"><label>Property address</label><input id="njAddress" placeholder="Optional"></div>
@@ -902,7 +902,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   </div>
   <div class="field"><label>Customer name</label><input id="ejName"></div>
   <div class="jd-field-row">
-    <div class="field"><label>Phone</label><input id="ejPhone"></div>
+    <div class="field"><label>Phone</label><input id="ejPhone" oninput="formatPhoneInput(this)"></div>
     <div class="field"><label>Date received</label><input id="ejDate" type="date"></div>
   </div>
   <div class="field"><label>Property address</label><input id="ejAddress"></div>
@@ -2514,6 +2514,18 @@ function completeSectionHtml(job){
   </div>`;
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Formats a phone number live as digits are typed: (520) 891-7235.
+// Only reformats US-style 10-digit numbers; anything longer or already
+// containing letters (e.g. an international number typed with a leading
+// "+") is left alone rather than mangled.
+function formatPhoneInput(el){
+  const digits = el.value.replace(/\D/g,'').slice(0,10);
+  let formatted = digits;
+  if(digits.length > 6) formatted = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  else if(digits.length > 3) formatted = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  else if(digits.length > 0) formatted = `(${digits}`;
+  el.value = formatted;
+}
 
 function totalFinancialSummaryHtml(job){
   const mit = job.scopes.mitigation, recon = job.scopes.reconstruction;
