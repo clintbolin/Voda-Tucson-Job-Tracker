@@ -1657,6 +1657,7 @@ async function loadData(silent){
     if(!data.personnel || !data.personnel.length){ await savePersonnel(); }
     setSyncing(false);
     renderAll();
+    renderEquipmentSyncBanner();
   }catch(e){
     console.error('load failed', e);
     setSyncing(false, true);
@@ -2896,13 +2897,53 @@ async function syncMitigationLandedToEquipmentTracker(job){
     } else {
       clients.push({ name: job.customerName, address: job.address || '' });
     }
-    await fetch(EQUIPMENT_API_URL, {
+    const postRes = await fetch(EQUIPMENT_API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'saveClientInfo', data: clients })
     });
+    if(!postRes.ok) throw new Error('Equipment Tracker rejected the update');
   }catch(e){
     console.error('Equipment Tracker sync failed (job still landed normally in Job Tracker):', e);
+    // Flag this on the job itself — which already syncs to everyone via the
+    // normal saveJobs() round trip — rather than just this one device, so a
+    // failure doesn't quietly go unnoticed until someone happens to check
+    // Equipment Tracker and finds a customer name missing.
+    if(job.scopes && job.scopes.mitigation){
+      job.scopes.mitigation.equipmentSyncFailed = true;
+      job.scopes.mitigation.equipmentSyncFailedAt = new Date().toISOString();
+      saveJobs();
+      renderEquipmentSyncBanner();
+    }
   }
+}
+// A banner that stays put — no auto-dismiss, no timer — until someone
+// explicitly acknowledges it. Reads straight off the job data, so it shows
+// up for whoever opens Job Tracker next, on any device, not just the one
+// where the failure happened.
+function renderEquipmentSyncBanner(){
+  let banner = document.getElementById('equipmentSyncBanner');
+  const failed = jobs.filter(j => j.scopes && j.scopes.mitigation && j.scopes.mitigation.equipmentSyncFailed);
+  if(failed.length === 0){
+    if(banner) banner.remove();
+    return;
+  }
+  if(!banner){
+    banner = document.createElement('div');
+    banner.id = 'equipmentSyncBanner';
+    banner.style.cssText = 'position:sticky;top:0;left:0;right:0;z-index:500;background:#FBEEF0;border-bottom:2px solid #D6455B;padding:11px 16px;font-size:12.5px;color:#7A2131;display:flex;align-items:center;justify-content:space-between;gap:14px;line-height:1.4;';
+    document.body.prepend(banner);
+  }
+  const names = failed.map(j=>escapeHtml(j.customerName||'Unnamed job')).join(', ');
+  banner.innerHTML = `
+    <span>&#9888; <b>Equipment Tracker sync failed</b> for: ${names}. The job landed fine here in Job Tracker, but the customer name never made it over to Equipment Tracker — you may want to add it there by hand. This stays up until you confirm you've seen it.</span>
+    <button onclick="dismissEquipmentSyncBanner()" style="flex-shrink:0;background:#D6455B;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:700;cursor:pointer;">Got it</button>`;
+}
+function dismissEquipmentSyncBanner(){
+  if(!confirm("Confirm you've seen this and dealt with it (checked or manually added the customer in Equipment Tracker)?")) return;
+  const failed = jobs.filter(j => j.scopes && j.scopes.mitigation && j.scopes.mitigation.equipmentSyncFailed);
+  failed.forEach(j=>{ j.scopes.mitigation.equipmentSyncFailed = false; });
+  saveJobs();
+  renderEquipmentSyncBanner();
 }
 function cancelLost(){ pendingLostScope=null; closeModal('modalLostReason'); renderJobDetail(); }
 function confirmLostReason(){
