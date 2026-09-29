@@ -499,6 +499,11 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .job-report-doc p{ font-size:12.5px; line-height:1.6; margin:0; }
 .report-timeline li{ list-style:none; border-left:2px solid var(--line); padding-left:14px; margin-bottom:4px; margin-left:0; }
 .report-tl-date{ font-weight:700; font-family:-apple-system,sans-serif; font-size:11px; color:var(--navy); }
+.report-table{ width:100%; border-collapse:collapse; font-size:12px; margin:2px 0 6px; font-family:-apple-system,sans-serif; }
+.report-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); border-bottom:1.5px solid var(--line); padding:4px 6px; }
+.report-table td{ border-bottom:1px solid var(--line); padding:5px 6px; vertical-align:top; }
+.report-table .num{ text-align:right; white-space:nowrap; }
+.report-table tfoot td{ font-weight:700; border-bottom:none; border-top:1.5px solid var(--line); }
 .report-footer{ margin-top:24px; padding-top:10px; border-top:1px solid var(--line); font-size:10px; color:var(--muted); font-family:-apple-system,sans-serif; text-align:center; }
 
 /* ===== auth gate ===== */
@@ -974,6 +979,24 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmLaborCost()">Add labor cost</button></div>
 </div></div>
 
+<!-- Material purchase -->
+<div class="overlay" id="modalMaterial"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div><div class="sheet-title" id="matSheetTitle">Add material purchase</div><div class="sheet-sub">Materials bought for this job</div></div>
+    <button class="close-x" onclick="closeModal('modalMaterial')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="jd-field-row">
+    <div class="field"><label>Amount</label><input id="matAmount" type="number" step="0.01" placeholder="0.00"></div>
+    <div class="field"><label>Purchase date</label><input id="matDate" type="date"></div>
+  </div>
+  <div class="hint" style="margin:-4px 0 8px;">Defaults to today &mdash; change it to match the date on the invoice or receipt.</div>
+  <div class="field"><label>Vendor</label><input id="matVendor" list="vendorListDL" placeholder="e.g. Home Depot, Lowe's, Floor &amp; Decor"></div>
+  <div class="field"><label>Description</label><input id="matDesc" placeholder="e.g. Drywall sheets, joint compound, screws"></div>
+  <div class="btn-row"><button class="btn btn-primary" id="matSaveBtn" onclick="confirmMaterial()">Add material</button></div>
+</div></div>
+<datalist id="vendorListDL"></datalist>
+
 <!-- Misc cost -->
 <div class="overlay" id="modalMiscCost"><div class="sheet">
   <div class="sheet-handle"></div>
@@ -1230,10 +1253,31 @@ let pendingLostScope = null; // {jobId, scopeType}
 /* ============ UTIL ============ */
 function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,9); }
 function visibleJobs(){ return jobs.filter(j=>!j.archived); }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+// All calendar dates in the app follow Tucson time (Mountain Standard Time,
+// no daylight saving), no matter what time zone the phone or computer is set to.
+const BUSINESS_TZ = 'America/Phoenix';
+function ymdInTz(d){
+  // 'en-CA' formats as YYYY-MM-DD
+  return new Intl.DateTimeFormat('en-CA',{timeZone:BUSINESS_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+}
+function todayStr(){ return ymdInTz(new Date()); }
+// Turn any stored date value into a YYYY-MM-DD Tucson date. Plain dates are
+// kept as-is; full timestamps (e.g. 2026-09-29T02:15:00.000Z, stored in UTC)
+// are converted so an evening entry doesn't show up as the next day.
+function dateOnly(v){
+  if(!v) return '';
+  v = String(v);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const d = new Date(v);
+  return isNaN(d) ? v.slice(0,10) : ymdInTz(d);
+}
+// Format a local Date object (built from year/month/day parts) as YYYY-MM-DD.
+function ymdLocal(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function ageDays(dateStr){
   if(!dateStr) return 0;
-  const d = new Date(dateStr.slice(0,10)+'T00:00:00');
+  const d = new Date(dateOnly(dateStr)+'T00:00:00');
   if(isNaN(d)) return 0;
   return Math.max(0, Math.floor((new Date() - d) / 86400000));
 }
@@ -1245,7 +1289,7 @@ function ageColor(days){
 }
 function fmtDate(s){
   if(!s) return "—";
-  const d = new Date(s+"T00:00:00");
+  const d = new Date(dateOnly(s)+"T00:00:00");
   if(isNaN(d)) return s;
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 }
@@ -1305,6 +1349,7 @@ function newScope(createdAt){
     payments: [],
     contractors: [],
     materialsCost: 0,
+    materials: [],
     laborCosts: [],
     miscCosts: [],
     phases: {},
@@ -1336,6 +1381,31 @@ function migrateContractors(scope){
   }
   return scope.contractors;
 }
+// backwards-compat: materials used to be one lump-sum `materialsCost` number.
+// They're now an itemized list (date, vendor, description, amount). Any old
+// lump sum is carried over as a single line so job totals don't change.
+// `materialsCost` is kept in sync with the list total so anything still
+// reading that field (sheet columns, exports) stays correct.
+function migrateMaterials(scope){
+  if(!Array.isArray(scope.materials)){
+    scope.materials = [];
+    const old = Number(scope.materialsCost)||0;
+    if(old){
+      scope.materials.push({
+        id: uid('MT'), amount: old,
+        date: dateOnly(scope.landedAt || scope.createdAt || todayStr()),
+        vendor: '', description: 'Materials total (entered before itemizing)'
+      });
+    }
+  }
+  scope.materialsCost = scope.materials.reduce((s,m)=>s+(Number(m.amount)||0),0);
+  return scope.materials;
+}
+function materialsSorted(scope){
+  return [...migrateMaterials(scope)].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+}
+// Kept for the materials code; todayStr() now uses Tucson time everywhere.
+function localTodayStr(){ return todayStr(); }
 // Display label for a line item. Supplement line items are numbered by their
 // order among the scope's Supplement items — first one unnumbered
 // ("Supplement"), the rest numbered starting at 2 ("Supplement 2", etc.) —
@@ -1368,6 +1438,7 @@ function scopeTotals(scope, type){
   const contractorOwed = costOfContractors - contractorPaid;
   const potentialTotal = totalEstimated;
 
+  migrateMaterials(scope);
   const materialsCost = Number(scope.materialsCost)||0;
   const costOfLead = Number(scope.costOfLead)||0;
   const laborCost = (scope.laborCosts||[]).reduce((s,l)=>s+(Number(l.amount)||0),0);
@@ -1408,7 +1479,7 @@ function scopeDueDate(scope){
   if(days===0) return billedDate;
   const d = new Date(billedDate+'T00:00:00');
   d.setDate(d.getDate()+days);
-  return d.toISOString().slice(0,10);
+  return ymdLocal(d);
 }
 function overdueColor(days){
   if(days < 0) return 'var(--blue)';      // not yet due
@@ -1649,6 +1720,7 @@ async function loadData(silent){
           sc.landedAt = j.updatedAt || j.createdAt || todayStr();
         }
         if(sc && sc.materialsCost===undefined) sc.materialsCost = 0;
+        if(sc) migrateMaterials(sc);
         if(sc && !sc.phaseNA) sc.phaseNA = {};
         if(sc && !sc.paymentTerms) sc.paymentTerms = 'Due on Receipt';
       });
@@ -1883,8 +1955,8 @@ function setCrRangePreset(kind, btn){
   else if(kind==='lastmonth'){ from = new Date(today.getFullYear(), today.getMonth()-1, 1); to = new Date(today.getFullYear(), today.getMonth(), 0); }
   else if(kind==='year'){ from = new Date(today.getFullYear(), 0, 1); to = today; }
   else { from = null; to = null; }
-  document.getElementById('crRangeFrom').value = from ? from.toISOString().slice(0,10) : '';
-  document.getElementById('crRangeTo').value = to ? to.toISOString().slice(0,10) : '';
+  document.getElementById('crRangeFrom').value = from ? ymdLocal(from) : '';
+  document.getElementById('crRangeTo').value = to ? ymdLocal(to) : '';
   document.querySelectorAll('#crRangePresets button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   renderCompletedReport();
@@ -1926,8 +1998,8 @@ function renderCompletedReport(){
   const nameFilter = (document.getElementById('crCustomerFilter')?.value || '').trim().toLowerCase();
 
   let completedJobs = visibleJobs().filter(j=>j.completed);
-  if(fromVal) completedJobs = completedJobs.filter(j=>(j.completedAt||'').slice(0,10) >= fromVal);
-  if(toVal) completedJobs = completedJobs.filter(j=>(j.completedAt||'').slice(0,10) <= toVal);
+  if(fromVal) completedJobs = completedJobs.filter(j=>dateOnly(j.completedAt) >= fromVal);
+  if(toVal) completedJobs = completedJobs.filter(j=>dateOnly(j.completedAt) <= toVal);
   if(nameFilter) completedJobs = completedJobs.filter(j=>j.customerName.toLowerCase().includes(nameFilter));
 
   const sums = {}; CR_CATS.forEach(c=>sums[c]=0);
@@ -2010,7 +2082,7 @@ function renderJobsList(){
     }
     wrap.innerHTML = archived.map(j=>`
       <div class="team-row">
-        <div class="nm">${j.customerName}<span style="color:var(--muted);font-weight:500;font-size:11.5px;"> &middot; archived ${fmtDate((j.archivedAt||'').slice(0,10))}</span></div>
+        <div class="nm">${j.customerName}<span style="color:var(--muted);font-weight:500;font-size:11.5px;"> &middot; archived ${fmtDate(dateOnly(j.archivedAt))}</span></div>
         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" onclick="restoreJob('${j.id}')" style="cursor:pointer;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
           <button class="del-btn" onclick="permanentlyDeleteJob('${j.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -2218,9 +2290,9 @@ function generateJobReportHtml(job){
   if(job.scopes.reconstruction) scopes.push({ type:'Reconstruction', sc: job.scopes.reconstruction });
 
   const overallStatus = job.completed
-    ? `Completed ${fmtDate((job.completedAt||'').slice(0,10))}`
+    ? `Completed ${fmtDate(dateOnly(job.completedAt))}`
     : job.workComplete
-      ? `Work complete, awaiting payment since ${fmtDate((job.workCompleteAt||'').slice(0,10))}`
+      ? `Work complete, awaiting payment since ${fmtDate(dateOnly(job.workCompleteAt))}`
       : 'In progress';
 
   let html = `
@@ -2266,14 +2338,29 @@ function generateJobReportHtml(job){
     if(type==='Reconstruction'){
       html += `<li>Contractor cost: ${fmtMoney(t.costOfContractors)}</li>`;
       html += `<li>Materials cost: ${fmtMoney(t.materialsCost)}</li>`;
-    } else if(t.costOfLead){
-      html += `<li>Cost of lead: ${fmtMoney(t.costOfLead)}</li>`;
+    } else {
+      if(t.costOfLead) html += `<li>Cost of lead: ${fmtMoney(t.costOfLead)}</li>`;
+      if(t.materialsCost) html += `<li>Materials cost: ${fmtMoney(t.materialsCost)}</li>`;
     }
     if(t.laborCost) html += `<li>Labor cost: ${fmtMoney(t.laborCost)}</li>`;
     if(t.miscCost) html += `<li>Miscellaneous cost: ${fmtMoney(t.miscCost)}</li>`;
     html += `<li>Royalty fee (${(t.royaltyRate*100).toFixed(0)}%): ${fmtMoney(t.royaltyFee)}</li>`;
     html += `<li>Profit margin: ${fmtMoney(t.profit)} (${t.profitMarginPct.toFixed(1)}%)</li>`;
     html += `</ul>`;
+
+    const mats = materialsSorted(sc);
+    if(mats.length){
+      html += `<div class="report-subh">Materials Purchased</div>
+        <table class="report-table">
+          <thead><tr><th>Date</th><th>Vendor</th><th>Description</th><th class="num">Amount</th></tr></thead>
+          <tbody>${mats.map(m=>`<tr>
+            <td style="white-space:nowrap;">${fmtDate(m.date)}</td>
+            <td>${escapeHtml(m.vendor||'—')}</td>
+            <td>${escapeHtml(m.description||'—')}</td>
+            <td class="num">${fmtMoney(m.amount)}</td></tr>`).join('')}</tbody>
+          <tfoot><tr><td colspan="3">Total materials</td><td class="num">${fmtMoney(t.materialsCost)}</td></tr></tfoot>
+        </table>`;
+    }
 
     const events = [];
     events.push({ date: sc.createdAt || job.dateReceived, label: type==='Mitigation' ? 'Lead received' : 'Reconstruction opportunity opened' });
@@ -2289,7 +2376,7 @@ function generateJobReportHtml(job){
     if(events.length){
       html += `<div class="report-subh">Timeline</div><ul class="report-timeline">`;
       events.forEach(e=>{
-        html += `<li><span class="report-tl-date">${fmtDate((e.date||'').slice(0,10))}</span> &mdash; ${e.label}</li>`;
+        html += `<li><span class="report-tl-date">${fmtDate(dateOnly(e.date))}</span> &mdash; ${e.label}</li>`;
       });
       html += `</ul>`;
     }
@@ -2326,8 +2413,8 @@ function generateJobReportHtml(job){
 
   if(job.workComplete || job.completed){
     html += `<div class="report-section"><div class="report-h">Completion</div><ul>`;
-    if(job.workComplete) html += `<li>Work completed: ${fmtDate((job.workCompleteAt||'').slice(0,10))}</li>`;
-    if(job.completed) html += `<li>Job finalized: ${fmtDate((job.completedAt||'').slice(0,10))}</li>`;
+    if(job.workComplete) html += `<li>Work completed: ${fmtDate(dateOnly(job.workCompleteAt))}</li>`;
+    if(job.completed) html += `<li>Job finalized: ${fmtDate(dateOnly(job.completedAt))}</li>`;
     html += `</ul></div>`;
   }
 
@@ -2420,6 +2507,15 @@ function renderJobDetail(){
   });
   document.getElementById('contractorListDL').innerHTML = [...contractorsKnown].map(c=>`<option value="${c}">`).join('');
 
+  const vendorsKnown = new Set();
+  jobs.forEach(j=>{
+    ['mitigation','reconstruction'].forEach(k=>{
+      const sc = j.scopes[k];
+      if(sc) migrateMaterials(sc).forEach(m=>{ if(m.vendor) vendorsKnown.add(m.vendor); });
+    });
+  });
+  document.getElementById('vendorListDL').innerHTML = [...vendorsKnown].sort().map(v=>`<option value="${escapeHtml(v)}">`).join('');
+
   let html = '';
   if(job.scopes.mitigation){
     html += scopeSectionHtml(job, 'Mitigation');
@@ -2475,7 +2571,7 @@ function completeSectionHtml(job){
     return `<div class="jd-section">
       <div class="jd-section-head">
         <div class="h">Complete</div>
-        <span class="chip-sm chip-landed">Completed ${fmtDate((job.completedAt||'').slice(0,10))}</span>
+        <span class="chip-sm chip-landed">Completed ${fmtDate(dateOnly(job.completedAt))}</span>
       </div>
       <div class="hint">Still counted in Reports &amp; Accounts Receivable &mdash; just out of the Active list.</div>
       <div class="btn-row"><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="reopenJob()">Reopen job</button></div>
@@ -2488,7 +2584,7 @@ function completeSectionHtml(job){
         <div class="h">Complete</div>
         <span class="chip-sm" style="background:var(--blue-bg);color:var(--blue);">Awaiting Payment</span>
       </div>
-      <div class="hint">Work finished ${fmtDate((job.workCompleteAt||'').slice(0,10))}. Just waiting to collect &mdash; still shows in Active until you finalize.</div>
+      <div class="hint">Work finished ${fmtDate(dateOnly(job.workCompleteAt))}. Just waiting to collect &mdash; still shows in Active until you finalize.</div>
       <div class="totals-mini" style="margin-top:8px;">
         <div>Still owed<br><b style="color:${owed>0?'var(--red)':'inherit'}">${fmtMoney(owed)}</b></div>
         <div>Total revenue<br><b>${fmtMoney(revenue)}</b></div>
@@ -2651,6 +2747,19 @@ function scopeSectionHtml(job, type){
         <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeLaborCost('${type}','${p.id}')"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
       </div>`).join('');
 
+  const matList = materialsSorted(sc);
+  const materialsHtml = matList.length===0
+    ? `<div class="empty" style="padding:6px 0;">No materials logged yet.</div>`
+    : matList.map(m=>`
+      <div class="pay-row" style="align-items:flex-start;">
+        <span style="cursor:pointer;flex:1;min-width:0;" onclick="openMaterial('${type}','${m.id}')" title="Tap to edit">
+          ${fmtDate(m.date)} — <b>${escapeHtml(m.vendor||'No vendor')}</b>
+          ${m.description ? `<br><span style="color:var(--muted);font-size:12px;">${escapeHtml(m.description)}</span>` : ''}
+        </span>
+        <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;"><b>${fmtMoney(m.amount)}</b>
+        <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeMaterial('${type}','${m.id}')"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+      </div>`).join('');
+
   const miscCostsHtml = (sc.miscCosts||[]).length===0
     ? `<div class="empty" style="padding:6px 0;">No miscellaneous costs logged yet.</div>`
     : sc.miscCosts.map(p=>`
@@ -2737,11 +2846,11 @@ function scopeSectionHtml(job, type){
 
     <div class="jd-section-head" style="margin-top:16px;"><div class="h" style="font-size:13px;">Job profitability</div></div>
     ${type==='Mitigation' ? `<div class="field"><label>Cost of lead</label><input type="number" step="0.01" value="${sc.costOfLead||0}" onchange="updateScopeField('${type}','costOfLead', parseFloat(this.value)||0)"></div>` : ''}
-    <div class="field"><label>Materials cost (if applicable)</label><input type="number" step="0.01" value="${sc.materialsCost||0}" onchange="updateScopeField('${type}','materialsCost', parseFloat(this.value)||0)"></div>
     <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
       <div style="flex:1 1 33%;">Billed out<br><b>${fmtMoney(t.totalBilled)}</b></div>
       <div style="flex:1 1 33%;">Contractor cost<br><b>${fmtMoney(t.costOfContractors)}</b></div>
-      ${type==='Mitigation' ? `<div style="flex:1 1 33%;">Cost of lead<br><b>${fmtMoney(t.costOfLead)}</b></div>` : `<div style="flex:1 1 33%;">Materials cost<br><b>${fmtMoney(t.materialsCost)}</b></div>`}
+      ${type==='Mitigation' ? `<div style="flex:1 1 33%;">Cost of lead<br><b>${fmtMoney(t.costOfLead)}</b></div>` : ''}
+      <div style="flex:1 1 33%;">Materials cost<br><b>${fmtMoney(t.materialsCost)}</b></div>
       <div style="flex:1 1 33%;">Labor cost<br><b>${fmtMoney(t.laborCost)}</b></div>
       <div style="flex:1 1 33%;">Misc. cost<br><b>${fmtMoney(t.miscCost)}</b></div>
       <div style="flex:1 1 33%;">Royalty fee (${(t.royaltyRate*100).toFixed(0)}%)<br><b>${fmtMoney(t.royaltyFee)}</b></div>
@@ -2768,6 +2877,15 @@ function scopeSectionHtml(job, type){
     </div>
     ${contractorsHtml}
     <div class="add-line-btn" onclick="addContractor('${type}')">+ Add contractor</div>
+
+    <div class="jd-section-head" style="margin-top:16px;"><div class="h" style="font-size:13px;">Materials</div></div>
+    <div class="totals-mini">
+      <div>Total materials cost<br><b>${fmtMoney(t.materialsCost)}</b></div>
+      <div>Purchases<br><b>${matList.length}</b></div>
+    </div>
+    <div class="add-line-btn" onclick="openMaterial('${type}')">+ Add material purchase</div>
+    ${materialsHtml}
+    ${matList.length ? `<div class="hint" style="margin-top:4px;">Tap a purchase to edit it.</div>` : ''}
 
     <div class="jd-section-head" style="margin-top:16px;"><div class="h" style="font-size:13px;">Labor</div></div>
     <div class="totals-mini">
@@ -3141,6 +3259,62 @@ function removeLaborCost(type, id){
   showToast('Labor cost deleted');
 }
 
+/* ---- materials (itemized purchases) ---- */
+let currentMaterialId = null;
+function openMaterial(type, id){
+  currentScopeType = type;
+  currentMaterialId = id || null;
+  const job = getJob(currentJobId);
+  const sc = getScope(job, type);
+  const m = id ? migrateMaterials(sc).find(x=>x.id===id) : null;
+  document.getElementById('matAmount').value = m ? m.amount : '';
+  document.getElementById('matDate').value = m ? (m.date||localTodayStr()) : localTodayStr();
+  document.getElementById('matVendor').value = m ? (m.vendor||'') : '';
+  document.getElementById('matDesc').value = m ? (m.description||'') : '';
+  document.getElementById('matSheetTitle').textContent = m ? 'Edit material purchase' : 'Add material purchase';
+  document.getElementById('matSaveBtn').textContent = m ? 'Save changes' : 'Add material';
+  openModal('modalMaterial');
+}
+function confirmMaterial(){
+  const amt = parseFloat(document.getElementById('matAmount').value);
+  if(!amt){ showToast('Enter an amount'); return; }
+  const vendor = document.getElementById('matVendor').value.trim();
+  if(!vendor){ showToast('Enter the vendor'); return; }
+  const job = getJob(currentJobId);
+  const sc = getScope(job, currentScopeType);
+  const list = migrateMaterials(sc);
+  const entry = {
+    amount: amt,
+    date: document.getElementById('matDate').value || localTodayStr(),
+    vendor,
+    description: document.getElementById('matDesc').value.trim()
+  };
+  const existing = currentMaterialId ? list.find(x=>x.id===currentMaterialId) : null;
+  if(existing){ Object.assign(existing, entry); }
+  else { list.push({ id: uid('MT'), ...entry }); }
+  migrateMaterials(sc); // re-sync materialsCost total
+  job.updatedAt = new Date().toISOString();
+  saveJobs();
+  closeModal('modalMaterial');
+  renderJobDetail();
+  renderAll();
+  showToast(existing ? 'Material updated' : 'Material added');
+  currentMaterialId = null;
+}
+function removeMaterial(type, id){
+  const job = getJob(currentJobId);
+  const sc = getScope(job, type);
+  const m = migrateMaterials(sc).find(x=>x.id===id);
+  if(!confirm(`Delete this material purchase${m && m.vendor ? ' from '+m.vendor : ''} of ${m? fmtMoney(m.amount) : 'this amount'}? This can't be undone.`)) return;
+  sc.materials = sc.materials.filter(x=>x.id!==id);
+  migrateMaterials(sc);
+  job.updatedAt = new Date().toISOString();
+  saveJobs();
+  renderJobDetail();
+  renderAll();
+  showToast('Material deleted');
+}
+
 /* ---- misc cost ---- */
 function openMiscCost(type){
   currentScopeType = type;
@@ -3359,7 +3533,7 @@ function renderAR(){
 
   const buckets = { current:0, d30:0, d60:0, d90:0 };
   withAr.forEach(x=>{
-    const dueDate = scopeDueDate(x.sc) || x.sc.landedAt.slice(0,10);
+    const dueDate = scopeDueDate(x.sc) || dateOnly(x.sc.landedAt);
     const days = Math.max(0, Math.floor((new Date(asOf) - new Date(dueDate)) / 86400000));
     if(days<=30) buckets.current += x.ar;
     else if(days<=60) buckets.d30 += x.ar;
@@ -3540,7 +3714,7 @@ function getAllScopesList(){
   });
   return list;
 }
-function scopeCreatedDate(x){ return (x.sc.createdAt || x.job.dateReceived || '').slice(0,10); }
+function scopeCreatedDate(x){ return dateOnly(x.sc.createdAt || x.job.dateReceived || ''); }
 function getLeadRangeScopes(){
   const fromVal = document.getElementById('leadRangeFrom')?.value || '';
   const toVal = document.getElementById('leadRangeTo')?.value || '';
@@ -3559,8 +3733,8 @@ function setLeadRangePreset(kind, btn){
   else if(kind==='lastmonth'){ from = new Date(today.getFullYear(), today.getMonth()-1, 1); to = new Date(today.getFullYear(), today.getMonth(), 0); }
   else if(kind==='year'){ from = new Date(today.getFullYear(), 0, 1); to = today; }
   else { from = null; to = null; }
-  document.getElementById('leadRangeFrom').value = from ? from.toISOString().slice(0,10) : '';
-  document.getElementById('leadRangeTo').value = to ? to.toISOString().slice(0,10) : '';
+  document.getElementById('leadRangeFrom').value = from ? ymdLocal(from) : '';
+  document.getElementById('leadRangeTo').value = to ? ymdLocal(to) : '';
   document.querySelectorAll('#leadRangePresets button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   renderLeadPerformance();
@@ -3594,7 +3768,7 @@ function renderLeadPerformance(){
 
   const avgDaysToClose = won.length ? Math.round(won.reduce((s,x)=>{
     const created = new Date(scopeCreatedDate(x)+'T00:00:00');
-    const landed = new Date((x.sc.landedAt||'').slice(0,10)+'T00:00:00');
+    const landed = new Date(dateOnly(x.sc.landedAt)+'T00:00:00');
     if(isNaN(created)||isNaN(landed)) return s;
     return s + Math.max(0,(landed-created)/86400000);
   },0)/won.length) : 0;
