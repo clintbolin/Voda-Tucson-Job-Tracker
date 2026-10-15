@@ -1216,9 +1216,8 @@ function getEffectivePhases(job, type){
   return insertPhasesAfter([
     {key:'workAuth', label:'Work Auth'},
     {key:'estimate', label:'Estimate'},
-    {key:'dryingLogs', label:'Drying Logs'},
     {key:'certOfSatisfactionMit', label:'Certificate of Satisfaction (Initial)'},
-    {key:'billingDate', label:'Invoice with Full Packet', hint:'Invoice, estimate, photo report &amp; drying logs sent to the adjuster or customer'},
+    {key:'billingDate', label:'Billing'},
     ...PHASES.Reconstruction
   ], 'insuranceEstApproval', supPhases);
 }
@@ -1747,7 +1746,7 @@ async function loadData(silent){
       // it (Certificate of Satisfaction or Invoice checked off) get it marked
       // done with that later date, so they don't suddenly show Drying Logs as
       // their next step. Runs once per scope; unchecking it later sticks.
-      [['mitigation','Mitigation'],['reconstruction','Reconstruction']].forEach(([k,type])=>{
+      [['mitigation','Mitigation']].forEach(([k,type])=>{
         const sc = j.scopes && j.scopes[k];
         if(!sc || sc.dryingLogsMigrated) return;
         sc.dryingLogsMigrated = true;
