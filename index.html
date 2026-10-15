@@ -393,6 +393,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .chip-sm{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--gray-bg);color:var(--muted);}
 .chip-mit{background:#E6F7FA;color:#0090AD;}
 .chip-recon{background:#EFEAFB;color:#6C4FD1;}
+.chip-abate{background:var(--amber-bg);color:var(--amber);}
 .chip-lost{background:var(--red-bg);color:var(--red);}
 .chip-landed{background:#E7F6EC;color:#1F9254;}
 
@@ -445,6 +446,17 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .slider-wrap input[type=range]{width:100%;accent-color:var(--navy);}
 .hint{font-size:11px;color:var(--muted);background:var(--gray-bg);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.4;}
 .report-hidden{ display:none; }
+.asb-toggle{ display:flex; align-items:center; justify-content:space-between; gap:12px; border:1.5px dashed var(--line); border-radius:12px; padding:11px 13px; margin-top:12px; cursor:pointer; }
+.asb-toggle.on{ border-style:solid; border-color:var(--amber); background:var(--amber-bg); }
+.asb-title{ font-weight:700; font-size:13.5px; }
+.asb-toggle.on .asb-title{ color:var(--amber); }
+.asb-sub{ font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.35; }
+.asb-switch{ flex-shrink:0; width:44px; height:26px; border-radius:99px; background:var(--line); position:relative; transition:background .15s; }
+.asb-switch span{ position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:left .15s; }
+.asb-toggle.on .asb-switch{ background:var(--amber); }
+.asb-toggle.on .asb-switch span{ left:21px; }
+.asb-sub-h{ font-size:12px; font-weight:700; margin:14px 0 6px; padding-top:10px; border-top:1px solid var(--line); }
+.asb-box{ border:1.5px solid var(--amber); border-top:none; border-radius:0 0 12px 12px; margin-top:-8px; padding:16px 13px 12px; }
 .phase-hint{ display:block; font-size:11px; font-weight:500; color:var(--muted); margin-top:1px; line-height:1.3; }
 .phase-report-row{
   background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;
@@ -700,6 +712,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
           <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="bystage" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Pipeline Value by Stage</label>
           <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="ar" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Accounts Receivable</label>
           <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="contractor" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Contractor Payouts Outstanding</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;"><input type="checkbox" value="abatement" onchange="onReportCheckboxChange(this)" style="width:16px;height:16px;"> Abatement Finder's Fees Owed</label>
         </div>
       </details>
 
@@ -780,6 +793,13 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
       <div data-report="contractor">
         <div class="section-title">Contractor payouts outstanding</div>
         <div id="reportContractor"></div>
+      </div>
+
+      <div data-report="abatement">
+        <div class="section-title">Abatement finder's fees owed</div>
+        <div class="hint" style="margin-bottom:10px;">What abatement companies (Desert Valley Abatement, etc.) owe us in finder's fees. The fee is due 30 days after the job is marked complete. Most overdue at the top. Tap a job to open it.</div>
+        <div class="kpi-strip" id="abatementKpis" style="margin-bottom:10px;"></div>
+        <div id="reportAbatement"></div>
       </div>
 
       <div class="hint" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;">
@@ -1441,6 +1461,43 @@ function scopeStatus(scope){
   return 'Pipeline';
 }
 const ROYALTY_RATE = { Mitigation: 0.07, Reconstruction: 0.04 };
+// Asbestos abatement is subbed out; the abatement company pays Voda a
+// finder's fee on their FINAL bill. Company and % can be changed per job.
+const DEFAULT_ABATEMENT_COMPANY = 'Desert Valley Abatement';
+const DEFAULT_ABATEMENT_FEE_PCT = 20;
+const ABATEMENT_PAY_DAYS = 30; // abatement company has 30 days after the job is complete to pay the fee
+function abatementInfo(scope){
+  const a = scope && scope.abatement;
+  if(!a || !a.enabled) return { enabled:false, fee:0, estimate:0, finalBill:0, pct:0, company:'', received:0, balance:0, royalty:0, net:0 };
+  const finalBill = Number(a.finalBill)||0;
+  const pct = (a.feePct===undefined || a.feePct==='') ? DEFAULT_ABATEMENT_FEE_PCT : (Number(a.feePct)||0);
+  const fee = Math.round(finalBill*pct)/100;
+  const royalty = fee * ROYALTY_RATE.Mitigation; // Voda takes 7% of the fee, same as other mitigation income
+  const received = Number(a.feeReceivedAmount)||0;
+  return { enabled:true, company:a.company||'', estimate:Number(a.estimate)||0, finalBill, pct, fee,
+           royalty, net: fee - royalty,
+           received, receivedDate:a.feeReceivedDate||'', balance: Math.max(0, Math.round((fee-received)*100)/100),
+           expectedFee: Math.round((Number(a.estimate)||0)*pct)/100 };
+}
+// When the fee is due: 30 days after the job's work is marked complete.
+function abatementDue(job, asOf){
+  const completeDate = dateOnly(job.workCompleteAt || job.completedAt || '');
+  if(!completeDate) return { completeDate:'', dueDate:'', daysPastDue:null };
+  const d = new Date(completeDate+'T00:00:00'); d.setDate(d.getDate()+ABATEMENT_PAY_DAYS);
+  const dueDate = ymdLocal(d);
+  const ref = new Date((asOf||todayStr())+'T00:00:00');
+  return { completeDate, dueDate, daysPastDue: Math.round((ref - d)/86400000) };
+}
+// Fee still owed as of a date (received amounts count once their date is on/before it).
+function abatementOwedAsOf(job, sc, asOf){
+  const ab = abatementInfo(sc);
+  if(!ab.enabled || !ab.fee) return 0;
+  const isToday = asOf === todayStr();
+  const start = dateOnly(job.workCompleteAt || job.completedAt || '');
+  if(!isToday && (!start || start > asOf)) return 0;
+  const rec = (ab.receivedDate && ab.receivedDate <= asOf) || (!ab.receivedDate && isToday) ? ab.received : 0;
+  return Math.max(0, Math.round((ab.fee - rec)*100)/100);
+}
 function scopeTotals(scope, type){
   scope.lineItems.forEach(migrateLineItem);
   const totalEstimated = scope.lineItems.reduce((s,li)=>s+(Number(li.estimated)||0),0);
@@ -1462,16 +1519,21 @@ function scopeTotals(scope, type){
   const laborCost = (scope.laborCosts||[]).reduce((s,l)=>s+(Number(l.amount)||0),0);
   const miscCost = (scope.miscCosts||[]).reduce((s,m)=>s+(Number(m.amount)||0),0);
   const royaltyRate = ROYALTY_RATE[type] || 0;
-  const royaltyFee = totalBilled * royaltyRate;
-  const totalCost = costOfContractors + materialsCost + costOfLead + laborCost + miscCost + royaltyFee;
-  const profit = totalBilled - totalCost;
-  const profitMarginPct = totalBilled ? (profit/totalBilled*100) : 0;
+  let royaltyFee = totalBilled * royaltyRate;
+  let totalCost = costOfContractors + materialsCost + costOfLead + laborCost + miscCost + royaltyFee;
+  const abatementFee = abatementInfo(scope).fee; // income from the abatement sub, not billed to customer
+  const abatementRoyalty = abatementFee * ROYALTY_RATE.Mitigation; // 7% of the fee goes to Voda
+  royaltyFee += abatementRoyalty;
+  totalCost += abatementRoyalty;
+  const profit = totalBilled - totalCost + abatementFee;
+  const income = totalBilled + abatementFee;
+  const profitMarginPct = income ? (profit/income*100) : 0;
 
   return {
     totalEstimated, totalBilled, estToBilledDiff, estToBilledPct,
     totalReceived, owed, contractorPaid, costOfContractors, contractorOwed,
     potentialTotal, materialsCost, costOfLead, laborCost, miscCost,
-    royaltyRate, royaltyFee, totalCost, profit, profitMarginPct
+    royaltyRate, royaltyFee, totalCost, profit, profitMarginPct, abatementFee
   };
 }
 function getJob(id){ return jobs.find(j=>j.id===id); }
@@ -1741,6 +1803,9 @@ async function loadData(silent){
         if(sc) migrateMaterials(sc);
         if(sc && !sc.phaseNA) sc.phaseNA = {};
         if(sc && !sc.paymentTerms) sc.paymentTerms = 'Due on Receipt';
+        if(sc && sc.abatement && sc.abatement.feeReceivedDate && sc.abatement.feeReceivedAmount===undefined){
+          sc.abatement.feeReceivedAmount = abatementInfo(sc).fee; // earlier version only had a date
+        }
       });
       // New "Drying Logs" phase (added Oct 2026). Jobs that were already past
       // it (Certificate of Satisfaction or Invoice checked off) get it marked
@@ -2010,7 +2075,7 @@ function setCrRangeCustom(){
 // Financial totals for one job under the chosen scope mode. Returns null if
 // the job has no data for that scope (e.g. Mitigation mode on a job with no
 // mitigation scope) so it's correctly excluded rather than counted as a zero.
-const CR_CATS = ['totalEstimated','totalBilled','costOfContractors','costOfLead','materialsCost','laborCost','miscCost','royaltyFee','profit'];
+const CR_CATS = ['totalEstimated','totalBilled','costOfContractors','costOfLead','materialsCost','laborCost','miscCost','royaltyFee','abatementFee','profit'];
 function completedReportEntryTotals(job, scopeMode){
   const mit = job.scopes.mitigation, recon = job.scopes.reconstruction;
   if(scopeMode==='Mitigation'){
@@ -2027,7 +2092,7 @@ function completedReportEntryTotals(job, scopeMode){
   const tr = recon ? scopeTotals(recon, 'Reconstruction') : null;
   const combined = {};
   CR_CATS.forEach(c=> combined[c] = (tm?tm[c]:0) + (tr?tr[c]:0) );
-  combined.profitMarginPct = combined.totalBilled ? (combined.profit/combined.totalBilled*100) : 0;
+  combined.profitMarginPct = (combined.totalBilled + combined.abatementFee) ? (combined.profit/(combined.totalBilled + combined.abatementFee)*100) : 0;
   return combined;
 }
 function renderCompletedReport(){
@@ -2053,7 +2118,7 @@ function renderCompletedReport(){
     pctSum += t.profitMarginPct;
     count++;
   });
-  const totalPct = sums.totalBilled ? (sums.profit/sums.totalBilled*100) : 0;
+  const totalPct = (sums.totalBilled + sums.abatementFee) ? (sums.profit/(sums.totalBilled + sums.abatementFee)*100) : 0;
   const avgPct = count ? (pctSum/count) : 0;
 
   const scopeNote = crScope==='Combined' ? 'Mitigation + Reconstruction combined per job' : crScope+' scope only';
@@ -2073,6 +2138,7 @@ function renderCompletedReport(){
     ['Labor', sums.laborCost, sums.laborCost/count],
     ['Misc', sums.miscCost, sums.miscCost/count],
     ["Royalty Fee's", sums.royaltyFee, sums.royaltyFee/count],
+    ...(sums.abatementFee ? [["Abatement Finder's Fees (+)", sums.abatementFee, sums.abatementFee/count]] : []),
     ['Profit Margin ($)', sums.profit, sums.profit/count]
   ];
 
@@ -2408,8 +2474,23 @@ function generateJobReportHtml(job){
     if(t.laborCost) html += `<li>Labor cost: ${fmtMoney(t.laborCost)}</li>`;
     if(t.miscCost) html += `<li>Miscellaneous cost: ${fmtMoney(t.miscCost)}</li>`;
     html += `<li>Royalty fee (${(t.royaltyRate*100).toFixed(0)}%): ${fmtMoney(t.royaltyFee)}</li>`;
+    if(t.abatementFee) html += `<li>Abatement finder's fee (income): +${fmtMoney(t.abatementFee)}</li>`;
     html += `<li>Profit margin: ${fmtMoney(t.profit)} (${t.profitMarginPct.toFixed(1)}%)</li>`;
     html += `</ul>`;
+
+    const ab = abatementInfo(sc);
+    if(type==='Mitigation' && ab.enabled){
+      html += `<div class="report-subh">Asbestos Abatement (subcontracted)</div><ul>`;
+      html += `<li><b>Tested positive for asbestos</b> &mdash; abatement/demo performed by ${escapeHtml(ab.company||'—')}</li>`;
+      html += `<li>Their estimate: ${fmtMoney(ab.estimate)}</li>`;
+      html += `<li>Their final bill: ${fmtMoney(ab.finalBill)}</li>`;
+      html += `<li>Finder's fee (${ab.pct}% of final bill): ${fmtMoney(ab.fee)}</li>`;
+      html += `<li>Voda royalty on fee (7%): -${fmtMoney(ab.royalty)} &mdash; net ${fmtMoney(ab.net)}</li>`;
+      html += `<li>Fee received: ${fmtMoney(ab.received)}${ab.receivedDate ? ' on '+fmtDate(ab.receivedDate) : ''}</li>`;
+      html += `<li>Fee still owed: ${fmtMoney(ab.balance)}</li>`;
+      html += `<li>Status: ${abatementStatusText(job, sc).replace(/<[^>]+>/g,'')}</li>`;
+      html += `</ul>`;
+    }
 
     const mats = materialsSorted(sc);
     if(mats.length){
@@ -2452,8 +2533,8 @@ function generateJobReportHtml(job){
     const sum = (k)=> (tm[k]||0) + (tr[k]||0);
     const totalBilled = sum('totalBilled');
     const totalCost = sum('totalCost');
-    const profit = totalBilled - totalCost;
-    const profitMarginPct = totalBilled ? (profit/totalBilled*100) : 0;
+    const profit = totalBilled - totalCost + sum('abatementFee');
+    const profitMarginPct = (totalBilled + sum('abatementFee')) ? (profit/(totalBilled + sum('abatementFee'))*100) : 0;
 
     html += `<div class="report-section"><div class="report-h">Total Financial Summary</div>`;
     html += `<div class="report-doc-title" style="margin-bottom:8px;">Mitigation + Reconstruction combined</div><ul>`;
@@ -2468,6 +2549,7 @@ function generateJobReportHtml(job){
     if(sum('miscCost')) html += `<li>Miscellaneous cost: ${fmtMoney(sum('miscCost'))}</li>`;
     html += `<li>Royalty fees: ${fmtMoney(sum('royaltyFee'))}</li>`;
     html += `<li>Total cost: ${fmtMoney(totalCost)}</li>`;
+    if(sum('abatementFee')) html += `<li>Abatement finder's fee (income): +${fmtMoney(sum('abatementFee'))}</li>`;
     html += `<li>Paid to contractors: ${fmtMoney(sum('contractorPaid'))}</li>`;
     html += `<li>Owed to contractors: ${fmtMoney(sum('contractorOwed'))}</li>`;
     html += `<li>Profit margin: ${fmtMoney(profit)} (${profitMarginPct.toFixed(1)}%)</li>`;
@@ -2694,8 +2776,8 @@ function totalFinancialSummaryHtml(job){
   const sum = (k)=> (tm[k]||0) + (tr[k]||0);
   const totalBilled = sum('totalBilled');
   const totalCost = sum('totalCost');
-  const profit = totalBilled - totalCost;
-  const profitMarginPct = totalBilled ? (profit/totalBilled*100) : 0;
+  const profit = totalBilled - totalCost + sum('abatementFee');
+  const profitMarginPct = (totalBilled + sum('abatementFee')) ? (profit/(totalBilled + sum('abatementFee'))*100) : 0;
 
   return `<div class="jd-section" style="background:var(--blue-bg);border-color:var(--blue);">
     <div class="jd-section-head"><div class="h">Total Financial Summary <span class="chip-sm" style="margin-left:6px;background:var(--card);color:var(--blue);">Mitigation + Reconstruction</span></div></div>
@@ -2892,6 +2974,7 @@ function scopeSectionHtml(job, type){
     </div>
     ${sc.payerType==='Insurance' ? `<div class="field"><label>Insurance company</label><input value="${escapeHtml(sc.insuranceCompany||'')}" onchange="updateScopeField('${type}','insuranceCompany', this.value)"></div>` : ''}
     ${status==='Lost' && sc.lossReason ? `<div class="hint">Lost reason: ${sc.lossReason}</div>` : ''}
+    ${type==='Mitigation' ? abatementSectionHtml(sc) : ''}
 
     <div class="jd-section-head" style="margin-top:16px;"><div class="h" style="font-size:13px;">Line items</div></div>
     ${lineItemsHtml}
@@ -2917,6 +3000,7 @@ function scopeSectionHtml(job, type){
       <div style="flex:1 1 33%;">Labor cost<br><b>${fmtMoney(t.laborCost)}</b></div>
       <div style="flex:1 1 33%;">Misc. cost<br><b>${fmtMoney(t.miscCost)}</b></div>
       <div style="flex:1 1 33%;">Royalty fee (${(t.royaltyRate*100).toFixed(0)}%)<br><b>${fmtMoney(t.royaltyFee)}</b></div>
+      ${t.abatementFee ? `<div style="flex:1 1 33%;">Abatement fee (+)<br><b style="color:#1F9254">${fmtMoney(t.abatementFee)}</b></div>` : ''}
     </div>
     <div class="totals-mini" style="margin-top:6px;">
       <div>Total cost<br><b>${fmtMoney(t.totalCost)}</b></div>
@@ -2967,6 +3051,91 @@ function scopeSectionHtml(job, type){
     <div class="jd-section-head" style="margin-top:16px;"><div class="h" style="font-size:13px;">Phase status</div></div>
     ${phasesHtml}
   </div>`;
+}
+
+/* ---- asbestos abatement (Mitigation) ---- */
+function abatementSectionHtml(sc){
+  const a = sc.abatement || {};
+  const info = abatementInfo(sc);
+  const on = !!a.enabled;
+  const toggle = `<div class="asb-toggle ${on?'on':''}" onclick="toggleAsbestos()">
+      <div><div class="asb-title">Positive for asbestos</div>
+      <div class="asb-sub">${on ? 'Abatement subbed out &mdash; details below' : 'Tap if testing came back positive and the demo goes to an abatement company'}</div></div>
+      <div class="asb-switch"><span></span></div>
+    </div>`;
+  if(!on) return toggle;
+  return toggle + `<div class="asb-box">
+    <div class="field"><label>Abatement company</label>
+      <input value="${escapeHtml(a.company||'')}" list="abatementCoDL" onchange="updateAbatement('company', this.value.trim())">
+      <datalist id="abatementCoDL"><option value="${DEFAULT_ABATEMENT_COMPANY}"></datalist>
+    </div>
+    <div class="jd-field-row">
+      <div class="field"><label>Their estimate</label><input type="number" step="0.01" placeholder="0.00" value="${a.estimate||''}" onchange="updateAbatement('estimate', parseFloat(this.value)||0)"></div>
+      <div class="field"><label>Their final bill</label><input type="number" step="0.01" placeholder="0.00" value="${a.finalBill||''}" onchange="updateAbatement('finalBill', parseFloat(this.value)||0)"></div>
+    </div>
+    <div class="field"><label>Finder's fee %</label><input type="number" step="0.5" value="${info.pct}" onchange="updateAbatement('feePct', this.value===''?${DEFAULT_ABATEMENT_FEE_PCT}:(parseFloat(this.value)||0))"></div>
+    <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
+      <div style="flex:1 1 33%;">Their estimate<br><b>${fmtMoney(info.estimate)}</b></div>
+      <div style="flex:1 1 33%;">Final bill<br><b>${fmtMoney(info.finalBill)}</b></div>
+      <div style="flex:1 1 33%;">Our ${info.pct}% fee<br><b style="color:#1F9254">${fmtMoney(info.fee)}</b></div>
+      <div style="flex:1 1 33%;">Voda royalty (7%)<br><b>-${fmtMoney(info.royalty)}</b></div>
+      <div style="flex:1 1 33%;">Net to us<br><b style="color:#1F9254">${fmtMoney(info.net)}</b></div>
+    </div>
+    <div class="asb-sub-h">Finder's fee check from ${escapeHtml(info.company||'abatement company')}</div>
+    <div class="jd-field-row">
+      <div class="field"><label>Amount received</label><input type="number" step="0.01" placeholder="0.00" value="${a.feeReceivedAmount||''}" onchange="updateAbatement('feeReceivedAmount', parseFloat(this.value)||0)"></div>
+      <div class="field"><label>Date received</label><input type="date" value="${a.feeReceivedDate||''}" onchange="updateAbatement('feeReceivedDate', this.value)"></div>
+    </div>
+    ${info.fee && !a.feeReceivedAmount ? `<div class="add-line-btn" style="margin-top:-2px;" onclick="markAbatementFeePaid()">+ Received in full today (${fmtMoney(info.fee)})</div>` : ''}
+    <div class="totals-mini">
+      <div>Fee<br><b>${fmtMoney(info.fee)}</b></div>
+      <div>Received<br><b>${fmtMoney(info.received)}</b></div>
+      <div>Still owed<br><b style="color:${info.balance>0?'var(--red)':'#1F9254'}">${fmtMoney(info.balance)}</b></div>
+    </div>
+    <div class="hint">${abatementStatusText(getJob(currentJobId), sc)}</div>
+  </div>`;
+}
+// Plain-English status line for the abatement fee (job screen + report).
+function abatementStatusText(job, sc){
+  const ab = abatementInfo(sc);
+  if(!ab.finalBill) return `The fee calculates from their <b>final bill</b>. Until that's entered, the fee shows $0${ab.expectedFee ? ` (about ${fmtMoney(ab.expectedFee)} based on their estimate)` : ''}.`;
+  if(ab.balance<=0) return `Paid in full${ab.receivedDate ? ' &mdash; received '+fmtDate(ab.receivedDate) : ''}.`;
+  const due = abatementDue(job);
+  const part = ab.received ? `${fmtMoney(ab.received)} received${ab.receivedDate?' '+fmtDate(ab.receivedDate):''}; ${fmtMoney(ab.balance)} still owed. ` : '';
+  if(!due.dueDate) return part + `Due ${ABATEMENT_PAY_DAYS} days after the job is marked complete.`;
+  if(due.daysPastDue>0) return part + `<b style="color:var(--red);">${due.daysPastDue} days past due</b> (was due ${fmtDate(due.dueDate)}).`;
+  if(due.daysPastDue===0) return part + `Due today (${fmtDate(due.dueDate)}).`;
+  return part + `Due ${fmtDate(due.dueDate)} &mdash; ${-due.daysPastDue} days left.`;
+}
+function markAbatementFeePaid(){
+  const job = getJob(currentJobId);
+  const sc = getScope(job, 'Mitigation');
+  if(!sc || !sc.abatement) return;
+  sc.abatement.feeReceivedAmount = abatementInfo(sc).fee;
+  sc.abatement.feeReceivedDate = todayStr();
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Finder\'s fee marked received');
+  renderJobDetail();
+}
+function toggleAsbestos(){
+  const job = getJob(currentJobId);
+  const sc = getScope(job, 'Mitigation');
+  if(!sc) return;
+  if(!sc.abatement) sc.abatement = { enabled:false, company:DEFAULT_ABATEMENT_COMPANY, estimate:0, finalBill:0, feePct:DEFAULT_ABATEMENT_FEE_PCT, feeReceivedDate:'' };
+  sc.abatement.enabled = !sc.abatement.enabled;
+  if(sc.abatement.enabled && !sc.abatement.company) sc.abatement.company = DEFAULT_ABATEMENT_COMPANY;
+  job.updatedAt = new Date().toISOString();
+  saveJobs(sc.abatement.enabled ? 'Marked positive for asbestos' : 'Asbestos turned off (details kept if you turn it back on)');
+  renderJobDetail();
+}
+function updateAbatement(field, value){
+  const job = getJob(currentJobId);
+  const sc = getScope(job, 'Mitigation');
+  if(!sc || !sc.abatement) return;
+  sc.abatement[field] = value;
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Saved');
+  renderJobDetail();
 }
 
 function updateJobNotes(val){
@@ -3595,10 +3764,24 @@ function renderAR(){
     .map(x=>({...x, ar: scopeArAsOf(x.sc, asOf)}))
     .filter(x=>x.ar>0);
 
+  // Finder's fees owed by abatement companies count as receivables too.
+  visibleJobs().forEach(j=>{
+    const sc = j.scopes.mitigation;
+    if(!sc) return;
+    const owedFee = abatementOwedAsOf(j, sc, asOf);
+    if(owedFee>0) withAr.push({ job:j, type:'Abatement', sc, ar: owedFee, abatement:true });
+  });
+
   const totalAr = withAr.reduce((s,x)=>s+x.ar,0);
 
   const buckets = { current:0, d30:0, d60:0, d90:0 };
   withAr.forEach(x=>{
+    if(x.abatement){
+      const due = abatementDue(x.job, asOf);
+      const late = due.daysPastDue==null ? 0 : due.daysPastDue;
+      if(late<=30) buckets.current += x.ar; else if(late<=60) buckets.d30 += x.ar; else if(late<=90) buckets.d60 += x.ar; else buckets.d90 += x.ar;
+      return;
+    }
     const dueDate = scopeDueDate(x.sc) || dateOnly(x.sc.landedAt);
     const days = Math.max(0, Math.floor((new Date(asOf) - new Date(dueDate)) / 86400000));
     if(days<=30) buckets.current += x.ar;
@@ -3621,7 +3804,7 @@ function renderAR(){
   } else {
     wrap.innerHTML = withAr.sort((a,b)=>b.ar-a.ar).map(x=>`
       <div class="report-row" onclick="openJobDetail('${x.job.id}')" style="cursor:pointer;"><div class="report-row-head" style="cursor:pointer;">
-        <div class="nm">${x.job.customerName} <span class="chip-sm ${x.type==='Mitigation'?'chip-mit':'chip-recon'}">${x.type}</span></div>
+        <div class="nm">${x.job.customerName} <span class="chip-sm ${x.abatement?'chip-abate':(x.type==='Mitigation'?'chip-mit':'chip-recon')}">${x.abatement ? 'Abatement fee &middot; '+escapeHtml(abatementInfo(x.sc).company||'') : x.type}</span></div>
         <div class="ct" style="color:var(--red);">${fmtMoney(x.ar)}</div>
       </div></div>`).join('');
   }
@@ -3630,7 +3813,7 @@ function renderAR(){
 let leadRangeInitialized = false;
 let phaseStatusType = 'Mitigation';
 
-const REPORT_KEYS = ['phasestatus','awaitingpayment','leadperf','monthly','lossreasons','sourceroi','bysource','bystage','ar','contractor'];
+const REPORT_KEYS = ['phasestatus','awaitingpayment','leadperf','monthly','lossreasons','sourceroi','bysource','bystage','ar','contractor','abatement'];
 
 function onReportCheckboxChange(cb){
   const allCb = document.querySelector('#reportPicker input[value="all"]');
@@ -4028,9 +4211,76 @@ function renderAwaitingPaymentReport(){
   }).join('');
 }
 
+function renderAbatementReport(){
+  const wrap = document.getElementById('reportAbatement');
+  const kpiWrap = document.getElementById('abatementKpis');
+  if(!wrap || !kpiWrap) return;
+  const owed = [], pending = [];
+  visibleJobs().forEach(j=>{
+    const sc = j.scopes.mitigation;
+    const ab = abatementInfo(sc);
+    if(!ab.enabled) return;
+    if(!ab.finalBill){ pending.push({ j, ab }); return; }
+    if(ab.balance<=0) return;
+    owed.push({ j, ab, due: abatementDue(j) });
+  });
+  // most overdue first; jobs not yet complete (no due date) at the bottom
+  owed.sort((a,b)=> (b.due.daysPastDue==null ? -99999 : b.due.daysPastDue) - (a.due.daysPastDue==null ? -99999 : a.due.daysPastDue));
+
+  const total = owed.reduce((s,r)=>s+r.ab.balance,0);
+  const sumWhere = f => owed.filter(f).reduce((s,r)=>s+r.ab.balance,0);
+  const notDue = sumWhere(r=>r.due.daysPastDue==null || r.due.daysPastDue<=0);
+  const late30 = sumWhere(r=>r.due.daysPastDue>0 && r.due.daysPastDue<=30);
+  const late60 = sumWhere(r=>r.due.daysPastDue>30 && r.due.daysPastDue<=60);
+  const late60p = sumWhere(r=>r.due.daysPastDue>60);
+  const expected = pending.reduce((s,r)=>s+r.ab.expectedFee,0);
+
+  kpiWrap.innerHTML = `
+    <div class="stat-card-light ${total>0?'alert':''}"><div class="n">${fmtMoney(total)}</div><div class="l">Total owed to us</div></div>
+    <div class="stat-card-light"><div class="n">${fmtMoney(notDue)}</div><div class="l">Not due yet</div></div>
+    <div class="stat-card-light ${late30>0?'alert':''}"><div class="n">${fmtMoney(late30)}</div><div class="l">1&ndash;30 days late</div></div>
+    <div class="stat-card-light ${late60>0?'alert':''}"><div class="n">${fmtMoney(late60)}</div><div class="l">31&ndash;60 days late</div></div>
+    <div class="stat-card-light ${late60p>0?'alert':''}"><div class="n">${fmtMoney(late60p)}</div><div class="l">60+ days late</div></div>
+    <div class="stat-card-light"><div class="n">${fmtMoney(expected)}</div><div class="l">Expected &mdash; awaiting final bill (${pending.length})</div></div>
+  `;
+
+  let html = '';
+  if(owed.length===0){
+    html += `<div class="empty">No finder's fees outstanding.</div>`;
+  } else {
+    html += owed.map(r=>{
+      const d = r.due.daysPastDue;
+      const late = d!=null && d>0;
+      const status = d==null ? `Job not marked complete yet &mdash; due ${ABATEMENT_PAY_DAYS} days after completion`
+        : late ? `<b style="color:var(--red);">${d} days past due</b> &middot; was due ${fmtDate(r.due.dueDate)}`
+        : d===0 ? `Due today` : `Due ${fmtDate(r.due.dueDate)} &middot; ${-d} days left`;
+      return `<div class="report-row" onclick="openJobDetail('${r.j.id}')" style="cursor:pointer;${late?'border-color:#F0B4A8;background:var(--red-bg);border-radius:12px;':''}">
+        <div class="report-row-head" style="cursor:pointer;">
+          <div class="nm">${escapeHtml(r.j.customerName)} <span class="chip-sm chip-abate">${escapeHtml(r.ab.company||'—')}</span>${late && d>30 ? ' <span class="crit-badge" style="margin-left:4px;">Follow up</span>' : ''}</div>
+          <div class="ct" style="color:var(--red);">${fmtMoney(r.ab.balance)}</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;padding:0 2px 2px;line-height:1.5;">
+          Final bill ${fmtMoney(r.ab.finalBill)} &middot; ${r.ab.pct}% fee ${fmtMoney(r.ab.fee)}${r.ab.received ? ` &middot; received ${fmtMoney(r.ab.received)}` : ''}${r.due.completeDate ? ` &middot; job complete ${fmtDate(r.due.completeDate)}` : ''}<br>${status}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if(pending.length){
+    html += `<div class="section-title" style="margin-top:14px;font-size:12.5px;">Waiting on their final bill (${pending.length})</div>`;
+    html += pending.map(r=>`<div class="report-row" onclick="openJobDetail('${r.j.id}')" style="cursor:pointer;">
+        <div class="report-row-head" style="cursor:pointer;">
+          <div class="nm">${escapeHtml(r.j.customerName)} <span class="chip-sm chip-abate">${escapeHtml(r.ab.company||'—')}</span></div>
+          <div class="ct" style="color:var(--muted);">~${fmtMoney(r.ab.expectedFee)}</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;padding:0 2px 2px;">Their estimate ${fmtMoney(r.ab.estimate)} &middot; enter their final bill to start the fee</div>
+      </div>`).join('');
+  }
+  wrap.innerHTML = html;
+}
 function renderReports(){
   if(!document.getElementById('leadKpis')) return;
   renderPhaseStatus();
+  renderAbatementReport();
   renderAwaitingPaymentReport();
   if(!leadRangeInitialized){
     leadRangeInitialized = true;
@@ -4139,7 +4389,7 @@ function exportCSV(){
   const cols = ['Customer','Phone','Lead Source','Assigned To','Date Received','Scope','Status','Probability',
     'Payer','Insurance Co','Estimated','Billed','Adjustment $','Adjustment %',
     'Received','Owed','Contractor(s)','Total Bid Amount','Contractor Paid','Contractor Owed',
-    'Materials Cost','Cost of Lead','Labor Cost','Misc Cost','Royalty Fee','Total Cost','Profit Margin ($)','Profit Margin (%)','Loss Reason'];
+    'Materials Cost','Cost of Lead','Labor Cost','Misc Cost','Royalty Fee','Total Cost','Asbestos Positive','Abatement Company','Abatement Estimate','Abatement Final Bill','Abatement Finder\'s Fee','Abatement Fee Received','Abatement Fee Received Date','Abatement Fee Owed','Profit Margin ($)','Profit Margin (%)','Loss Reason'];
   const rows = [];
   visibleJobs().forEach(j=>{
     ['mitigation','reconstruction'].forEach(k=>{
@@ -4157,7 +4407,9 @@ function exportCSV(){
         t.totalEstimated, t.totalBilled, t.estToBilledDiff, t.estToBilledPct.toFixed(1)+'%',
         t.totalReceived, t.owed,
         contractorNames, contractorBidTotal, t.contractorPaid, t.contractorOwed,
-        t.materialsCost, t.costOfLead, t.laborCost, t.miscCost, t.royaltyFee, t.totalCost, t.profit, t.profitMarginPct.toFixed(1)+'%',
+        t.materialsCost, t.costOfLead, t.laborCost, t.miscCost, t.royaltyFee, t.totalCost,
+        ...(()=>{ const a = abatementInfo(sc); return [a.enabled?'Yes':'', a.company, a.enabled?a.estimate:'', a.enabled?a.finalBill:'', a.enabled?a.fee:'', a.enabled?a.received:'', a.enabled?a.receivedDate:'', a.enabled?a.balance:'']; })(),
+        t.profit, t.profitMarginPct.toFixed(1)+'%',
         sc.lossReason
       ]);
     });
