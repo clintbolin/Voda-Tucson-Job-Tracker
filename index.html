@@ -541,6 +541,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .hist-text{ font-size:12.5px; margin-top:2px; line-height:1.4; }
 .hist-flag{ color:var(--red); font-weight:700; font-size:11.5px; }
 .ro-box{ padding:11px 12px; border-radius:10px; background:var(--gray-bg); font-weight:800; font-size:14px; }
+#printArea{ display:none; }
 #pinGate{ position:fixed; inset:0; z-index:9998; background:var(--navy); align-items:center; justify-content:center; padding:20px; overflow-y:auto; }
 #pinGateBox{ background:var(--card); color:var(--ink); border-radius:18px; padding:22px 18px; width:100%; max-width:380px; text-align:center; }
 .pin-title{ font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; }
@@ -615,6 +616,10 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   body.printing-overlay .jd-done-bar,
   body.printing-overlay .report-actions{ display:none !important; }
   #pinGate{ display:none !important; }
+  body.printing-area > *:not(#printArea){ display:none !important; }
+  body.printing-area #printArea{ display:block !important; }
+  body.printing-area #printArea .sheet{ max-height:none !important; overflow:visible !important; box-shadow:none !important; border-radius:0 !important; padding:0 !important; max-width:none !important; width:100% !important; animation:none !important; }
+  body.printing-area #printArea .jd-print-title{ display:block !important; }
   body.printing-overlay #modalCollReport .sheet-head, body.printing-overlay #modalJobReport .sheet-head{ display:none !important; }
   .toast{ display:none !important; }
   html, body.printing-overlay{ overflow:visible !important; height:auto !important; }
@@ -1035,7 +1040,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
       <button class="close-x" onclick="closeModal('modalJobDetail')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
   </div>
-  <div id="jdPrintTitle" style="display:none;font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:700;"></div>
+  <div id="jdPrintTitle" class="jd-print-title" style="display:none;font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:700;"></div>
   <div id="jdBody"></div>
   <div class="jd-done-bar"><button class="btn btn-green" id="jdDoneBtn" onclick="saveAndCloseJobDetail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span>Save &amp; Close</span></button></div>
 </div></div>
@@ -1268,6 +1273,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     </div>
   </div>
   <div class="hint" id="teamPinNote" style="margin-top:0;margin-bottom:8px;"></div>
+  <div style="font-size:10.5px;color:var(--muted);margin-bottom:6px;">App version: <span id="appVersionLbl"></span></div>
   <div class="section-title" style="margin-top:6px;">Current team (<span id="teamCount">0</span>)</div>
   <div id="teamList"></div>
 </div></div>
@@ -1408,6 +1414,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
+const APP_VERSION = 'Oct 18, 2026 \u00b7 11:40 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -1614,6 +1621,7 @@ function closeModal(id){
   document.getElementById(id).classList.remove('active');
   document.getElementById(id).classList.remove('print-target');
   document.body.classList.remove('printing-overlay');
+  document.body.classList.remove('printing-area');
   _openModalCount = Math.max(0, _openModalCount - 1);
   if(_openModalCount === 0) document.body.style.overflow = '';
 }
@@ -2146,6 +2154,7 @@ function updatePrintTitle(v){
 }
 function printCurrentPage(){
   document.body.classList.remove('printing-overlay');
+  document.body.classList.remove('printing-area');
   updatePrintTitle(currentView);
   window.print();
 }
@@ -2647,14 +2656,30 @@ async function saveAndCloseJobDetail(){
 // on until printing actually finishes (or the window is closed). Phones
 // build the print preview after a delay, and removing it early is what made
 // the printout show the job list behind the report instead.
+// Prints only what's in the top-most open window. Its contents are copied
+// into a separate print area that sits outside the app, and everything else
+// on the page is hidden while printing. (Edge was printing the screens
+// stacked behind a report when we relied on hiding them instead.)
 function printActiveModal(){
-  // only the top-most open window gets printed (e.g. the report, not the account screen under it)
   const open = [...document.querySelectorAll('.overlay.active')];
   const top = open.sort((a,b)=>(Number(b.style.zIndex)||0)-(Number(a.style.zIndex)||0))[0];
-  document.querySelectorAll('.overlay.print-target').forEach(o=>o.classList.remove('print-target'));
-  if(top) top.classList.add('print-target');
-  document.body.classList.add('printing-overlay');
-  const done = ()=>{ document.body.classList.remove('printing-overlay'); document.querySelectorAll('.overlay.print-target').forEach(o=>o.classList.remove('print-target')); window.removeEventListener('afterprint', done); };
+  let area = document.getElementById('printArea');
+  if(!area){ area = document.createElement('div'); area.id = 'printArea'; document.body.appendChild(area); }
+  area.innerHTML = '';
+  if(top){
+    const sheet = top.querySelector('.sheet');
+    const clone = sheet.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id')); // keep ids unique
+    // carry over typed values that cloneNode doesn't copy
+    const srcInputs = sheet.querySelectorAll('input, select, textarea'), dstInputs = clone.querySelectorAll('input, select, textarea');
+    srcInputs.forEach((el,i)=>{ const d = dstInputs[i]; if(!d) return; if(el.tagName==='SELECT'){ d.value = el.value; [...d.options].forEach(o=>o.selected = (o.value===el.value)); } else if(el.type==='checkbox'){ d.checked = el.checked; } else { d.setAttribute('value', el.value); if(el.tagName==='TEXTAREA') d.textContent = el.value; } });
+    clone.querySelectorAll('.sheet-handle, .sheet-head button, .sheet-head svg, .report-actions, .jd-done-bar, .stage-btns, .slider-wrap, .add-line-btn').forEach(el=>el.remove());
+    if(top.id==='modalCollReport' || top.id==='modalJobReport') clone.querySelectorAll('.sheet-head').forEach(el=>el.remove());
+    area.appendChild(clone);
+  }
+  document.body.classList.add('printing-area');
+  const done = ()=>{ document.body.classList.remove('printing-area'); area.innerHTML=''; window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   window.print();
 }
@@ -3995,6 +4020,7 @@ function renderSearchAll(){
   }).join('');
 }
 function openTeam(){
+  const v = document.getElementById('appVersionLbl'); if(v) v.textContent = APP_VERSION;
   document.getElementById('teamNameInput').value = '';
   renderTeam();
   openModal('modalTeam');
