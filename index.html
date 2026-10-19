@@ -2065,8 +2065,8 @@ async function loadData(silent){
     personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
     if(!data.personnel || !data.personnel.length){ await savePersonnel(); }
     jobs.forEach(j=>{
-      if(j.scopes.mitigation) ensureCollections(j, j.scopes.mitigation, 'Mitigation');
-      if(j.scopes.reconstruction) ensureCollections(j, j.scopes.reconstruction, 'Reconstruction');
+      if(j.scopes.mitigation) syncCollFromJob(j, j.scopes.mitigation, 'Mitigation');
+      if(j.scopes.reconstruction) syncCollFromJob(j, j.scopes.reconstruction, 'Reconstruction');
     });
     setSyncing(false);
     if(!pinGateShown){ restorePinUser(); maybeShowPinGate(); }
@@ -4348,6 +4348,8 @@ function setCollType(type){ collAcctType = type; currentScopeType = type; }
 function renderCollAccount(){
   const job = getJob(collAcctJobId);
   if(!job) return;
+  if(job.scopes.mitigation) syncCollFromJob(job, job.scopes.mitigation, 'Mitigation');
+  if(job.scopes.reconstruction) syncCollFromJob(job, job.scopes.reconstruction, 'Reconstruction');
   document.getElementById('collTitle').textContent = job.customerName;
   const parts = [];
   if(job.scopes.mitigation) parts.push('Mitigation');
@@ -4430,6 +4432,8 @@ function renderCollPanel(job, sc, type){
     </div>`;
   }
 
+  const paidSoFar = (sc.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  if(paidSoFar > ct.invoice + 0.5) h += `<div class="hint" style="border:1px solid var(--amber);background:var(--amber-bg);color:var(--ink);">${fmtMoney(paidSoFar)} has been received but only ${fmtMoney(ct.invoice)} is billed on this scope's line items. Enter the full ${type==='Reconstruction'?'contract':'invoice'} amount as the <b>Billed</b> amount on the line item so the balance owed is right.</div>`;
   if(type==='Reconstruction') h += scheduleHtml(job, sc);
 
   const pays = (sc.payments||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
@@ -4501,7 +4505,15 @@ function setupSchedule(kind){
   const { job, sc, c } = reconCtx(); if(!job) return;
   const names = kind==='uf' ? ['Upfront payment','Final payment'] : ['Deposit / down payment','Progress payment','Final payment'];
   c.schedule = names.map(n=>({ id: uid('MS'), label:n, amount:0, due:'' }));
-  collLog(sc, { kind:'note', text:`Payment schedule set up: ${names.join(' → ')}` });
+  // payments already received fill the first steps, oldest first
+  const untied = (sc.payments||[]).filter(p=>!p.milestoneId && !p.deductible).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const tied = [];
+  untied.forEach((p,i)=>{
+    const m = c.schedule[Math.min(i, c.schedule.length-1)];
+    if(i>=c.schedule.length-1 && c.schedule.length>1 && i>0 && !/final/i.test(m.label)) return;
+    if(i<c.schedule.length-1){ m.amount = (Number(m.amount)||0) + (Number(p.amount)||0); m.due = m.due || p.date || ''; p.milestoneId = m.id; tied.push(`${fmtMoney(p.amount)} \u2192 ${m.label}`); syncPhaseFromMilestone(job, sc, 'Reconstruction', p); }
+  });
+  collLog(sc, { kind:'note', text:`Payment schedule set up: ${names.join(' → ')}${tied.length ? '. Payments already received tied in: '+tied.join(', ') : ''}` });
   job.updatedAt = new Date().toISOString();
   saveJobs('Payment schedule added — fill in the amounts'); renderCollAccount();
 }
@@ -4762,7 +4774,10 @@ function collAfterPayment(job, sc, type, p){
   if(!sc.collections) ensureCollections(job, sc, type);
   const c = sc.collections;
   const msName = p.milestoneId && ((c.schedule||[]).find(m=>m.id===p.milestoneId)||{}).label;
-  collLog(sc, { kind:'payment', text:`Payment ${fmtMoney(p.amount)} from ${p.payer}${msName?' for '+msName:''}${p.deductible?' (deductible)':''}${p.checkNo?' — check #'+p.checkNo:''}${p.method?' — '+p.method:''}` });
+  collLog(sc, { kind:'payment', paymentId: p.id, text:`Payment ${fmtMoney(p.amount)} from ${p.payer}${msName?' for '+msName:''}${p.deductible?' (deductible)':''}${p.checkNo?' — check #'+p.checkNo:''}${p.method?' — '+p.method:''}` });
+  p.collLogged = true;
+  syncPhaseFromMilestone(job, sc, type, p);
+  if(c.step==='notBilled' && type==='Reconstruction') activateFromPayment(job, sc, type);
   const ct = collTotals(job, sc, type);
   if(c.step!=='notBilled' && c.step!=='paid' && c.step!=='closed' && ct.outstanding<=0.005){
     const from = collStepLabel(sc, c.step);
@@ -4771,6 +4786,49 @@ function collAfterPayment(job, sc, type, p){
     setTimeout(()=>showToast('Balances are at $0 — account moved to Paid'), 2900);
   }
 }
+/* ---------- keep the job and its collections accounts in step ----------
+   Payments entered on the job screen before collections existed (or from any
+   screen) show up in the collections history on the date they were paid, a
+   Reconstruction account with deposits received is active, and a payment
+   tied to a schedule step checks off the matching phase. */
+function payLogText(sc, p){
+  const ms = p.milestoneId && (((sc.collections||{}).schedule)||[]).find(m=>m.id===p.milestoneId);
+  return `Payment ${fmtMoney(p.amount)} from ${p.payer||'customer'}${ms?' for '+ms.label:''}${p.deductible?' (deductible)':''}${p.checkNo?' \u2014 check #'+p.checkNo:''}${p.method?' \u2014 '+p.method:''}${p.note?' \u2014 '+p.note:''}`;
+}
+function activateFromPayment(job, sc, type){
+  const c = sc.collections;
+  const paid = (sc.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  if(c.step!=='notBilled' || paid<=0) return false;
+  const first = (sc.payments||[]).map(p=>p.date).filter(Boolean).sort()[0] || todayStr();
+  c.billingSentDate = [earliestBilledDate(sc), first].filter(Boolean).sort()[0];
+  c.step = 'invoiceSent';
+  if(!c.nextAction) c.nextAction = { text:'Review this account and set the next step', due: todayStr(), assignee: job.assignedTo||'' };
+  c.log.push({ id: uid('CL'), by:'System', at:new Date().toISOString(), kind:'system', text:`Account activated \u2014 ${fmtMoney(paid)} already received on this ${type.toLowerCase()} scope (first payment ${fmtDate(first)})` });
+  return true;
+}
+const MILESTONE_PHASE = [[/deposit|down|upfront/i, 'deposit'], [/progress/i, 'progressPayment'], [/final/i, 'finalPayment']];
+function syncPhaseFromMilestone(job, sc, type, p){
+  if(type!=='Reconstruction' || !p.milestoneId) return;
+  const ms = (((sc.collections||{}).schedule)||[]).find(m=>m.id===p.milestoneId); if(!ms) return;
+  const hit = MILESTONE_PHASE.find(([re])=>re.test(ms.label)); if(!hit) return;
+  const key = hit[1];
+  if(!getEffectivePhases(job, type).some(ph=>ph.key===key) || sc.phases[key]) return;
+  sc.phases[key] = p.date || todayStr(); sc.phaseNA[key] = false;
+  logActivity(job, `Reconstruction: ${getEffectivePhases(job,type).find(ph=>ph.key===key).label} checked off (payment ${fmtMoney(p.amount)} for ${ms.label})`);
+}
+function syncCollFromJob(job, sc, type){
+  if(!sc) return;
+  if(!sc.collections) ensureCollections(job, sc, type);
+  const c = sc.collections; if(!c.log) c.log = [];
+  (sc.payments||[]).forEach(p=>{ if(!p.payer) p.payer = sc.payerType==='Insurance' ? 'Insurance' : 'Customer'; });
+  (sc.payments||[]).forEach(p=>{
+    if(p.collLogged || c.log.some(e=>e.paymentId===p.id)){ p.collLogged = true; return; }
+    c.log.push({ id: uid('CL'), kind:'payment', paymentId: p.id, by: p.by || 'Job record', at: p.at || new Date().toISOString(), contactDate: p.date || '', text: payLogText(sc, p) });
+    p.collLogged = true;
+  });
+  if(type==='Reconstruction') activateFromPayment(job, sc, type);
+}
+
 function refreshCollViews(){
   if(document.getElementById('modalColl').classList.contains('active')) renderCollAccount();
   if(document.getElementById('modalJobDetail').classList.contains('active')) renderJobDetail();
