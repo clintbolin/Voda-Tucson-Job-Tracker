@@ -1414,7 +1414,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 18, 2026 \u00b7 11:40 PM';
+const APP_VERSION = 'Oct 18, 2026 \u00b7 11:50 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -5249,10 +5249,11 @@ let collReportMode = 'daily', collReportJobId = null, collReportPerson = '';
 function setPrintOrientation(landscape){
   let st = document.getElementById('printPageStyle');
   if(!st){ st = document.createElement('style'); st.id = 'printPageStyle'; document.head.appendChild(st); }
-  st.textContent = landscape ? '@page { size: landscape; margin: 0.4in; }' : '@page { size: portrait; margin: 0.5in; }';
+  // only the collections reports set landscape; otherwise leave the choice to the print window
+  st.textContent = landscape ? '@page { size: landscape; margin: 0.4in; }' : '';
 }
 function printCollReport(){
-  setPrintOrientation(collReportMode==='daily');
+  setPrintOrientation(true); // both the daily checklist and the client collections report are laid out landscape
   const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   printActiveModal();
