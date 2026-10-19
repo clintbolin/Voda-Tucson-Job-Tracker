@@ -468,6 +468,9 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .rpt-grid .sm{ font-size:9.5px; color:#647184; margin-top:1px; }
 .rpt-grid .red{ color:#C0392B; } .rpt-grid .amber{ color:#9A6B00; font-weight:700; }
 #collReportBody{ overflow-x:auto; }
+#collReportBody .report-table{ font-size:11.5px; }
+#collReportBody .report-table th{ font-size:9.5px; white-space:normal; padding:4px 5px; }
+#collReportBody .report-table td{ padding:4px 5px; }
 .rpt-kv{ width:100%; border-collapse:collapse; font-size:12.5px; }
 .rpt-kv td{ padding:4px 6px; border-bottom:1px solid var(--line); }
 .rpt-kv td:nth-child(odd){ color:var(--muted); font-family:-apple-system,sans-serif; font-size:11px; width:90px; }
@@ -594,6 +597,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   body.printing-overlay #printPageTitle{ display:none !important; }
   body.printing-overlay main.content{ display:none !important; }
   body.printing-overlay .overlay:not(.active){ display:none !important; }
+  body.printing-overlay .overlay.active:not(.print-target){ display:none !important; }
   body.printing-overlay .overlay.active{
     position:static !important; display:block !important; background:none !important; padding:0 !important;
   }
@@ -1608,6 +1612,7 @@ function openModal(id){
 }
 function closeModal(id){
   document.getElementById(id).classList.remove('active');
+  document.getElementById(id).classList.remove('print-target');
   document.body.classList.remove('printing-overlay');
   _openModalCount = Math.max(0, _openModalCount - 1);
   if(_openModalCount === 0) document.body.style.overflow = '';
@@ -2643,8 +2648,13 @@ async function saveAndCloseJobDetail(){
 // build the print preview after a delay, and removing it early is what made
 // the printout show the job list behind the report instead.
 function printActiveModal(){
+  // only the top-most open window gets printed (e.g. the report, not the account screen under it)
+  const open = [...document.querySelectorAll('.overlay.active')];
+  const top = open.sort((a,b)=>(Number(b.style.zIndex)||0)-(Number(a.style.zIndex)||0))[0];
+  document.querySelectorAll('.overlay.print-target').forEach(o=>o.classList.remove('print-target'));
+  if(top) top.classList.add('print-target');
   document.body.classList.add('printing-overlay');
-  const done = ()=>{ document.body.classList.remove('printing-overlay'); window.removeEventListener('afterprint', done); };
+  const done = ()=>{ document.body.classList.remove('printing-overlay'); document.querySelectorAll('.overlay.print-target').forEach(o=>o.classList.remove('print-target')); window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   window.print();
 }
@@ -4844,6 +4854,8 @@ function syncCollFromJob(job, sc, type){
   if(!sc) return;
   if(!sc.collections) ensureCollections(job, sc, type);
   const c = sc.collections; if(!c.log) c.log = [];
+  c.log = c.log.filter(e=>!(e.kind==='note' && /: due [A-Z][a-z]{2} \d{1,2}, \d{1,3}$/.test(e.text||'')));
+  (c.schedule||[]).forEach(m=>{ if(m.due && !dateReady(m.due)) m.due = ''; });
   (sc.payments||[]).forEach(p=>{ if(!p.payer) p.payer = sc.payerType==='Insurance' ? 'Insurance' : 'Customer'; });
   (sc.payments||[]).forEach(p=>{
     if(p.collLogged || c.log.some(e=>e.paymentId===p.id)){ p.collLogged = true; return; }
@@ -5234,7 +5246,7 @@ function openJobCollReport(jobId){
   collReportMode = 'job'; collReportJobId = jobId || collAcctJobId || currentJobId;
   document.getElementById('crpTitle').textContent = 'Collections Report';
   document.getElementById('crpControls').style.display = 'none';
-  document.getElementById('crpSheet').classList.remove('wide');
+  document.getElementById('crpSheet').classList.add('wide');
   renderCollReport();
   openModal('modalCollReport');
 }
