@@ -446,6 +446,55 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .slider-wrap input[type=range]{width:100%;accent-color:var(--navy);}
 .hint{font-size:11px;color:var(--muted);background:var(--gray-bg);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.4;}
 .report-hidden{ display:none; }
+.sheet.wide{ max-width:1100px; }
+.rpt-summary{ width:100%; border-collapse:separate; border-spacing:6px 0; margin:0 -6px 14px; font-family:-apple-system,sans-serif; }
+.rpt-summary td{ border:1px solid var(--line); border-radius:8px; padding:7px 8px; text-align:center; }
+.rpt-summary .v{ font-size:15px; font-weight:800; color:var(--navy); }
+.rpt-summary .v.red{ color:var(--red); }
+.rpt-summary .k{ font-size:9.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); margin-top:2px; }
+.rpt-sec{ font-family:-apple-system,sans-serif; font-weight:800; font-size:12.5px; color:#fff; background:var(--navy); padding:6px 9px; margin:14px 0 0; border-radius:6px 6px 0 0; }
+.rpt-sec span{ font-weight:600; opacity:.8; }
+.rpt-empty{ font-family:-apple-system,sans-serif; font-size:12px; color:var(--muted); border:1px solid var(--line); border-top:none; padding:8px 10px; }
+.rpt-grid{ width:100%; border-collapse:collapse; font-family:-apple-system,sans-serif; font-size:10.5px; }
+.rpt-grid th{ background:#E9EEF3; color:#33414F; text-align:left; font-size:9.5px; text-transform:uppercase; letter-spacing:.3px; padding:5px 5px; border:1px solid #CBD5DF; white-space:nowrap; }
+.rpt-grid td{ border:1px solid #CBD5DF; padding:5px 5px; vertical-align:top; color:#1a1a1a; background:#fff; }
+.rpt-grid tbody tr:nth-child(even) td{ background:#F7F9FB; }
+.rpt-grid tr.row-red td{ background:#FDF0F2 !important; }
+.rpt-grid tr.row-amber td{ background:#FFF8E6 !important; }
+.rpt-grid .num{ text-align:right; white-space:nowrap; }
+.rpt-grid .ck{ width:18px; text-align:center; }
+.rpt-grid .box{ display:inline-block; width:11px; height:11px; border:1.5px solid #33414F; border-radius:2px; }
+.rpt-grid .notes{ min-width:110px; }
+.rpt-grid .sm{ font-size:9.5px; color:#647184; margin-top:1px; }
+.rpt-grid .red{ color:#C0392B; } .rpt-grid .amber{ color:#9A6B00; font-weight:700; }
+#collReportBody{ overflow-x:auto; }
+.rpt-kv{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.rpt-kv td{ padding:4px 6px; border-bottom:1px solid var(--line); }
+.rpt-kv td:nth-child(odd){ color:var(--muted); font-family:-apple-system,sans-serif; font-size:11px; width:90px; }
+.report-table tr.tot td{ font-weight:700; border-top:1.5px solid var(--line); }
+.ed-row{ display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--line); }
+.ed-row label{ flex:1; font-size:13px; }
+.ed-row input{ width:150px; flex-shrink:0; padding:7px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:13px; }
+.ed-clear{ border:none; background:var(--gray-bg); color:var(--muted); width:26px; height:26px; border-radius:7px; font-size:16px; cursor:pointer; }
+.ed-tag{ font-size:9.5px; text-transform:uppercase; color:var(--muted); background:var(--gray-bg); padding:1px 5px; border-radius:4px; }
+@media print{ .rpt-grid{ font-size:9px; } .rpt-grid th{ font-size:8px; } .sheet.wide{ max-width:none !important; } #collReportBody{ overflow:visible !important; } }
+.coll-panel{ border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:14px; }
+.coll-panel.focus{ border-color:var(--cyan); box-shadow:0 0 0 1px var(--cyan); }
+.coll-panel-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.coll-panel-path{ font-size:12px; color:var(--muted); flex:1; }
+.coll-panel-amt{ font-weight:800; font-size:14px; }
+.coll-job .coll-line{ border-top:1px solid var(--line); padding:8px 0 4px; margin-top:8px; cursor:pointer; }
+.coll-line.dim{ opacity:.55; }
+.sched-row{ border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin-bottom:6px; }
+.sched-row.paid{ background:var(--green-bg); border-color:transparent; }
+.sched-row.late{ border-color:var(--red); background:var(--red-bg); }
+.sched-top{ display:flex; align-items:center; gap:8px; }
+.sched-label{ flex:1; min-width:0; font-weight:700; font-size:13px; border:none; background:transparent; color:var(--ink); padding:2px 0; }
+.sched-fields{ display:flex; gap:8px; align-items:flex-end; margin-top:6px; }
+.sched-fields label{ flex:1; font-size:10.5px; color:var(--muted); font-weight:700; text-transform:uppercase; display:flex; flex-direction:column; gap:3px; }
+.sched-fields label{ min-width:0; }
+.sched-fields input{ width:100%; box-sizing:border-box; font-size:13px; padding:7px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); min-width:0; }
+.sched-paid{ font-size:11.5px; color:var(--muted); min-width:80px; text-align:right; }
 .who-chip{ display:inline-block; color:#fff; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:99px; vertical-align:1px; }
 .jobs-filters{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
 .jobs-filters select{ flex:1 1 30%; min-width:0; padding:8px 8px; border:1px solid var(--line); border-radius:9px; font-size:12.5px; background:var(--card); color:var(--ink); }
@@ -561,6 +610,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   body.printing-overlay .jd-done-bar,
   body.printing-overlay .report-actions{ display:none !important; }
   #pinGate{ display:none !important; }
+  body.printing-overlay #modalCollReport .sheet-head, body.printing-overlay #modalJobReport .sheet-head{ display:none !important; }
   .toast{ display:none !important; }
   html, body.printing-overlay{ overflow:visible !important; height:auto !important; }
 }
@@ -1020,6 +1070,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     <div class="field"><label>Assigned to</label><input id="ejAssigned" list="teamListEJ"><datalist id="teamListEJ"></datalist></div>
   </div>
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmEditJob()">Save changes</button></div>
+  <div class="add-line-btn" style="text-align:center;margin-top:10px;" onclick="openEditDates()">Edit all job dates (landed, phases, billing, payments)&hellip;</div>
 </div></div>
 
 <!-- Add / edit line item -->
@@ -1053,6 +1104,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     <div class="field"><label>Paid by</label><select id="payPayer"><option>Insurance</option><option>Customer</option><option>Mortgage Co.</option></select></div>
     <div class="field"><label>Check #</label><input id="payCheck" placeholder="Optional"></div>
   </div>
+  <div class="field" id="payMsWrap" style="display:none;"><label>For payment step</label><select id="payMs"></select></div>
   <div class="field"><label>Note</label><input id="payNote" placeholder="e.g. insurance draft, supplement payment"></div>
   <div class="hint" style="margin-top:-2px;margin-bottom:8px;">Deductible payments go in the job's Deductible section instead.</div>
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmPayment()">Log payment</button></div>
@@ -1227,6 +1279,10 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 <div class="overlay" id="modalColl"><div class="sheet" style="max-height:92vh;">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><div><div class="sheet-title" id="collTitle">Collections</div><div class="sheet-sub" id="collSub"></div></div><button class="close-x" onclick="closeModal('modalColl')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="btn-row" style="margin-bottom:12px;">
+    <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="openJobCollReport(collAcctJobId)">Collections Report</button>
+    <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="currentJobId=collAcctJobId;openEditDates()">Edit dates</button>
+  </div>
   <div id="collBody"></div>
   <div class="btn-row" style="margin-top:14px;"><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="closeModal('modalColl')">Close</button></div>
 </div></div>
@@ -1273,7 +1329,10 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     <div class="field"><label>Who</label><select id="ctWho" onchange="ctSuggest()"></select></div>
     <div class="field"><label>Method</label><select id="ctMethod" onchange="ctSuggest()"></select></div>
   </div>
-  <div class="field"><label>Result</label><select id="ctResult" onchange="ctSuggest()"></select></div>
+  <div class="jd-field-row">
+    <div class="field"><label>Result</label><select id="ctResult" onchange="ctSuggest()"></select></div>
+    <div class="field"><label>Date of contact</label><input id="ctDate" type="date"></div>
+  </div>
   <div class="field" id="ctPromisedWrap" style="display:none;"><label>Promised payment date</label><input id="ctPromised" type="date" onchange="ctSuggest()"></div>
   <div class="field"><label>Note</label><textarea id="ctNote" rows="2" placeholder="What was said"></textarea></div>
   <label id="ctDocsWrap" style="display:none;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;"><input type="checkbox" id="ctDocs" style="width:17px;height:17px;"> Move step to &ldquo;Docs / Supplement Requested&rdquo;</label>
@@ -1300,6 +1359,30 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     <div class="field"><label>Note / check #</label><input id="dpNote" placeholder="Optional"></div>
   </div>
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmDedPayment()">Log payment</button></div>
+</div></div>
+
+<!-- Printable collections reports -->
+<div class="overlay" id="modalCollReport"><div class="sheet" id="crpSheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title" id="crpTitle">Collections Report</div><div class="sheet-sub">Ready to print</div></div><button class="close-x" onclick="closeModal('modalCollReport')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="crpControls" class="report-actions" style="display:none;gap:8px;align-items:center;margin-bottom:10px;">
+    <span style="font-size:12.5px;font-weight:700;">Show:</span>
+    <select id="crpPerson" class="mini-select" style="font-size:13px;padding:7px 9px;" onchange="collReportPerson=this.value;renderCollReport();"></select>
+  </div>
+  <div id="collReportBody" class="job-report-doc"></div>
+  <div class="btn-row report-actions" style="margin-top:4px;">
+    <button class="btn btn-primary" onclick="printCollReport()">Print report</button>
+    <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="closeModal('modalCollReport')">Close</button>
+  </div>
+</div></div>
+
+<!-- Edit dates -->
+<div class="overlay" id="modalEditDates"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title">Edit dates</div><div class="sheet-sub">For jobs entered after the fact &mdash; set when things actually happened</div></div><button class="close-x" onclick="closeModal('modalEditDates')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="hint" style="margin-top:0;">Change any date to match what really happened. Phases can be filled in with a past date (or cleared with &times;). Every change is logged with your name.</div>
+  <div id="edBody"></div>
+  <div class="btn-row" style="margin-top:12px;"><button class="btn btn-primary" onclick="confirmEditDates()">Save dates</button></div>
 </div></div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
 
@@ -3565,6 +3648,13 @@ function openPayment(type){
   document.getElementById('payCheck').value='';
   const scP = getScope(getJob(currentJobId), type);
   document.getElementById('payPayer').value = scP && scP.payerType==='Insurance' ? 'Insurance' : 'Customer';
+  const msRows = (type==='Reconstruction' && scP) ? scheduleStatus(scP) : [];
+  document.getElementById('payMsWrap').style.display = msRows.length ? 'block' : 'none';
+  if(msRows.length){
+    const firstOpen = msRows.find(m=>!m.isPaid);
+    document.getElementById('payMs').innerHTML = `<option value="">Not tied to a step</option>` + msRows.map(m=>`<option value="${m.id}" ${firstOpen&&m.id===firstOpen.id?'selected':''}>${escapeHtml(m.label)} — ${m.isPaid?'paid':fmtMoney(m.left)+' left'}</option>`).join('');
+    if(firstOpen && firstOpen.left) document.getElementById('payAmount').value = firstOpen.left;
+  }
   openModal('modalPayment');
 }
 function confirmPayment(){
@@ -3574,6 +3664,7 @@ function confirmPayment(){
   const sc = getScope(job, currentScopeType);
   const pmt = { id: uid('PMT'), amount: amt, date: document.getElementById('payDate').value||todayStr(), note: document.getElementById('payNote').value.trim(),
     payer: document.getElementById('payPayer').value, checkNo: document.getElementById('payCheck').value.trim(), ...stamp() };
+  if(document.getElementById('payMsWrap').style.display!=='none' && document.getElementById('payMs').value) pmt.milestoneId = document.getElementById('payMs').value;
   sc.payments.push(pmt);
   collAfterPayment(job, sc, currentScopeType, pmt);
   logActivity(job, `${currentScopeType} payment ${fmtMoney(amt)} from ${pmt.payer}${pmt.checkNo?' (check #'+pmt.checkNo+')':''}`);
@@ -4242,6 +4333,7 @@ function openCollAccount(jobId, type){
   currentJobId = jobId; currentScopeType = type;
   renderCollAccount();
   openModal('modalColl');
+  setTimeout(()=>{ const el = document.getElementById('collPanel-'+type); if(el && type==='Reconstruction') el.scrollIntoView({block:'start', behavior:'smooth'}); }, 120);
 }
 function collCtx(){
   const job = getJob(collAcctJobId); if(!job) return {};
@@ -4249,14 +4341,42 @@ function collCtx(){
   if(!sc.collections) ensureCollections(job, sc, collAcctType);
   return { job, sc, type: collAcctType, c: sc.collections };
 }
+// The account screen shows the customer's Mitigation and Reconstruction
+// collections together, one on top of the other. They're still tracked
+// separately (own steps, next action, payments, history).
+function setCollType(type){ collAcctType = type; currentScopeType = type; }
 function renderCollAccount(){
-  const { job, sc, type, c } = collCtx();
-  if(!job){ return; }
+  const job = getJob(collAcctJobId);
+  if(!job) return;
+  document.getElementById('collTitle').textContent = job.customerName;
+  const parts = [];
+  if(job.scopes.mitigation) parts.push('Mitigation');
+  if(job.scopes.reconstruction) parts.push('Reconstruction');
+  document.getElementById('collSub').textContent = 'Collections — ' + (parts.join(' + ') || 'no scopes');
+  let h = '';
+  ['Mitigation','Reconstruction'].forEach(type=>{
+    const sc = getScope(job, type);
+    h += `<div class="coll-panel ${type===collAcctType?'focus':''}" id="collPanel-${type}">`;
+    h += `<div class="coll-panel-head"><span class="chip-sm ${type==='Mitigation'?'chip-mit':'chip-recon'}">${type}</span>`;
+    if(sc){
+      if(!sc.collections) ensureCollections(job, sc, type);
+      const ct = collTotals(job, sc, type);
+      h += `<span class="coll-panel-path">${ct.path==='insurance' ? 'Insurance claim'+(sc.insuranceCompany?' — '+escapeHtml(sc.insuranceCompany):'') : 'Customer pay'}</span>`;
+      h += `<span class="coll-panel-amt" style="color:${ct.outstanding>0 && sc.collections.step!=='notBilled'?'var(--red)':'inherit'};">${sc.collections.step==='notBilled' ? 'Not billed' : fmtMoney(ct.outstanding)+' owed'}</span></div>`;
+      h += renderCollPanel(job, sc, type);
+    } else {
+      h += `</div><div class="empty" style="padding:8px 0 4px;">No ${type.toLowerCase()} scope on this job${type==='Reconstruction' ? ' yet. Add it from the job screen when reconstruction is sold.' : '.'}</div>`;
+    }
+    h += `</div>`;
+  });
+  document.getElementById('collBody').innerHTML = h;
+}
+function collBtn(type, call){ return `setCollType('${type}');${call}`; }
+function renderCollPanel(job, sc, type){
+  const c = sc.collections;
   const ct = collTotals(job, sc, type);
   const steps = collSteps(sc);
   const idx = steps.findIndex(s=>s[0]===c.step);
-  document.getElementById('collTitle').textContent = job.customerName;
-  document.getElementById('collSub').innerHTML = `${type} &middot; ${ct.path==='insurance' ? 'Insurance claim'+(sc.insuranceCompany?' ('+escapeHtml(sc.insuranceCompany)+')':'') : 'Customer pay'}`;
   let h = '';
 
   if(c.step==='notBilled'){
@@ -4264,10 +4384,9 @@ function renderCollAccount(){
       <div style="font-weight:800;">Not Yet Billed &mdash; inactive</div>
       <div style="font-size:12px;margin-top:3px;">No reminders and not counted in aging until billing is sent.</div>
       <div style="font-size:12px;margin-top:6px;">Billed line items on this scope: <b>${fmtMoney(ct.invoice)}</b></div>
-      <button class="btn btn-primary" style="margin-top:10px;" onclick="openBillingSent()">Mark Billing Sent</button>
+      <button class="btn btn-primary" style="margin-top:10px;" onclick="${collBtn(type,'openBillingSent()')}">Mark Billing Sent</button>
     </div>`;
   } else {
-    // balances
     h += `<div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
       <div style="flex:1 1 33%;">Invoice<br><b>${fmtMoney(ct.invoice)}</b></div>
       ${ct.path==='insurance' ? `<div style="flex:1 1 33%;">Deductible<br><b>${fmtMoney(ct.ded)}</b></div>` : ''}
@@ -4276,22 +4395,18 @@ function renderCollAccount(){
       <div style="flex:1 1 33%;">Customer owes<br><b style="color:${ct.custNet>0?'var(--red)':'#1F9254'}">${fmtMoney(ct.custNet)}</b></div>
       ${ct.writeOff ? `<div style="flex:1 1 33%;">Written off<br><b>${fmtMoney(ct.writeOff)}</b></div>` : ''}
     </div>
-    <div class="coll-meta">Billing sent ${fmtDate(c.billingSentDate)} &middot; <b>${ct.daysOut}d outstanding</b> &middot; <a onclick="openBillingSent()">edit</a>
-      ${ct.path==='insurance' ? ` &middot; <a onclick="editNonCovered()">non-covered items</a>` : ''}</div>`;
+    <div class="coll-meta">Billing sent ${fmtDate(c.billingSentDate)} &middot; <b>${ct.daysOut}d outstanding</b> &middot; <a onclick="${collBtn(type,'openBillingSent()')}">edit</a>
+      ${ct.path==='insurance' ? ` &middot; <a onclick="${collBtn(type,'editNonCovered()')}">non-covered items</a>` : ''}</div>`;
 
-    // steps
     h += `<div class="coll-h">Collections step</div><div class="coll-steps">` + steps.map((s,i)=>{
       const cls = i<idx ? 'done' : i===idx ? 'cur' : '';
       return `<div class="coll-step ${cls}"><span>${i<idx?'✓':i+1}</span>${s[1]}</div>`;
     }).join('') + `</div>`;
     const next = steps[idx+1];
-    h += `<div class="btn-row" style="margin-top:8px;">
-      ${next ? `<button class="btn btn-cyan" onclick="moveCollStep('${next[0]}')">Move to: ${next[1]} &rarr;</button>` : ''}
-    </div>
-    <div style="text-align:right;margin-top:4px;"><select class="mini-select" onchange="if(this.value){moveCollStep(this.value);} this.value='';">
+    h += `${next ? `<div class="btn-row" style="margin-top:8px;"><button class="btn btn-cyan" onclick="${collBtn(type,`moveCollStep('${next[0]}')`)}">Move to: ${next[1]} &rarr;</button></div>` : ''}
+    <div style="text-align:right;margin-top:4px;"><select class="mini-select" onchange="if(this.value){setCollType('${type}');moveCollStep(this.value);} this.value='';">
       <option value="">Change step&hellip;</option>${steps.filter(s=>s[0]!==c.step && s[0]!=='notBilled').map(s=>`<option value="${s[0]}">${s[1]}</option>`).join('')}</select></div>`;
 
-    // next action
     if(collNeedsNextAction(sc)){
       const st = nextActionState(sc);
       const na = c.nextAction || {};
@@ -4300,38 +4415,125 @@ function renderCollAccount(){
         ${na.text ? `<div class="na-text">${escapeHtml(na.text)}</div>
           <div class="na-sub">${st.label}${na.assignee ? ' &middot; '+escapeHtml(na.assignee) : ''}</div>` : `<div class="na-text">No next action set &mdash; every active account needs one.</div>`}
         <div class="btn-row" style="margin-top:8px;">
-          <button class="btn btn-primary" onclick="openContactLog()">Log contact</button>
-          <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="openNextAction()">${na.text ? 'Done / change' : 'Set next action'}</button>
+          <button class="btn btn-primary" onclick="${collBtn(type,'openContactLog()')}">Log contact</button>
+          <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="${collBtn(type,'openNextAction()')}">${na.text ? 'Done / change' : 'Set next action'}</button>
         </div>
       </div>
       <div class="coll-meta">No-response attempts: <b>${c.noResponseCount||0}</b>${c.escalate ? ' <span class="crit-badge" style="margin-left:6px;">Escalate</span>' : ''}</div>`;
     } else {
-      h += `<div class="btn-row" style="margin-top:10px;"><button class="btn btn-primary" onclick="openContactLog()">Log contact</button></div>`;
+      h += `<div class="btn-row" style="margin-top:10px;"><button class="btn btn-primary" onclick="${collBtn(type,'openContactLog()')}">Log contact</button></div>`;
     }
-
     h += `<div class="btn-row" style="margin-top:8px;">
-      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="openPayment('${type}')">+ Payment</button>
-      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="addCollNote()">+ Note</button>
-      ${ct.outstanding>0 && isManager(pinUser) ? `<button class="btn" style="background:var(--gray-bg);color:var(--red);" onclick="writeOffRemainder()">Write off</button>` : ''}
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="${collBtn(type,`openPayment('${type}')`)}">+ Payment</button>
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="${collBtn(type,'addCollNote()')}">+ Note</button>
+      ${ct.outstanding>0 && isManager(pinUser) ? `<button class="btn" style="background:var(--gray-bg);color:var(--red);" onclick="${collBtn(type,'writeOffRemainder()')}">Write off</button>` : ''}
     </div>`;
   }
 
-  // payments
+  if(type==='Reconstruction') h += scheduleHtml(job, sc);
+
   const pays = (sc.payments||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const ms = (sc.collections.schedule||[]);
   h += `<div class="coll-h">Payments (${pays.length})</div>`;
-  h += pays.length ? pays.map(p=>`<div class="pay-row"><span>${fmtDate(p.date)} &mdash; <b>${escapeHtml(p.payer||'')}</b>${p.deductible?' (deductible)':''}${p.checkNo?' &middot; #'+escapeHtml(p.checkNo):''}${p.method?' &middot; '+escapeHtml(p.method):''}${p.note?' &middot; '+escapeHtml(p.note):''}${p.by?' '+nameChip(p.by):''}</span><b>${fmtMoney(p.amount)}</b></div>`).join('')
+  h += pays.length ? pays.map(p=>{ const m = p.milestoneId && ms.find(x=>x.id===p.milestoneId);
+      return `<div class="pay-row"><span>${fmtDate(p.date)} &mdash; <b>${escapeHtml(p.payer||'')}</b>${p.deductible?' (deductible)':''}${m?' &middot; '+escapeHtml(m.label):''}${p.checkNo?' &middot; #'+escapeHtml(p.checkNo):''}${p.method?' &middot; '+escapeHtml(p.method):''}${p.note?' &middot; '+escapeHtml(p.note):''}${p.by?' '+nameChip(p.by):''}</span><b>${fmtMoney(p.amount)}</b></div>`; }).join('')
     : `<div class="empty" style="padding:6px 0;">No payments yet.</div>`;
 
-  // history
-  const log = (c.log||[]).slice().sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  const log = (c.log||[]).slice().sort((a,b)=>logWhen(b).localeCompare(logWhen(a)));
   h += `<div class="coll-h">History (${log.length})</div>`;
   h += log.length ? `<div class="coll-history">${log.map(e=>`<div class="hist-row" style="border-left-color:${userColor(e.by)};">
-      <div class="hist-top">${nameChip(e.by)} <span class="hist-when">${fmtStamp(e.at)}</span></div>
+      <div class="hist-top">${nameChip(e.by)} <span class="hist-when">${logWhenText(e)}</span></div>
       <div class="hist-text">${collLogText(e)}</div></div>`).join('')}</div>`
     : `<div class="empty" style="padding:6px 0;">Nothing logged yet.</div>`;
-
-  document.getElementById('collBody').innerHTML = h;
+  return h;
 }
+
+function nextPaymentLine(sc){
+  const m = nextScheduledPayment(sc);
+  if(!m) return (sc.collections && (sc.collections.schedule||[]).length) ? `<div class="coll-card-sub">All scheduled payments received</div>` : '';
+  return `<div class="coll-card-sub"${m.late?' style="color:var(--red);"':''}>Next payment: <b>${escapeHtml(m.label)}</b> ${fmtMoney(m.left)}${m.due?' &middot; due '+fmtDate(m.due):''}${m.late?' (overdue)':''}</div>`;
+}
+/* ---------- reconstruction payment schedule ----------
+   Deposit / down payment, any progress payments, and the final payment.
+   Payments logged on Reconstruction can be tied to a step. */
+function scheduleStatus(sc){
+  const ms = (sc.collections && sc.collections.schedule) || [];
+  return ms.map(m=>{
+    const paid = (sc.payments||[]).filter(p=>p.milestoneId===m.id).reduce((s,p)=>s+(Number(p.amount)||0),0);
+    const amt = Number(m.amount)||0;
+    const left = Math.max(0, Math.round((amt-paid)*100)/100);
+    const isPaid = amt>0 && left<=0.005;
+    const late = !isPaid && m.due && m.due < todayStr();
+    return { ...m, amt, paid, left, isPaid, late };
+  });
+}
+function nextScheduledPayment(sc){ return scheduleStatus(sc).find(m=>!m.isPaid && m.amt>0) || null; }
+function scheduleHtml(job, sc){
+  const rows = scheduleStatus(sc);
+  const total = rows.reduce((s,m)=>s+m.amt,0);
+  const billed = scopeTotals(sc,'Reconstruction').totalBilled;
+  let h = `<div class="coll-h">Payment schedule</div>`;
+  if(!rows.length){
+    h += `<div class="hint" style="margin-top:0;">Set up the deposit, progress and final payments so everyone can see what's due next.</div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="setupSchedule('dpf')">Deposit &rarr; Progress &rarr; Final</button>
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="setupSchedule('uf')">Upfront &rarr; Final</button>
+    </div>`;
+    return h;
+  }
+  h += rows.map(m=>`<div class="sched-row ${m.isPaid?'paid':m.late?'late':''}">
+      <div class="sched-top">
+        <input class="sched-label" value="${escapeHtml(m.label)}" onchange="updateMilestone('${m.id}','label',this.value)">
+        <span class="chip-sm ${m.isPaid?'chip-landed':m.late?'chip-lost':''}" ${(!m.isPaid&&!m.late)?'style="background:var(--gray-bg);color:var(--muted);"':''}>${m.isPaid?'Paid':m.paid>0?fmtMoney(m.paid)+' paid · '+fmtMoney(m.left)+' left':m.late?'Overdue':'Not paid'}</span>
+        <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeMilestone('${m.id}')"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+      <div class="sched-fields">
+        <label>Amount<input type="number" step="0.01" placeholder="0.00" value="${m.amt||''}" onchange="updateMilestone('${m.id}','amount',parseFloat(this.value)||0)"></label>
+        <label>Due<input type="date" value="${m.due||''}" onchange="updateMilestone('${m.id}','due',this.value)"></label>
+      </div>
+    </div>`).join('');
+  h += `<div class="add-line-btn" onclick="addMilestone()">+ Add payment step</div>`;
+  h += `<div class="coll-meta">Schedule total <b>${fmtMoney(total)}</b>${billed ? ` of ${fmtMoney(billed)} billed` : ''}${billed && Math.abs(total-billed)>0.5 ? ` &mdash; <span style="color:var(--red);">doesn't match the billed total</span>` : ''}</div>`;
+  return h;
+}
+function reconCtx(){ setCollType('Reconstruction'); const x = collCtx(); if(x.c && !x.c.schedule) x.c.schedule = []; return x; }
+function setupSchedule(kind){
+  const { job, sc, c } = reconCtx(); if(!job) return;
+  const names = kind==='uf' ? ['Upfront payment','Final payment'] : ['Deposit / down payment','Progress payment','Final payment'];
+  c.schedule = names.map(n=>({ id: uid('MS'), label:n, amount:0, due:'' }));
+  collLog(sc, { kind:'note', text:`Payment schedule set up: ${names.join(' → ')}` });
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Payment schedule added — fill in the amounts'); renderCollAccount();
+}
+function addMilestone(){
+  const { job, c } = reconCtx(); if(!job) return;
+  const finalIdx = c.schedule.findIndex(m=>/final/i.test(m.label));
+  const n = c.schedule.filter(m=>/progress/i.test(m.label)).length + 1;
+  const m = { id: uid('MS'), label: n>1 ? `Progress payment ${n}` : 'Progress payment', amount:0, due:'' };
+  if(finalIdx>=0) c.schedule.splice(finalIdx, 0, m); else c.schedule.push(m);
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Payment step added'); renderCollAccount();
+}
+function updateMilestone(id, field, value){
+  const { job, sc, c } = reconCtx(); if(!job) return;
+  const m = c.schedule.find(x=>x.id===id); if(!m) return;
+  const before = m[field];
+  m[field] = value;
+  if(field!=='label' && before!==value) collLog(sc, { kind:'note', text:`${m.label}: ${field==='amount' ? 'amount '+fmtMoney(value) : 'due '+fmtDate(value)}` });
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Saved'); renderCollAccount();
+}
+function removeMilestone(id){
+  const { job, sc, c } = reconCtx(); if(!job) return;
+  const m = c.schedule.find(x=>x.id===id); if(!m) return;
+  if(!confirm(`Remove "${m.label}" from the payment schedule? Payments already logged stay, just untied from it.`)) return;
+  c.schedule = c.schedule.filter(x=>x.id!==id);
+  (sc.payments||[]).forEach(p=>{ if(p.milestoneId===id) delete p.milestoneId; });
+  collLog(sc, { kind:'note', text:`Removed "${m.label}" from the payment schedule` });
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Removed'); renderCollAccount();
+}
+
 function collLogText(e){
   if(e.kind==='contact'){
     return `<b>${escapeHtml(e.method)}</b> to ${escapeHtml(e.who)} &mdash; ${escapeHtml(e.result)}${e.promisedDate?' (promised '+fmtDate(e.promisedDate)+')':''}${e.note?'<br>'+escapeHtml(e.note):''}${e.attempt?`<br><span class="hist-flag">No-response attempt ${e.attempt}${e.attempt>=3?' — ESCALATE':''}</span>`:''}`;
@@ -4447,6 +4649,7 @@ function openContactLog(){
   sel('ctMethod', CONTACT_METHODS, 'Call');
   sel('ctResult', CONTACT_RESULTS, 'Spoke');
   document.getElementById('ctNote').value = '';
+  document.getElementById('ctDate').value = todayStr();
   document.getElementById('ctPromised').value = '';
   fillAssigneeSelect('ctNaWho', (c.nextAction && c.nextAction.assignee) || pinUser);
   document.getElementById('ctNaText').value = '';
@@ -4505,7 +4708,8 @@ function confirmContact(){
   let attempt = 0;
   if(noResp){ c.noResponseCount = (c.noResponseCount||0)+1; attempt = c.noResponseCount; if(attempt>=3) c.escalate = true; }
   else { c.noResponseCount = 0; c.escalate = false; }
-  collLog(sc, { kind:'contact', who, method, result, note, promisedDate: promised||'', attempt });
+  const ctDate = document.getElementById('ctDate').value;
+  collLog(sc, { kind:'contact', who, method, result, note, promisedDate: promised||'', attempt, ...(ctDate && ctDate!==todayStr() ? { contactDate: ctDate } : {}) });
   if(document.getElementById('ctDocs').checked && collPath(sc)==='insurance'){
     const from = collStepLabel(sc, c.step); c.step = 'docsRequested';
     collLog(sc, { kind:'step', text:`Step: ${from} → ${collStepLabel(sc,'docsRequested')}` });
@@ -4557,7 +4761,8 @@ function writeOffRemainder(){
 function collAfterPayment(job, sc, type, p){
   if(!sc.collections) ensureCollections(job, sc, type);
   const c = sc.collections;
-  collLog(sc, { kind:'payment', text:`Payment ${fmtMoney(p.amount)} from ${p.payer}${p.deductible?' (deductible)':''}${p.checkNo?' — check #'+p.checkNo:''}${p.method?' — '+p.method:''}` });
+  const msName = p.milestoneId && ((c.schedule||[]).find(m=>m.id===p.milestoneId)||{}).label;
+  collLog(sc, { kind:'payment', text:`Payment ${fmtMoney(p.amount)} from ${p.payer}${msName?' for '+msName:''}${p.deductible?' (deductible)':''}${p.checkNo?' — check #'+p.checkNo:''}${p.method?' — '+p.method:''}` });
   const ct = collTotals(job, sc, type);
   if(c.step!=='notBilled' && c.step!=='paid' && c.step!=='closed' && ct.outstanding<=0.005){
     const from = collStepLabel(sc, c.step);
@@ -4665,6 +4870,10 @@ function activitySectionHtml(job){
   const shown = acts.slice(0, 12);
   return `<div class="jd-section">
     <div class="jd-section-head"><div class="h">Activity</div><span class="add-line-btn" style="margin:0;padding:0;" onclick="addJobNote()">+ Add note</span></div>
+    <div class="btn-row" style="margin:0 0 10px;">
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);font-size:13px;padding:10px;" onclick="openEditDates()">Edit dates</button>
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);font-size:13px;padding:10px;" onclick="openJobCollReport('${job.id}')">Collections Report</button>
+    </div>
     ${shown.length ? `<div class="coll-history">${shown.map(e=>`<div class="hist-row" style="border-left-color:${userColor(e.by)};"><div class="hist-top">${nameChip(e.by)} <span class="hist-when">${fmtStamp(e.at)}</span></div><div class="hist-text">${escapeHtml(e.text)}</div></div>`).join('')}</div>${acts.length>shown.length?`<div class="hint">Showing the latest ${shown.length} of ${acts.length}. All of it prints on the Job Report.</div>`:''}`
       : `<div class="empty" style="padding:6px 0;">Nothing logged yet. Status changes, phases, payments and notes show here with who did them.</div>`}
   </div>`;
@@ -4689,6 +4898,7 @@ function scopeCollCardHtml(job, type){
     <div class="coll-card-top"><span><b>Collections</b> &middot; ${collStepLabel(sc, c.step)}</span><span class="coll-open">Open &rsaquo;</span></div>
     ${inactive ? `<div class="coll-card-sub">Inactive until billing is sent${ct.invoice>0?` &middot; billed ${fmtMoney(ct.invoice)}`:''}</div>`
       : `<div class="coll-card-sub">${ct.path==='insurance' ? `Insurance owes <b>${fmtMoney(ct.insNet)}</b> &middot; ` : ''}Customer owes <b>${fmtMoney(ct.custNet)}</b> &middot; ${ct.daysOut}d since billed${c.escalate?' &middot; <span class="crit-badge">Escalate</span>':''}</div>${nextActionLine(sc)}`}
+    ${type==='Reconstruction' ? nextPaymentLine(sc) : ''}
   </div>`;
 }
 
@@ -4752,7 +4962,10 @@ function renderCollectionsTab(wrap){
       <div class="stat-card-light ${overdueCount>0?'alert':''}" onclick="jobsOverdueOnly=!jobsOverdueOnly;document.getElementById('jobsOverdueChk').checked=jobsOverdueOnly;renderJobsList();" style="cursor:pointer;"><div class="n">${overdueCount}</div><div class="l">Overdue next actions</div></div>
       <div class="stat-card-light" onclick="toggleMyFollowups()" style="cursor:pointer;${myFollowupsOnly?'outline:2px solid var(--cyan);':''}"><div class="n">${myCount}</div><div class="l">${pinUser ? 'My follow-ups today' : 'Sign in for my follow-ups'}</div></div>
     </div>
-    <button class="btn ${myFollowupsOnly?'btn-cyan':''}" style="width:100%;margin-bottom:10px;${myFollowupsOnly?'':'background:var(--gray-bg);color:var(--ink);'}" onclick="toggleMyFollowups()">${myFollowupsOnly ? '✓ Showing my follow-ups today — tap to show all' : 'My Follow-ups Today'}</button>`;
+    <div class="btn-row" style="margin-bottom:10px;">
+      <button class="btn ${myFollowupsOnly?'btn-cyan':''}" style="${myFollowupsOnly?'':'background:var(--gray-bg);color:var(--ink);'}" onclick="toggleMyFollowups()">${myFollowupsOnly ? '✓ My follow-ups (tap for all)' : 'My Follow-ups Today'}</button>
+      <button class="btn btn-primary" onclick="openCollDailyReport()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Daily Report</button>
+    </div>`;
 
   let list = accts;
   if(collStepFilter==='active') list = list.filter(a=>collNeedsNextAction(a.sc));
@@ -4769,7 +4982,37 @@ function renderCollectionsTab(wrap){
   list.sort((x,y)=>rank(x)-rank(y));
 
   if(list.length===0){ wrap.innerHTML = `<div class="empty">${myFollowupsOnly ? 'No follow-ups due for you today.' : 'No accounts match these filters.'}</div>`; return; }
-  wrap.innerHTML = list.map(a=>{
+  // one card per customer: Mitigation on top, Reconstruction below (in order of the most urgent side)
+  const order = [], byJob = {};
+  list.forEach(a=>{ if(!byJob[a.job.id]){ byJob[a.job.id] = []; order.push(a.job.id); } byJob[a.job.id].push(a); });
+  wrap.innerHTML = order.map(id=>{
+    const job = getJob(id);
+    const lines = ['Mitigation','Reconstruction'].map(type=>{
+      const a = accts.find(x=>x.job.id===id && x.type===type);
+      if(!a) return '';
+      return collLineHtml(a, byJob[id].includes(a));
+    }).join('');
+    const worst = byJob[id][0];
+    const border = worst.sc.collections.step==='notBilled' ? 'var(--line)' : worst.na.overdue ? 'var(--red)' : worst.na.today ? 'var(--yellow)' : collNeedsNextAction(worst.sc) ? 'var(--green)' : 'var(--line)';
+    return `<div class="job-card coll-job" style="border-left:4px solid ${border};">
+      <div class="top" onclick="openCollAccount('${id}','${worst.type}')" style="cursor:pointer;"><div class="nm">${escapeHtml(job.customerName)}</div><div class="sub" style="margin:0;">${escapeHtml(job.assignedTo||'')}</div></div>
+      ${lines}
+    </div>`;
+  }).join('');
+}
+function collLineHtml(a, matched){
+  const c = a.sc.collections, inactive = c.step==='notBilled';
+  const short = a.type==='Mitigation' ? 'MIT' : 'RECON';
+  return `<div class="coll-line ${inactive?'coll-gray':''} ${matched?'':'dim'}" onclick="event.stopPropagation();openCollAccount('${a.job.id}','${a.type}')">
+      <div class="top">
+        <div class="nm" style="font-size:13px;"><span class="chip-sm ${a.type==='Mitigation'?'chip-mit':'chip-recon'}">${short}</span> ${collStepLabel(a.sc, c.step)}${c.escalate?' <span class="crit-badge">Escalate</span>':''}</div>
+        <div class="amt" style="font-size:14px;color:${a.ct.outstanding>0&&!inactive?'var(--red)':'inherit'};">${inactive ? (a.ct.invoice? fmtMoney(a.ct.invoice)+' billed' : '—') : fmtMoney(a.ct.outstanding)}</div>
+      </div>
+      <div class="sub">${inactive ? 'Inactive until billing is sent' : `${a.ct.daysOut}d since billed`}${a.ct.path==='insurance' && !inactive ? ` &middot; Ins ${fmtMoney(a.ct.insNet)} / Cust ${fmtMoney(a.ct.custNet)}` : ''}${(c.noResponseCount||0)>0 ? ` &middot; ${c.noResponseCount} no-response` : ''}</div>
+      ${nextActionLine(a.sc)}${a.type==='Reconstruction' ? nextPaymentLine(a.sc) : ''}
+    </div>`;
+}
+function _unusedCollRow(a){
     const c = a.sc.collections, inactive = c.step==='notBilled';
     const border = inactive ? 'var(--line)' : a.na.overdue ? 'var(--red)' : a.na.today ? 'var(--yellow)' : collNeedsNextAction(a.sc) ? 'var(--green)' : 'var(--line)';
     return `<div class="job-card ${inactive?'coll-gray':''}" style="border-left:4px solid ${border};" onclick="openCollAccount('${a.job.id}','${a.type}')">
@@ -4780,7 +5023,6 @@ function renderCollectionsTab(wrap){
       <div class="sub">${collStepLabel(a.sc, c.step)}${inactive ? ' &middot; inactive' : ` &middot; ${a.ct.daysOut}d since billed`}${a.ct.path==='insurance' && !inactive ? ` &middot; Ins ${fmtMoney(a.ct.insNet)} / Cust ${fmtMoney(a.ct.custNet)}` : ''}${(c.noResponseCount||0)>0 ? ` &middot; ${c.noResponseCount} no-response` : ''}</div>
       ${nextActionLine(a.sc)}
     </div>`;
-  }).join('');
 }
 function toggleMyFollowups(){
   if(!pinUser){ showToast('Sign in first to see your follow-ups'); return; }
@@ -4827,16 +5069,22 @@ function reportCollectionsHtml(job, type, sc){
   h += `<li>${ct.path==='insurance' ? `Insurance owes: ${fmtMoney(ct.insNet)} &middot; ` : ''}Customer owes: ${fmtMoney(ct.custNet)}${ct.writeOff ? ` &middot; Written off: ${fmtMoney(ct.writeOff)} (${escapeHtml(c.writeOff.note||'')} &mdash; ${escapeHtml(c.writeOff.by||'')})` : ''}</li>`;
   if(c.nextAction && c.nextAction.text) h += `<li>Next action: ${escapeHtml(c.nextAction.text)} &mdash; due ${fmtDate(c.nextAction.due)}${c.nextAction.assignee?' ('+escapeHtml(c.nextAction.assignee)+')':''}</li>`;
   h += `</ul>`;
+  const sched = scheduleStatus(sc);
+  if(sched.length){
+    h += `<div class="report-subh">Payment Schedule</div><table class="report-table"><thead><tr><th>Payment</th><th>Due</th><th class="num">Amount</th><th class="num">Paid</th><th>Status</th></tr></thead><tbody>`;
+    h += sched.map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.due?fmtDate(m.due):'—'}</td><td class="num">${fmtMoney(m.amt)}</td><td class="num">${fmtMoney(m.paid)}</td><td>${m.isPaid?'Paid':m.late?'Overdue':m.paid?'Partly paid':'Not paid'}</td></tr>`).join('');
+    h += `</tbody></table>`;
+  }
   const pays = (sc.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   if(pays.length){
     h += `<div class="report-subh">Payment Log</div><table class="report-table"><thead><tr><th>Date</th><th>Payer</th><th>Check # / method</th><th>Logged by</th><th class="num">Amount</th></tr></thead><tbody>`;
     h += pays.map(p=>`<tr><td style="white-space:nowrap;">${fmtDate(p.date)}</td><td>${escapeHtml(p.payer||'')}${p.deductible?' (deductible)':''}</td><td>${escapeHtml([p.checkNo?'#'+p.checkNo:'', p.method||'', p.note||''].filter(Boolean).join(' · ')||'—')}</td><td>${escapeHtml(p.by||'—')}</td><td class="num">${fmtMoney(p.amount)}</td></tr>`).join('');
     h += `</tbody></table>`;
   }
-  const log = (c.log||[]).slice().sort((a,b)=>(a.at||'').localeCompare(b.at||''));
+  const log = (c.log||[]).slice().sort((a,b)=>logWhen(a).localeCompare(logWhen(b)));
   if(log.length){
     h += `<div class="report-subh">Collections History</div><ul class="report-timeline">`;
-    h += log.map(e=>`<li><span class="report-tl-date">${fmtStamp(e.at)}</span> &mdash; <b>${escapeHtml(e.by||'')}</b>: ${collLogText(e).replace(/<br>/g,' &mdash; ').replace(/<span[^>]*>|<\/span>/g,'')}</li>`).join('');
+    h += log.map(e=>`<li><span class="report-tl-date">${logWhenText(e)}</span> &mdash; <b>${escapeHtml(e.by||'')}</b>: ${collLogText(e).replace(/<br>/g,' &mdash; ').replace(/<span[^>]*>|<\/span>/g,'')}</li>`).join('');
     h += `</ul>`;
   }
   return h;
@@ -4858,6 +5106,242 @@ function reportActivityHtml(job){
   const acts = (job.activity||[]).slice().sort((a,b)=>(a.at||'').localeCompare(b.at||''));
   if(!acts.length) return '';
   return `<div class="report-section"><div class="report-h">Activity Log</div><ul class="report-timeline">${acts.map(e=>`<li><span class="report-tl-date">${fmtStamp(e.at)}</span> &mdash; <b>${escapeHtml(e.by||'')}</b>: ${escapeHtml(e.text)}</li>`).join('')}</ul></div>`;
+}
+
+/* =====================================================================
+   PRINTABLE REPORTS: Daily Collections checklist + per-job Collections
+   report.  EDIT DATES for jobs entered after the fact.
+   ===================================================================== */
+function letterheadHtml(title, metaLine){
+  return `<div class="report-letterhead">
+      <img src="data:image/png;base64,${MARK_B64}" alt="Voda">
+      <div><div class="report-co-name">Voda Cleaning &amp; Restoration of Tucson</div><div class="report-doc-title">${title}</div></div>
+    </div>
+    <div class="report-meta">${metaLine}</div>`;
+}
+// When a log entry happened (a back-dated contact uses its contact date).
+function logWhen(e){ return e.contactDate ? e.contactDate+'T12:00:00' : (e.at||''); }
+function logWhenText(e){ return e.contactDate ? fmtDate(e.contactDate) + (dateOnly(e.at)!==e.contactDate ? ` <span style="color:var(--muted);">(entered ${fmtDate(dateOnly(e.at))})</span>` : '') : fmtStamp(e.at); }
+function collLogType(e){ return ({contact:'Contact', step:'Step', payment:'Payment', note:'Note', billing:'Billing', nextAction:'Next action', writeoff:'Write-off', system:'System'})[e.kind] || 'Note'; }
+
+/* ---------- report modal (shared) ---------- */
+let collReportMode = 'daily', collReportJobId = null, collReportPerson = '';
+function setPrintOrientation(landscape){
+  let st = document.getElementById('printPageStyle');
+  if(!st){ st = document.createElement('style'); st.id = 'printPageStyle'; document.head.appendChild(st); }
+  st.textContent = landscape ? '@page { size: landscape; margin: 0.4in; }' : '@page { size: portrait; margin: 0.5in; }';
+}
+function printCollReport(){
+  setPrintOrientation(collReportMode==='daily');
+  const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  printActiveModal();
+}
+function openCollDailyReport(){
+  collReportMode = 'daily';
+  collReportPerson = myFollowupsOnly && pinUser ? pinUser : (jobsAssignedFilter || '');
+  document.getElementById('crpTitle').textContent = 'Daily Collections Report';
+  document.getElementById('crpControls').style.display = 'flex';
+  const sel = document.getElementById('crpPerson');
+  sel.innerHTML = `<option value="">All staff</option>` + [...personnel].sort((a,b)=>a.localeCompare(b)).map(n=>`<option value="${escapeHtml(n)}" ${n===collReportPerson?'selected':''}>${escapeHtml(n)}</option>`).join('');
+  document.getElementById('crpSheet').classList.add('wide');
+  renderCollReport();
+  openModal('modalCollReport');
+}
+function openJobCollReport(jobId){
+  collReportMode = 'job'; collReportJobId = jobId || collAcctJobId || currentJobId;
+  document.getElementById('crpTitle').textContent = 'Collections Report';
+  document.getElementById('crpControls').style.display = 'none';
+  document.getElementById('crpSheet').classList.remove('wide');
+  renderCollReport();
+  openModal('modalCollReport');
+}
+function renderCollReport(){
+  const body = document.getElementById('collReportBody');
+  body.innerHTML = collReportMode==='daily' ? dailyCollReportHtml(collReportPerson) : jobCollReportHtml(getJob(collReportJobId));
+}
+
+/* ---------- daily checklist ---------- */
+function dailyCollReportHtml(person){
+  const today = todayStr();
+  let accts = allCollAccounts().filter(a=>collNeedsNextAction(a.sc) || a.sc.collections.step==='paid');
+  const who = a => (a.sc.collections.nextAction && a.sc.collections.nextAction.assignee) || a.job.assignedTo || '';
+  if(person) accts = accts.filter(a=>who(a)===person);
+  const due = accts.filter(a=>collNeedsNextAction(a.sc) && (a.na.overdue || a.na.today));
+  const upcoming = accts.filter(a=>collNeedsNextAction(a.sc) && !a.na.overdue && !a.na.today);
+  const toClose = accts.filter(a=>a.sc.collections.step==='paid');
+  due.sort((x,y)=>(y.na.days||0)-(x.na.days||0));
+  upcoming.sort((x,y)=>((x.sc.collections.nextAction||{}).due||'').localeCompare((y.sc.collections.nextAction||{}).due||''));
+  const owing = accts.filter(a=>collNeedsNextAction(a.sc));
+  const tot = owing.reduce((s,a)=>s+a.ct.outstanding,0), ins = owing.reduce((s,a)=>s+a.ct.insNet,0), cust = owing.reduce((s,a)=>s+a.ct.custNet,0);
+  const esc = owing.filter(a=>a.sc.collections.escalate).length;
+  const genTime = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ});
+
+  let h = letterheadHtml('Daily Collections Report', `${new Date(today+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})} &middot; ${person ? 'Prepared for '+escapeHtml(person) : 'All staff'} &middot; Generated ${genTime}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
+  h += `<table class="rpt-summary"><tr>
+    <td><div class="v">${fmtMoney(tot)}</div><div class="k">Total outstanding</div></td>
+    <td><div class="v">${fmtMoney(ins)}</div><div class="k">Insurance owes</div></td>
+    <td><div class="v">${fmtMoney(cust)}</div><div class="k">Customer owes</div></td>
+    <td><div class="v ${due.length?'red':''}">${due.length}</div><div class="k">Due today / overdue</div></td>
+    <td><div class="v">${upcoming.length}</div><div class="k">Upcoming</div></td>
+    <td><div class="v ${esc?'red':''}">${esc}</div><div class="k">Escalations</div></td>
+  </tr></table>`;
+
+  const head = `<thead><tr><th class="ck">&#10003;</th><th>#</th><th>Customer</th><th>Scope</th><th>Payer</th><th>Step</th><th>Billed</th><th class="num">Days</th><th class="num">Ins owes</th><th class="num">Cust owes</th><th class="num">Total</th><th>Next action</th><th>Due</th><th>Assigned</th><th class="num">Tries</th><th class="notes">Result / notes</th></tr></thead>`;
+  const row = (a, i) => {
+    const c = a.sc.collections, na = c.nextAction || {};
+    const nextPay = a.type==='Reconstruction' ? nextScheduledPayment(a.sc) : null;
+    const dueCls = a.na.overdue ? 'red' : a.na.today ? 'amber' : '';
+    return `<tr class="${a.na.overdue?'row-red':a.na.today?'row-amber':''}">
+      <td class="ck"><span class="box"></span></td>
+      <td>${i+1}</td>
+      <td><b>${escapeHtml(a.job.customerName)}</b>${a.job.phone?`<div class="sm">${escapeHtml(a.job.phone)}</div>`:''}</td>
+      <td>${a.type==='Mitigation'?'MIT':'RECON'}</td>
+      <td>${a.ct.path==='insurance' ? escapeHtml(a.sc.insuranceCompany||'Insurance') : 'Customer'}</td>
+      <td>${collStepLabel(a.sc, c.step)}${c.escalate?'<div class="sm red"><b>ESCALATE</b></div>':''}</td>
+      <td style="white-space:nowrap;">${c.billingSentDate ? fmtDate(c.billingSentDate) : '—'}</td>
+      <td class="num ${a.ct.daysOut>60?'red':''}">${a.ct.daysOut==null?'—':a.ct.daysOut}</td>
+      <td class="num">${a.ct.path==='insurance' ? fmtMoney(a.ct.insNet) : '—'}</td>
+      <td class="num">${fmtMoney(a.ct.custNet)}</td>
+      <td class="num"><b>${fmtMoney(a.ct.outstanding)}</b></td>
+      <td>${na.text ? escapeHtml(na.text) : (c.step==='paid' ? 'Paid in full — review &amp; close' : '<span class="red">No next action set</span>')}${nextPay ? `<div class="sm">Next payment: ${escapeHtml(nextPay.label)} ${fmtMoney(nextPay.left)}${nextPay.due?' due '+fmtDate(nextPay.due):''}</div>` : ''}</td>
+      <td class="${dueCls}" style="white-space:nowrap;">${na.due ? fmtDate(na.due) + (a.na.overdue ? `<div class="sm">${a.na.days}d late</div>` : a.na.today ? '<div class="sm">today</div>' : '') : '—'}</td>
+      <td>${escapeHtml(na.assignee || a.job.assignedTo || '')}</td>
+      <td class="num">${c.noResponseCount||0}</td>
+      <td class="notes"></td>
+    </tr>`;
+  };
+  const section = (title, list, note) => `<div class="rpt-sec">${title} <span>(${list.length})</span></div>` + (list.length
+    ? `<table class="rpt-grid">${head}<tbody>${list.map(row).join('')}</tbody></table>`
+    : `<div class="rpt-empty">${note}</div>`);
+  h += section('Action required today — overdue &amp; due today', due, 'Nothing overdue or due today.');
+  h += section('Upcoming follow-ups', upcoming, 'No upcoming follow-ups.');
+  if(toClose.length) h += section('Paid — ready to close', toClose, '');
+  h += `<div class="report-footer">Voda Job Tracker &middot; Daily Collections Report &middot; ${fmtDate(today)} &middot; Open each account in the app for full history.</div>`;
+  return h;
+}
+
+/* ---------- per-job collections report ---------- */
+function jobCollReportHtml(job){
+  if(!job) return '<div class="empty">Job not found.</div>';
+  const scopes = [['Mitigation', job.scopes.mitigation], ['Reconstruction', job.scopes.reconstruction]].filter(x=>x[1]);
+  scopes.forEach(([type, sc])=>{ if(!sc.collections) ensureCollections(job, sc, type); });
+  let h = letterheadHtml('Collections Report', `Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
+  const insCo = scopes.map(([,sc])=>sc.insuranceCompany).filter(Boolean)[0] || '';
+  h += `<div class="report-section"><div class="report-h">Customer</div>
+    <table class="rpt-kv"><tr><td>Customer</td><td><b>${escapeHtml(job.customerName)}</b></td><td>Phone</td><td>${escapeHtml(job.phone||'—')}</td></tr>
+    <tr><td>Address</td><td>${escapeHtml(job.address||'—')}</td><td>Assigned to</td><td>${escapeHtml(job.assignedTo||'Unassigned')}</td></tr>
+    <tr><td>Insurance</td><td>${escapeHtml(insCo||'—')}</td><td>Date received</td><td>${fmtDate(job.dateReceived)}</td></tr></table></div>`;
+
+  h += `<div class="report-section"><div class="report-h">Account Summary</div><table class="report-table">
+    <thead><tr><th>Scope</th><th>Payer</th><th>Step</th><th>Billing sent</th><th class="num">Days</th><th class="num">Invoice</th><th class="num">Deductible</th><th class="num">Ins owes</th><th class="num">Cust owes</th><th class="num">Outstanding</th></tr></thead><tbody>`;
+  let sumOut = 0;
+  scopes.forEach(([type, sc])=>{
+    const c = sc.collections, ct = collTotals(job, sc, type);
+    if(c.step!=='notBilled') sumOut += ct.outstanding;
+    h += `<tr><td><b>${type}</b></td><td>${ct.path==='insurance'?'Insurance':'Customer'}</td><td>${collStepLabel(sc,c.step)}</td><td>${c.billingSentDate?fmtDate(c.billingSentDate):'—'}</td><td class="num">${ct.daysOut==null?'—':ct.daysOut}</td><td class="num">${fmtMoney(ct.invoice)}</td><td class="num">${ct.ded?fmtMoney(ct.ded):'—'}</td><td class="num">${ct.path==='insurance'?fmtMoney(ct.insNet):'—'}</td><td class="num">${fmtMoney(ct.custNet)}</td><td class="num"><b>${c.step==='notBilled'?'Not billed':fmtMoney(ct.outstanding)}</b></td></tr>`;
+  });
+  h += `</tbody><tfoot><tr><td colspan="9">Total outstanding</td><td class="num">${fmtMoney(sumOut)}</td></tr></tfoot></table></div>`;
+
+  const ded = deductibleInfo(job);
+  if(ded.amount) h += `<div class="report-section"><div class="report-h">Deductible</div><p>${fmtMoney(ded.amount)} applied to ${ded.appliedTo} &mdash; paid ${fmtMoney(ded.paid)}, ${ded.paidInFull ? '<b>paid in full</b>' : fmtMoney(ded.remaining)+' remaining'}.</p></div>`;
+
+  scopes.forEach(([type, sc])=>{
+    const c = sc.collections;
+    h += `<div class="report-section"><div class="report-h">${type} Collections</div>`;
+    if(c.nextAction && c.nextAction.text) h += `<p><b>Next action:</b> ${escapeHtml(c.nextAction.text)} &mdash; due ${fmtDate(c.nextAction.due)}${c.nextAction.assignee?' ('+escapeHtml(c.nextAction.assignee)+')':''}${c.escalate?' &mdash; <b>ESCALATE</b>':''}</p>`;
+    if(c.writeOff) h += `<p><b>Written off:</b> ${fmtMoney(c.writeOff.amount)} &mdash; ${escapeHtml(c.writeOff.note||'')} (${escapeHtml(c.writeOff.by||'')}, ${fmtStamp(c.writeOff.at)})</p>`;
+    const sched = scheduleStatus(sc);
+    if(sched.length){
+      h += `<div class="report-subh">Payment Schedule</div><table class="report-table"><thead><tr><th>Payment</th><th>Due</th><th class="num">Amount</th><th class="num">Paid</th><th>Status</th></tr></thead><tbody>`;
+      h += sched.map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.due?fmtDate(m.due):'—'}</td><td class="num">${fmtMoney(m.amt)}</td><td class="num">${fmtMoney(m.paid)}</td><td>${m.isPaid?'Paid':m.late?'Overdue':m.paid?'Partly paid':'Not paid'}</td></tr>`).join('') + `</tbody></table>`;
+    }
+    const pays = (sc.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    h += `<div class="report-subh">Payments Received</div>`;
+    if(pays.length){
+      h += `<table class="report-table"><thead><tr><th>Date</th><th>Payer</th><th>For</th><th>Check # / method</th><th>Logged by</th><th class="num">Amount</th></tr></thead><tbody>`;
+      h += pays.map(p=>{ const m = p.milestoneId && (c.schedule||[]).find(x=>x.id===p.milestoneId);
+        return `<tr><td>${fmtDate(p.date)}</td><td>${escapeHtml(p.payer||'')}</td><td>${p.deductible?'Deductible':m?escapeHtml(m.label):'—'}</td><td>${escapeHtml([p.checkNo?'#'+p.checkNo:'',p.method||'',p.note||''].filter(Boolean).join(' · ')||'—')}</td><td>${escapeHtml(p.by||'—')}</td><td class="num">${fmtMoney(p.amount)}</td></tr>`; }).join('');
+      h += `<tr class="tot"><td colspan="5">Total received</td><td class="num">${fmtMoney(pays.reduce((s,p)=>s+(Number(p.amount)||0),0))}</td></tr></tbody></table>`;
+    } else h += `<p>No payments received yet.</p>`;
+    const log = (c.log||[]).slice().sort((a,b)=>logWhen(a).localeCompare(logWhen(b)));
+    h += `<div class="report-subh">Contact &amp; Activity History</div>`;
+    if(log.length){
+      h += `<table class="report-table"><thead><tr><th style="width:118px;">Date</th><th style="width:90px;">By</th><th style="width:76px;">Type</th><th>Detail</th></tr></thead><tbody>`;
+      h += log.map(e=>`<tr><td>${logWhenText(e)}</td><td>${escapeHtml(e.by||'')}</td><td>${collLogType(e)}</td><td>${collLogText(e).replace(/<span[^>]*>|<\/span>/g,'')}</td></tr>`).join('');
+      h += `</tbody></table>`;
+    } else h += `<p>Nothing logged yet.</p>`;
+    h += `</div>`;
+  });
+  h += `<div class="report-footer">Voda Job Tracker &middot; Collections Report &middot; ${escapeHtml(job.customerName)} &middot; ${fmtDate(todayStr())}</div>`;
+  return h;
+}
+
+/* ---------- EDIT DATES (back-entering older jobs) ---------- */
+let editDateFields = [];
+function openEditDates(){
+  const job = getJob(currentJobId); if(!job) return;
+  editDateFields = [];
+  const add = (group, label, get, set, note) => editDateFields.push({ group, label, get, set, note });
+  add('Job', 'Date received', ()=>job.dateReceived||'', v=>{ job.dateReceived = v; });
+  if(job.workComplete) add('Job', 'Work completed', ()=>dateOnly(job.workCompleteAt), v=>{ job.workCompleteAt = v; });
+  if(job.completed) add('Job', 'Job completed / finalized', ()=>dateOnly(job.completedAt), v=>{ job.completedAt = v; });
+  [['Mitigation', job.scopes.mitigation], ['Reconstruction', job.scopes.reconstruction]].forEach(([type, sc])=>{
+    if(!sc) return;
+    add(type, type==='Mitigation' ? 'Lead received / opened' : 'Reconstruction opened', ()=>dateOnly(sc.createdAt), v=>{ sc.createdAt = v; });
+    if(sc.probability>=100) add(type, 'Landed (won)', ()=>dateOnly(sc.landedAt), v=>{ sc.landedAt = v; });
+    getEffectivePhases(job, type).forEach(p=>{
+      if(sc.phaseNA[p.key]) return;
+      add(type, p.label, ()=>sc.phases[p.key]||'', v=>{ sc.phases[p.key] = v || null; if(v) sc.phaseNA[p.key] = false; }, 'phase');
+    });
+    if(sc.collections && sc.collections.step!=='notBilled') add(type, 'Billing sent (collections aging)', ()=>sc.collections.billingSentDate||'', v=>{ sc.collections.billingSentDate = v; });
+    (sc.lineItems||[]).forEach(li=>{ if(Number(li.billed)>0) add(type, `Billed: ${lineItemLabel(sc, li)} ${fmtMoney(li.billed)}`, ()=>li.billedDate||'', v=>{ li.billedDate = v; }); });
+    (sc.payments||[]).forEach(pm=>add(type, `Payment ${fmtMoney(pm.amount)}${pm.payer?' ('+pm.payer+(pm.deductible?', deductible':'')+')':''}`, ()=>pm.date||'', v=>{ pm.date = v; }));
+  });
+  let h = '', lastGroup = '';
+  editDateFields.forEach((f, i)=>{
+    if(f.group!==lastGroup){ h += `<div class="coll-h">${f.group}</div>`; lastGroup = f.group; }
+    h += `<div class="ed-row"><label for="ed${i}">${escapeHtml(f.label)}${f.note==='phase'?' <span class="ed-tag">phase</span>':''}</label>
+      <input type="date" id="ed${i}" value="${f.get()||''}">${f.note==='phase' ? `<button class="ed-clear" onclick="document.getElementById('ed${i}').value=''" title="Clear (not done)">&times;</button>` : ''}</div>`;
+  });
+  document.getElementById('edBody').innerHTML = h;
+  if(document.getElementById('modalEditJob').classList.contains('active')) closeModal('modalEditJob');
+  openModal('modalEditDates');
+}
+function confirmEditDates(){
+  const job = getJob(currentJobId); if(!job) return;
+  const changes = [], changed = {};
+  editDateFields.forEach((f, i)=>{
+    const v = document.getElementById('ed'+i).value || '';
+    const before = f.get() || '';
+    if(v===before) return;
+    if(!v && f.note!=='phase'){ return; } // only phases can be cleared
+    f.set(v);
+    changed[f.group+'|'+f.label.split(':')[0]] = v;
+    changes.push(`${f.group==='Job'?'':f.group+' '}${f.label}: ${before?fmtDate(before):'blank'} → ${v?fmtDate(v):'not done'}`);
+    // checking "Invoice with Full Packet" with a date also starts collections from that date
+    if(f.note==='phase' && v && f.group==='Mitigation' && f.label==='Invoice with Full Packet') autoBillingFromPhase(job, job.scopes.mitigation, 'Mitigation', v);
+  });
+  // Collections aging follows the real billing date unless it was set by hand here.
+  [['Mitigation', job.scopes.mitigation], ['Reconstruction', job.scopes.reconstruction]].forEach(([type, sc])=>{
+    if(!sc || !sc.collections || sc.collections.step==='notBilled') return;
+    if(changed[type+'|Billing sent (collections aging)']!==undefined) return;
+    let nd = '';
+    if(type==='Mitigation' && changed['Mitigation|Invoice with Full Packet']) nd = changed['Mitigation|Invoice with Full Packet'];
+    else if(changed[type+'|Billed']!==undefined) nd = earliestBilledDate(sc);
+    if(nd && nd!==sc.collections.billingSentDate){
+      changes.push(`${type} Billing sent (collections aging): ${fmtDate(sc.collections.billingSentDate)} → ${fmtDate(nd)}`);
+      sc.collections.billingSentDate = nd;
+    }
+  });
+  closeModal('modalEditDates');
+  if(!changes.length){ showToast('No dates changed'); return; }
+  logActivity(job, 'Dates edited — ' + changes.join('; '));
+  ['mitigation','reconstruction'].forEach(k=>{ const sc = job.scopes[k]; if(sc && sc.collections) collLog(sc, { kind:'note', text:'Dates edited — ' + changes.filter(c=>c.startsWith(k==='mitigation'?'Mitigation':'Reconstruction')).join('; ') }); });
+  ['mitigation','reconstruction'].forEach(k=>{ const sc = job.scopes[k]; if(sc && sc.collections) sc.collections.log = sc.collections.log.filter(e=>e.text!=='Dates edited — '); });
+  job.updatedAt = new Date().toISOString();
+  saveJobs(`${changes.length} date${changes.length>1?'s':''} updated`);
+  renderJobDetail(); renderAll();
 }
 
 /* ============ REPORTS ============ */
