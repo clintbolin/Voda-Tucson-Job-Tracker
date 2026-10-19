@@ -3,7 +3,7 @@
 // dropped signal. Data itself (jobs, payments, etc.) still needs a live
 // connection to sync with the Google Sheet backend — this only makes the
 // APP ITSELF available offline, not new data.
-const CACHE_NAME = 'voda-job-tracker-v1';
+const CACHE_NAME = 'voda-job-tracker-v2';
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -29,8 +29,12 @@ self.addEventListener('fetch', (event) => {
   if (url.hostname.includes('script.google.com') || url.hostname.includes('script.googleusercontent.com')) {
     return;
   }
+  // The app page itself always checks GitHub for the newest version (skipping
+  // the browser's 10-minute saved copy), so a new upload shows up on the next
+  // open/refresh. The saved copy is only used when there's no signal.
+  const isPage = event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, isPage ? { cache: 'no-cache' } : undefined)
       .then((res) => {
         const resClone = res.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
