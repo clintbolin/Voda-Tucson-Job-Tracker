@@ -485,6 +485,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .coll-panel-amt{ font-weight:800; font-size:14px; }
 .coll-job .coll-line{ border-top:1px solid var(--line); padding:8px 0 4px; margin-top:8px; cursor:pointer; }
 .coll-line.dim{ opacity:.55; }
+.sched-loose{ border:1px dashed var(--amber); border-radius:10px; padding:8px 10px; margin:4px 0 8px; background:var(--amber-bg); }
 .sched-row{ border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin-bottom:6px; }
 .sched-row.paid{ background:var(--green-bg); border-color:transparent; }
 .sched-row.late{ border-color:var(--red); background:var(--red-bg); }
@@ -1333,7 +1334,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     <div class="field"><label>Result</label><select id="ctResult" onchange="ctSuggest()"></select></div>
     <div class="field"><label>Date of contact</label><input id="ctDate" type="date"></div>
   </div>
-  <div class="field" id="ctPromisedWrap" style="display:none;"><label>Promised payment date</label><input id="ctPromised" type="date" onchange="ctSuggest()"></div>
+  <div class="field" id="ctPromisedWrap" style="display:none;"><label>Promised payment date</label><input id="ctPromised" type="date" onchange="if(dateReady(this.value)) ctSuggest()"></div>
   <div class="field"><label>Note</label><textarea id="ctNote" rows="2" placeholder="What was said"></textarea></div>
   <label id="ctDocsWrap" style="display:none;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;"><input type="checkbox" id="ctDocs" style="width:17px;height:17px;"> Move step to &ldquo;Docs / Supplement Requested&rdquo;</label>
   <div class="hint" id="ctHint" style="display:none;margin-top:0;margin-bottom:8px;"></div>
@@ -3342,7 +3343,7 @@ function abatementSectionHtml(sc){
     <div class="asb-sub-h">Finder's fee check from ${escapeHtml(info.company||'abatement company')}</div>
     <div class="jd-field-row">
       <div class="field"><label>Amount received</label><input type="number" step="0.01" placeholder="0.00" value="${a.feeReceivedAmount||''}" onchange="updateAbatement('feeReceivedAmount', parseFloat(this.value)||0)"></div>
-      <div class="field"><label>Date received</label><input type="date" value="${a.feeReceivedDate||''}" onchange="updateAbatement('feeReceivedDate', this.value)"></div>
+      <div class="field"><label>Date received</label><input type="date" value="${a.feeReceivedDate||''}" onchange="this.dataset.dirty='1'" onkeydown="if(event.key==='Enter') this.blur()" onblur="if(this.dataset.dirty && dateReady(this.value)){ this.dataset.dirty=''; updateAbatement('feeReceivedDate', this.value); }"></div>
     </div>
     ${info.fee && !a.feeReceivedAmount ? `<div class="add-line-btn" style="margin-top:-2px;" onclick="markAbatementFeePaid()">+ Received in full today (${fmtMoney(info.fee)})</div>` : ''}
     <div class="totals-mini">
@@ -4196,6 +4197,9 @@ async function toggleMemberManager(name){
 }
 
 /* ---------- dates ---------- */
+// A typed date only counts once the year is complete (typing "2026" briefly
+// passes through years 2, 20 and 202, which used to save and close the box).
+function dateReady(v){ if(!v) return true; const y = Number(String(v).slice(0,4)); return y>=1990 && y<=2100; }
 function addBusinessDays(dateStr, n){
   const d = new Date((dateStr||todayStr())+'T00:00:00');
   let added = 0;
@@ -4488,19 +4492,36 @@ function scheduleHtml(job, sc){
   h += rows.map(m=>`<div class="sched-row ${m.isPaid?'paid':m.late?'late':''}">
       <div class="sched-top">
         <input class="sched-label" value="${escapeHtml(m.label)}" onchange="updateMilestone('${m.id}','label',this.value)">
-        <span class="chip-sm ${m.isPaid?'chip-landed':m.late?'chip-lost':''}" ${(!m.isPaid&&!m.late)?'style="background:var(--gray-bg);color:var(--muted);"':''}>${m.isPaid?'Paid':m.paid>0?fmtMoney(m.paid)+' paid · '+fmtMoney(m.left)+' left':m.late?'Overdue':'Not paid'}</span>
+        <span class="chip-sm ${m.isPaid?'chip-landed':m.late?'chip-lost':''}" ${(!m.isPaid&&!m.late)?'style="background:var(--gray-bg);color:var(--muted);"':''}>${m.isPaid?'Paid':(m.paid>0&&!m.amt)?fmtMoney(m.paid)+' paid · enter amount':m.paid>0?fmtMoney(m.paid)+' paid · '+fmtMoney(m.left)+' left':m.late?'Overdue':'Not paid'}</span>
         <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeMilestone('${m.id}')"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </div>
       <div class="sched-fields">
         <label>Amount<input type="number" step="0.01" placeholder="0.00" value="${m.amt||''}" onchange="updateMilestone('${m.id}','amount',parseFloat(this.value)||0)"></label>
-        <label>Due<input type="date" value="${m.due||''}" onchange="updateMilestone('${m.id}','due',this.value)"></label>
+        <label>Due<input type="date" value="${m.due||''}" onchange="this.dataset.dirty='1'" onkeydown="if(event.key==='Enter') this.blur()" onblur="if(this.dataset.dirty && dateReady(this.value)){ this.dataset.dirty=''; updateMilestone('${m.id}','due',this.value); }"></label>
       </div>
     </div>`).join('');
   h += `<div class="add-line-btn" onclick="addMilestone()">+ Add payment step</div>`;
+  const loose = (sc.payments||[]).filter(p=>!p.deductible && !(p.milestoneId && rows.some(r=>r.id===p.milestoneId))).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(loose.length){
+    h += `<div class="sched-loose"><div style="font-weight:700;font-size:12px;margin-bottom:4px;">Payments not tied to a step (${loose.length})</div>` + loose.map(p=>`<div class="pay-row"><span>${fmtDate(p.date)} &mdash; ${fmtMoney(p.amount)}${p.note?' &middot; '+escapeHtml(p.note):''}</span>
+      <select class="mini-select" onchange="if(this.value) tiePayment('${p.id}', this.value)"><option value="">Tie to&hellip;</option>${rows.map(r=>`<option value="${r.id}">${escapeHtml(r.label)}</option>`).join('')}</select></div>`).join('') + `</div>`;
+  }
   h += `<div class="coll-meta">Schedule total <b>${fmtMoney(total)}</b>${billed ? ` of ${fmtMoney(billed)} billed` : ''}${billed && Math.abs(total-billed)>0.5 ? ` &mdash; <span style="color:var(--red);">doesn't match the billed total</span>` : ''}</div>`;
   return h;
 }
 function reconCtx(){ setCollType('Reconstruction'); const x = collCtx(); if(x.c && !x.c.schedule) x.c.schedule = []; return x; }
+function tiePayment(pid, msid){
+  const { job, sc, c } = reconCtx(); if(!job) return;
+  const p = (sc.payments||[]).find(x=>x.id===pid), m = c.schedule.find(x=>x.id===msid);
+  if(!p || !m) return;
+  p.milestoneId = m.id;
+  if(!m.due && p.date) m.due = p.date;            // due date defaults to when it was paid
+  if(!(Number(m.amount)>0)) m.amount = (sc.payments||[]).filter(x=>x.milestoneId===m.id).reduce((s,x)=>s+(Number(x.amount)||0),0);
+  collLog(sc, { kind:'note', text:`Payment ${fmtMoney(p.amount)} (${fmtDate(p.date)}) tied to ${m.label}` });
+  syncPhaseFromMilestone(job, sc, 'Reconstruction', p);
+  job.updatedAt = new Date().toISOString();
+  saveJobs(`Tied to ${m.label}`); renderCollAccount();
+}
 function setupSchedule(kind){
   const { job, sc, c } = reconCtx(); if(!job) return;
   const names = kind==='uf' ? ['Upfront payment','Final payment'] : ['Deposit / down payment','Progress payment','Final payment'];
@@ -4509,9 +4530,12 @@ function setupSchedule(kind){
   const untied = (sc.payments||[]).filter(p=>!p.milestoneId && !p.deductible).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const tied = [];
   untied.forEach((p,i)=>{
+    const last = i >= c.schedule.length-1;
     const m = c.schedule[Math.min(i, c.schedule.length-1)];
-    if(i>=c.schedule.length-1 && c.schedule.length>1 && i>0 && !/final/i.test(m.label)) return;
-    if(i<c.schedule.length-1){ m.amount = (Number(m.amount)||0) + (Number(p.amount)||0); m.due = m.due || p.date || ''; p.milestoneId = m.id; tied.push(`${fmtMoney(p.amount)} \u2192 ${m.label}`); syncPhaseFromMilestone(job, sc, 'Reconstruction', p); }
+    if(!last) m.amount = (Number(m.amount)||0) + (Number(p.amount)||0); // final amount is left for you to enter
+    m.due = m.due || p.date || '';
+    p.milestoneId = m.id; tied.push(`${fmtMoney(p.amount)} \u2192 ${m.label}`);
+    syncPhaseFromMilestone(job, sc, 'Reconstruction', p);
   });
   collLog(sc, { kind:'note', text:`Payment schedule set up: ${names.join(' → ')}${tied.length ? '. Payments already received tied in: '+tied.join(', ') : ''}` });
   job.updatedAt = new Date().toISOString();
