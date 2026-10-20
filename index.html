@@ -61,6 +61,22 @@
 [data-theme="dark"] nav.bottom .navbtn.active svg{ stroke:var(--cyan); }
 [data-theme="dark"] .stat-card-light .n{ color:var(--cyan); }
 [data-theme="dark"] .stat-card-light.alert .n{ color:var(--red); }
+/* dark mode: pop-up windows were white with light text on top, which was hard to read */
+[data-theme="dark"] .sheet{ background:var(--card); color:var(--ink); }
+[data-theme="dark"] .kit-selected-bar{ background:var(--card); }
+[data-theme="dark"] .stage-btn,[data-theme="dark"] .phase-check,[data-theme="dark"] .phase-na-check{ background:var(--gray-bg); color:var(--ink); }
+[data-theme="dark"] .phase-check.done{ background:#1F9254; color:#fff; }
+[data-theme="dark"] .coll-step{ color:#A9B6C6; }
+[data-theme="dark"] .coll-step.done, [data-theme="dark"] .coll-step.cur{ color:var(--ink); }
+[data-theme="dark"] .coll-meta, [data-theme="dark"] .na-sub, [data-theme="dark"] .hist-when{ color:#A9B6C6; }
+[data-theme="dark"] .na-card.na-green{ background:#123024; }
+[data-theme="dark"] .na-card.na-yellow{ background:#332711; }
+[data-theme="dark"] .na-card.na-red{ background:#3A1620; }
+[data-theme="dark"] .sched-row.paid{ background:#123024; }
+[data-theme="dark"] .sched-row.late{ background:#3A1620; }
+[data-theme="dark"] .sched-label{ color:var(--ink); }
+/* reports keep a white "paper" look in dark mode so they read like the printout */
+[data-theme="dark"] .job-report-doc{ --ink:#10202E; --muted:#5B6878; --line:#D9E0E7; --card:#fff; --gray-bg:#EEF0F2; background:#fff; color:#1a1a1a; border-radius:10px; padding:14px 14px 20px; }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
@@ -1414,7 +1430,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 18, 2026 \u00b7 11:50 PM';
+const APP_VERSION = 'Oct 19, 2026 \u00b7 5:45 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -2156,6 +2172,12 @@ function printCurrentPage(){
   document.body.classList.remove('printing-overlay');
   document.body.classList.remove('printing-area');
   updatePrintTitle(currentView);
+  const prevTheme = document.documentElement.getAttribute('data-theme');
+  if(prevTheme==='dark'){
+    document.documentElement.setAttribute('data-theme','light');
+    const back = ()=>{ document.documentElement.setAttribute('data-theme','dark'); window.removeEventListener('afterprint', back); };
+    window.addEventListener('afterprint', back);
+  }
   window.print();
 }
 function renderAll(){
@@ -2678,8 +2700,10 @@ function printActiveModal(){
     if(top.id==='modalCollReport' || top.id==='modalJobReport') clone.querySelectorAll('.sheet-head').forEach(el=>el.remove());
     area.appendChild(clone);
   }
+  const prevTheme = document.documentElement.getAttribute('data-theme');
+  if(prevTheme==='dark') document.documentElement.setAttribute('data-theme','light');
   document.body.classList.add('printing-area');
-  const done = ()=>{ document.body.classList.remove('printing-area'); area.innerHTML=''; window.removeEventListener('afterprint', done); };
+  const done = ()=>{ document.body.classList.remove('printing-area'); area.innerHTML=''; if(prevTheme==='dark') document.documentElement.setAttribute('data-theme','dark'); window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   window.print();
 }
