@@ -521,7 +521,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 #subPortalBody{ max-width:640px; margin:0 auto; padding:16px 16px 60px; }
 .sp-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--navy); color:#fff; border-radius:14px; padding:14px 16px; margin-bottom:14px; }
 .sp-hi{ font-size:18px; font-weight:800; } .sp-sub{ font-size:11.5px; opacity:.75; margin-top:2px; }
-.sp-switch{ background:rgba(255,255,255,.12); color:#fff; border:none; border-radius:9px; padding:8px 11px; font-weight:700; font-size:12px; cursor:pointer; }
+.sp-switch{ white-space:nowrap; background:rgba(255,255,255,.12); color:#fff; border:none; border-radius:9px; padding:8px 11px; font-weight:700; font-size:12px; cursor:pointer; }
 .sp-title{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); margin:6px 0 8px; }
 .sp-card, .sp-job, .sp-form{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:10px; }
 .sp-card{ cursor:pointer; }
@@ -552,6 +552,20 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .sub-handled{ display:inline-block; margin-left:6px; border:1px solid var(--red); background:var(--card); color:var(--red); border-radius:7px; padding:2px 8px; font-size:11.5px; font-weight:700; cursor:pointer; }
 .sub-day{ font-size:12px; font-weight:800; margin:10px 0 4px; color:var(--ink); }
 [data-theme="dark"] .sp-head{ background:#0E2238; }
+.sp-preview{ background:var(--amber); color:#fff; border-radius:12px; padding:10px 12px; font-size:12.5px; margin-bottom:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.sp-preview button{ margin-left:auto; background:#fff; color:#8A5A00; border:none; border-radius:8px; padding:6px 10px; font-weight:800; cursor:pointer; }
+.tog.go.on{ background:#1F9254; border-color:#1F9254; }
+.sp-badge.go{ background:#1F9254; }
+.sp-status{ display:inline-block; background:var(--green-bg); color:#1F7A50; font-weight:800; font-size:11.5px; padding:2px 8px; border-radius:6px; margin:2px 0 4px; }
+.sub-status-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.sub-st{ font-size:11.5px; font-weight:700; padding:3px 8px; border-radius:7px; background:var(--gray-bg); color:var(--ink); }
+.sub-st.walk, .sub-st.complete{ background:var(--green-bg); color:#1F7A50; }
+.sub-walk{ margin-top:8px; padding:8px 10px; border-radius:9px; background:var(--green-bg); color:#1F7A50; font-size:12.5px; }
+[data-theme="dark"] .sub-st.walk, [data-theme="dark"] .sub-st.complete, [data-theme="dark"] .sub-walk, [data-theme="dark"] .sp-status{ color:#7FD6A8; }
+.sp-helplink{ background:var(--blue-bg); color:var(--ink); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:12px; cursor:pointer; }
+.sp-helplink b{ color:var(--cyan-dark); }
+.sp-help p{ font-size:13px; line-height:1.5; margin:8px 0; }
+.sp-help ol{ padding-left:20px; margin:8px 0; } .sp-help li{ font-size:13px; line-height:1.5; margin-bottom:8px; }
 .who-chip{ display:inline-block; color:#fff; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:99px; vertical-align:1px; }
 .jobs-filters{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
 .jobs-filters select{ flex:1 1 30%; min-width:0; padding:8px 8px; border:1px solid var(--line); border-radius:9px; font-size:12.5px; background:var(--card); color:var(--ink); }
@@ -797,7 +811,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
         <button class="quick-btn" onclick="openSubSchedule()">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           <div class="t">Sub schedule</div>
-          <div class="d">Visits, updates &amp; requests</div>
+          <div class="d">Visits, updates &amp; daily report</div>
         </button>
         <button class="quick-btn" onclick="openSearchAll()">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
@@ -1466,7 +1480,24 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 <div class="overlay" id="modalSubSchedule"><div class="sheet" style="max-height:92vh;">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><div><div class="sheet-title">Sub schedule</div><div class="sheet-sub">Subcontractor visits, missed updates &amp; requests</div></div><button class="close-x" onclick="closeModal('modalSubSchedule')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="btn-row" style="margin-bottom:6px;"><button class="btn btn-primary" onclick="openSubDailyReport()">Daily Sub Report (print)</button><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="openSubPreviewPicker()">View as a sub</button></div>
   <div id="subScheduleBody"></div>
+</div></div>
+
+<!-- Daily subcontractor report -->
+<div class="overlay" id="modalSubReport"><div class="sheet wide" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title">Daily Sub Report</div><div class="sheet-sub">All jobs worked that day + the next visits</div></div><button class="close-x" onclick="closeModal('modalSubReport')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="report-actions" style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+    <span style="font-size:12.5px;font-weight:700;">Day:</span>
+    <input type="date" id="srDate" style="padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);" onchange="if(dateReady(this.value)) renderSubDailyReport()">
+    <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="document.getElementById('srDate').value=todayStr();renderSubDailyReport();">Today</button>
+  </div>
+  <div id="subReportBody" class="job-report-doc" style="overflow-x:auto;"></div>
+  <div class="btn-row report-actions" style="margin-top:4px;">
+    <button class="btn btn-primary" onclick="printSubReport()">Print report</button>
+    <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="closeModal('modalSubReport')">Close</button>
+  </div>
 </div></div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
 
@@ -1487,7 +1518,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 26, 2026 \u00b7 5:30 PM';
+const APP_VERSION = 'Oct 26, 2026 \u00b7 6:30 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -2756,7 +2787,7 @@ function printActiveModal(){
     const srcInputs = sheet.querySelectorAll('input, select, textarea'), dstInputs = clone.querySelectorAll('input, select, textarea');
     srcInputs.forEach((el,i)=>{ const d = dstInputs[i]; if(!d) return; if(el.tagName==='SELECT'){ d.value = el.value; [...d.options].forEach(o=>o.selected = (o.value===el.value)); } else if(el.type==='checkbox'){ d.checked = el.checked; } else { d.setAttribute('value', el.value); if(el.tagName==='TEXTAREA') d.textContent = el.value; } });
     clone.querySelectorAll('.sheet-handle, .sheet-head button, .sheet-head svg, .report-actions, .jd-done-bar, .stage-btns, .slider-wrap, .add-line-btn').forEach(el=>el.remove());
-    if(top.id==='modalCollReport' || top.id==='modalJobReport') clone.querySelectorAll('.sheet-head').forEach(el=>el.remove());
+    if(top.id==='modalCollReport' || top.id==='modalJobReport' || top.id==='modalSubReport') clone.querySelectorAll('.sheet-head').forEach(el=>el.remove());
     area.appendChild(clone);
   }
   const prevTheme = document.documentElement.getAttribute('data-theme');
@@ -4186,7 +4217,7 @@ function renderTeam(){
       <div class="team-ctl">
       ${canEdit ? `<button class="tc ${mi.pin?'on':''}" onclick="${mi.pin?`if(confirm('Change PIN for ${esc}? (Cancel to remove it instead)')) setMemberPin('${esc}'); else clearMemberPin('${esc}');`:`setMemberPin('${esc}')`}">${mi.pin?'PIN ✓':'Set PIN'}</button>
       <button class="tc ${mi.manager?'on':''}" onclick="toggleMemberManager('${esc}')">Manager</button>
-      <button class="tc ${mi.sub?'on':''}" onclick="toggleMemberSub('${esc}')">Sub</button>` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}${mi.sub?'<span class="chip-sm">Sub</span>':''}`}
+      <button class="tc ${mi.sub?'on':''}" onclick="toggleMemberSub('${esc}')">Sub</button>${mi.sub ? `<button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}')">View as</button>` : ''}` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}${mi.sub?'<span class="chip-sm">Sub</span>':''}`}
       <button class="del-btn" onclick="removePersonnel('${esc}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
       </div>
     </div>`;
@@ -5616,10 +5647,46 @@ const SUB_TASKS = ['Demo','Framing','Insulation','Drywall hung','Tape & mud','Te
 const SUB_WINDOWS = ['7–9 AM','8–10 AM','9–11 AM','10 AM–12 PM','12–2 PM','1–3 PM','2–4 PM','All day'];
 const SUB_NOT_SCHED = ['Waiting on materials','Waiting on customer selections','Waiting on inspection','Pulled to another job','Customer unavailable','Work complete','Other'];
 const SUB_FLAGS = ['Extra work found (possible change order / supplement)','Materials needed','Customer decision needed','Access problem','Other'];
+const SUB_STATUS = [['progress','Still working'],['walk','Ready for final walk'],['complete','My work is complete']];
+function subStatusLabel(k){ const x = SUB_STATUS.find(s=>s[0]===k); return x ? x[1] : 'Still working'; }
+function subStatuses(job){
+  const seen = {}, out = [];
+  subLog(job).forEach(u=>{ const k = normName(u.by); if(seen[k]) return; seen[k] = 1; out.push({ by:u.by, status:u.status||'progress', date:u.date, u }); });
+  return out;
+}
+// waiting on the office for a final walk / sign-off
+function walkPending(job){
+  const st = subStatuses(job).filter(x=>x.status==='walk' || x.status==='complete');
+  if(!st.length) return null;
+  const latest = st.map(x=>x.date).sort().pop();
+  if(job.finalWalk && dateOnly(job.finalWalk.at) >= latest) return null;
+  return st;
+}
 const SUB_SLIP = ['Pulled to another job','Waiting on materials','Extra work found','Customer delay','Weather','Other'];
 
 function isSub(name){ return personnel.some(n=>String(n).trim().toLowerCase()===String(name||'').trim().toLowerCase() && !!memberInfo(n).sub); }
-function subMode(){ return !!(pinUser && isSub(pinUser)); }
+let subPreviewSnapshot = null;
+let subPreviewAs = null; // a manager looking at the sub screen as a given sub
+function subUser(){ return subPreviewAs || pinUser; }
+function subMode(){ return !!subPreviewAs || !!(pinUser && isSub(pinUser)); }
+function startSubPreview(name){
+  if(!canManageTeam()){ showToast('Only a manager can preview the sub screen'); return; }
+  document.querySelectorAll('.overlay.active').forEach(o=>closeModal(o.id));
+  subPreviewSnapshot = jobs.map(j=>[j.id, (j.subAreas||[]).slice(), (j.subTasks||[]).slice()]);
+  subPreviewAs = name; subView = 'list'; subJobId = null; subDraft = null;
+  applyUserMode(); window.scrollTo(0,0);
+}
+function exitSubPreview(){
+  if(subPreviewSnapshot){ subPreviewSnapshot.forEach(([id,a,t])=>{ const j=getJob(id); if(j){ j.subAreas=a; j.subTasks=t; } }); subPreviewSnapshot=null; }
+  subPreviewAs = null; subView = 'list'; subDraft = null; applyUserMode(); renderAll();
+}
+function openSubPreviewPicker(){
+  const subs = personnel.filter(isSub);
+  if(!subs.length){ showToast('Mark someone as a Sub in Manage Team first'); return; }
+  if(subs.length===1) return startSubPreview(subs[0]);
+  const pick = prompt('Preview the app as which sub?\n\n' + subs.map((n,i)=>`${i+1}. ${n}`).join('\n') + '\n\nType the number:');
+  const n = subs[Number(pick)-1]; if(n) startSubPreview(n);
+}
 function normName(s){ return String(s||'').trim().toLowerCase(); }
 function jobSubs(job){
   const names = new Set();
@@ -5634,14 +5701,14 @@ function latestEst(job){ const u = subLog(job).find(x=>x.estCompletion); return 
 function nextVisitOf(job){ const u = latestSubUpdate(job); return u && u.nextVisit && !u.nextVisit.notScheduled ? u.nextVisit : null; }
 // a visit was planned for a day that's now passed, and no update came in for it
 function missedUpdate(job){
-  const nv = nextVisitOf(job); if(!nv || !nv.date) return null;
+  const nv = nextVisitOf(job); if(!nv || !nv.date || nv.walk) return null;
   if(nv.date >= todayStr()) return null;
   return subLog(job).some(u=>u.date >= nv.date) ? null : nv;
 }
 function openSubFlags(job){ return (job.subLog||[]).filter(u=>u.needsOffice && !u.handled); }
-function canEditSubUpdate(u){ return u.by===pinUser && todayStr() <= addDays(u.date, 1); }
+function canEditSubUpdate(u){ return u.by===subUser() && todayStr() <= addDays(u.date, 1); }
 function fmtTime12(t){ if(!t) return ''; const [h,m] = t.split(':').map(Number); return `${((h+11)%12)+1}:${String(m).padStart(2,'0')} ${h<12?'AM':'PM'}`; }
-function visitText(nv){ if(!nv) return ''; if(nv.notScheduled) return `Not scheduled — ${nv.reason||''}${nv.reasonNote?' ('+nv.reasonNote+')':''}`; return `${new Date(nv.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${nv.window?' · '+nv.window:''}`; }
+function visitText(nv){ if(!nv) return ''; if(nv.notScheduled) return `Not scheduled — ${nv.reason||''}${nv.reasonNote?' ('+nv.reasonNote+')':''}`; return `${nv.walk?'Final walk ':''}${new Date(nv.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${nv.window?' \u00b7 '+nv.window:''}`; }
 
 /* ---------- switch between the office app and the sub screen ---------- */
 function applyUserMode(){
@@ -5657,17 +5724,19 @@ function renderSubPortal(){
   if(!subMode()) return;
   if(subView==='form') return; // never redraw while they're typing
   const box = document.getElementById('subPortalBody');
-  const head = `<div class="sp-head"><div><div class="sp-hi">Hi, ${escapeHtml(pinUser)}</div><div class="sp-sub">Voda Cleaning &amp; Restoration &middot; Daily job updates</div></div>
-    <button class="sp-switch" onclick="switchUser()">Switch user</button></div>`;
-  if(subView==='job' && getJob(subJobId) && subOnJob(getJob(subJobId), pinUser)){ box.innerHTML = head + subJobHtml(getJob(subJobId)); window.scrollTo(0,0); return; }
+  const preview = subPreviewAs ? `<div class="sp-preview">Preview: you're seeing exactly what <b>${escapeHtml(subPreviewAs)}</b> sees. Nothing you enter is saved. <button onclick="exitSubPreview()">Exit preview</button></div>` : '';
+  const head = preview + `<div class="sp-head"><div><div class="sp-hi">Hi, ${escapeHtml(subUser())}</div><div class="sp-sub">Voda Cleaning &amp; Restoration &middot; Daily job updates</div></div>
+    <div style="display:flex;gap:6px;"><button class="sp-switch" onclick="subView='help'; renderSubPortal();">How to</button><button class="sp-switch" onclick="${subPreviewAs ? 'exitSubPreview()' : 'switchUser()'}">${subPreviewAs ? 'Exit preview' : 'Switch user'}</button></div></div>`;
+  if(subView==='help'){ box.innerHTML = head + subHelpHtml(); window.scrollTo(0,0); return; }
+  if(subView==='job' && getJob(subJobId) && subOnJob(getJob(subJobId), subUser())){ box.innerHTML = head + subJobHtml(getJob(subJobId)); window.scrollTo(0,0); return; }
   subView = 'list';
-  const list = jobsForSub(pinUser);
-  box.innerHTML = head + `<div class="sp-title">Your jobs (${list.length})</div>` + (list.length ? list.map(j=>{
+  const list = jobsForSub(subUser());
+  box.innerHTML = head + `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div><div class="sp-title">Your jobs (${list.length})</div>` + (list.length ? list.map(j=>{
     const u = latestSubUpdate(j), nv = nextVisitOf(j), est = latestEst(j);
-    const mine = (j.subLog||[]).some(x=>x.by===pinUser && x.date===todayStr());
+    const mine = (j.subLog||[]).some(x=>normName(x.by)===normName(subUser()) && x.date===todayStr());
     const visitToday = nv && nv.date===todayStr();
     return `<div class="sp-card" onclick="subOpenJob('${j.id}')">
-      <div class="sp-card-top"><b>${escapeHtml(j.customerName)}</b>${visitToday && !mine ? '<span class="sp-badge">Update due today</span>' : ''}</div>
+      <div class="sp-card-top"><b>${escapeHtml(j.customerName)}</b>${(()=>{ const me = subStatuses(j).find(x=>normName(x.by)===normName(subUser())); return me && me.status!=='progress' ? `<span class="sp-badge go">${subStatusLabel(me.status)}</span>` : (visitToday && !mine ? '<span class="sp-badge">Update due today</span>' : ''); })()}</div>
       <div class="sp-line">${escapeHtml(j.address||'No address on file')}</div>
       <div class="sp-line">Next visit: <b>${nv ? visitText(nv) : (u && u.nextVisit && u.nextVisit.notScheduled ? 'not scheduled' : '—')}</b>${est ? ` &middot; Est. completion <b>${fmtDate(est)}</b>` : ''}</div>
       <div class="sp-line muted">${u ? `Last update ${fmtDate(u.date)} by ${escapeHtml(u.by)}` : 'No updates yet'}</div>
@@ -5676,7 +5745,7 @@ function renderSubPortal(){
 function subOpenJob(id){ subView = 'job'; subJobId = id; renderSubPortal(); }
 function subBack(){ subView = 'list'; subJobId = null; renderSubPortal(); }
 function subJobHtml(job){
-  const others = jobSubs(job).filter(n=>normName(n)!==normName(pinUser));
+  const others = jobSubs(job).filter(n=>normName(n)!==normName(subUser()));
   const est = latestEst(job), nv = nextVisitOf(job);
   const log = subLog(job);
   return `<button class="sp-back" onclick="subBack()">&larr; All my jobs</button>
@@ -5698,6 +5767,7 @@ function subUpdateCardHtml(u, forSub){
     <div class="sp-upd-top">${nameChip(u.by)} <b>${new Date(u.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</b>${time?` <span class="muted">${time}${u.crew?' · crew of '+u.crew:''}</span>`:''}
       ${u.editedAt ? '<span class="muted">(edited)</span>' : ''}
       ${forSub && canEditSubUpdate(u) ? `<button class="sp-edit" onclick="subEditUpdate('${u.id}')">Edit</button>` : ''}</div>
+    ${u.status && u.status!=='progress' ? `<div class="sp-status">${u.status==='walk'?'\u2691':'\u2713'} ${subStatusLabel(u.status)}</div>` : ''}
     ${(u.areas||[]).length ? `<div class="sp-tags">${u.areas.map(a=>`<span>${escapeHtml(a)}</span>`).join('')}</div>` : ''}
     ${(u.completed||[]).length ? `<div class="sp-l"><b>Completed:</b> ${u.completed.map(escapeHtml).join(', ')}</div>` : ''}
     ${u.notes ? `<div class="sp-l"><b>Notes:</b> ${escapeHtml(u.notes).replace(/\n/g,'<br>')}</div>` : ''}
@@ -5714,7 +5784,7 @@ function subNewUpdate(jobId){
   subJobId = jobId; subEditId = null;
   const job = getJob(jobId);
   const prev = subLog(job)[0];
-  subDraft = { date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===pinUser ? prev.crew : '', areas:[], completed:[], notes:'', todo: '', estCompletion: latestEst(job)||'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, needsOffice:false, flags:[], flagNote:'', photos:false, slipReason:'' };
+  subDraft = { date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===subUser() ? prev.crew : '', status:'progress', areas:[], completed:[], notes:'', todo: '', estCompletion: latestEst(job)||'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, needsOffice:false, flags:[], flagNote:'', photos:false, slipReason:'' };
   subView = 'form'; renderSubForm();
 }
 function subEditUpdate(id){
@@ -5755,8 +5825,10 @@ function renderSubForm(){
   const winOpts = SUB_WINDOWS.map(w=>`<option ${d.nextVisit.window===w?'selected':''}>${w}</option>`).join('');
   const customWin = d.nextVisit.window && !SUB_WINDOWS.includes(d.nextVisit.window);
   document.getElementById('subPortalBody').innerHTML = `
+    ${subPreviewAs ? `<div class="sp-preview">Preview as <b>${escapeHtml(subPreviewAs)}</b> &mdash; this form won't be saved. <button onclick="exitSubPreview()">Exit preview</button></div>` : ''}
     <button class="sp-back" onclick="subCancel()">&larr; Cancel</button>
     <div class="sp-title" style="margin-top:4px;">${subEditId?'Edit update':'Daily update'} &mdash; ${escapeHtml(job.customerName)}</div>
+    <div class="sp-hint" style="margin:-4px 0 8px;">Tap everything that applies, then describe the day in the notes. Not sure what to put? <a style="color:var(--cyan-dark);font-weight:700;cursor:pointer;" onclick="subView='help'; renderSubPortal();">See how to fill this out</a> (what you've entered is kept).</div>
     <div class="sp-form">
       <div class="jd-field-row">
         <div class="field"><label>Date</label><input type="date" value="${d.date}" ${subEditId?'disabled':''} onchange="subField('date', this.value)"></div>
@@ -5766,6 +5838,9 @@ function renderSubForm(){
         <div class="field"><label>Arrived</label><input type="time" value="${d.timeIn||''}" onchange="subField('timeIn', this.value)"></div>
         <div class="field"><label>Left</label><input type="time" value="${d.timeOut||''}" onchange="subField('timeOut', this.value)"></div>
       </div>
+      <div class="sp-q">Where does your work stand?</div>
+      <div class="tog-row">${SUB_STATUS.map(([k,l])=>`<button type="button" class="tog ${k!=='progress'?'go':''} ${(d.status||'progress')===k?'on':''}" onclick="subDraft.status='${k}'; renderSubForm();">${l}</button>`).join('')}</div>
+      ${d.status==='walk' ? '<div class="sp-hint">The office will be told this job is ready for the final walk-through.</div>' : d.status==='complete' ? '<div class="sp-hint">The office will be told your part of this job is finished.</div>' : ''}
       <div class="sp-q">Areas worked on <span>tap all that apply</span></div>
       <div class="tog-row">${chips('areas', SUB_AREAS, job.subAreas)}</div>
       <div class="sp-q">Completed today <span>tap all that apply</span></div>
@@ -5774,13 +5849,14 @@ function renderSubForm(){
       <textarea rows="4" placeholder="What was done and anything important. e.g. &quot;Hung and taped hall bath. Found soft subfloor by toilet &mdash; customer aware.&quot;" oninput="subField('notes', this.value)">${escapeHtml(d.notes||'')}</textarea>
       <div class="sp-q">Still to do</div>
       <textarea rows="3" placeholder="e.g. Texture &amp; paint hall bath, install vanity" oninput="subField('todo', this.value)">${escapeHtml(d.todo||'')}</textarea>
-      <div class="sp-q">Estimated completion <span class="req">required</span></div>
-      <input type="date" class="sp-input" value="${d.estCompletion||''}" onchange="subField('estCompletion', this.value); renderSubForm();">
-      ${prevEst ? `<div class="sp-hint">Last estimate: <b>${fmtDate(prevEst)}</b></div>` : ''}
-      ${slip ? `<div class="sp-slip"><label>The date moved later &mdash; why?</label>
+      ${(d.status||'progress')!=='progress' ? '' : `<div class="sp-q">Estimated completion <span class="req">required</span></div>`}
+      ${(d.status||'progress')!=='progress' ? '' : `<input type="date" class="sp-input" value="${d.estCompletion||''}" onchange="subField('estCompletion', this.value); renderSubForm();">
+      ${prevEst ? `<div class="sp-hint">Last estimate: <b>${fmtDate(prevEst)}</b></div>` : ''}`}
+      ${slip && (d.status||'progress')==='progress' ? `<div class="sp-slip"><label>The date moved later &mdash; why?</label>
         <select onchange="subField('slipReason', this.value)"><option value="">Pick a reason&hellip;</option>${SUB_SLIP.map(r=>`<option ${d.slipReason===r?'selected':''}>${r}</option>`).join('')}</select></div>` : ''}
-      <div class="sp-q">Next visit <span>agreed with the customer</span></div>
-      <label class="sp-check"><input type="checkbox" ${d.nextVisit.notScheduled?'checked':''} onchange="subDraft.nextVisit.notScheduled=this.checked; renderSubForm();"> Not scheduled yet</label>
+      ${d.status==='complete' ? '' : `<div class="sp-q">${d.status==='walk' ? 'Final walk-through <span>if a day is set with the customer (optional)</span>' : 'Next visit <span>agreed with the customer</span>'}</div>`}
+      <div style="${d.status==='complete'?'display:none':''}">
+      <label class="sp-check" style="${d.status==='walk'?'display:none':''}"><input type="checkbox" ${d.nextVisit.notScheduled?'checked':''} onchange="subDraft.nextVisit.notScheduled=this.checked; renderSubForm();"> Not scheduled yet</label>
       ${d.nextVisit.notScheduled ? `<select class="sp-input" onchange="subDraft.nextVisit.reason=this.value; renderSubForm();"><option value="">Why not?&hellip;</option>${SUB_NOT_SCHED.map(r=>`<option ${d.nextVisit.reason===r?'selected':''}>${r}</option>`).join('')}</select>
         ${d.nextVisit.reason==='Other' ? `<input class="sp-input" placeholder="Explain" value="${escapeHtml(d.nextVisit.reasonNote||'')}" oninput="subDraft.nextVisit.reasonNote=this.value">` : ''}`
       : `<div class="jd-field-row">
@@ -5788,6 +5864,7 @@ function renderSubForm(){
           <div class="field"><label>Time</label><select onchange="if(this.value==='Custom'){ const t=prompt('Time (e.g. 10:30 AM–12 PM):'); subDraft.nextVisit.window=t||''; renderSubForm(); } else subDraft.nextVisit.window=this.value;">
             <option value="">Pick&hellip;</option>${winOpts}${customWin?`<option selected>${escapeHtml(d.nextVisit.window)}</option>`:''}<option value="Custom">Custom&hellip;</option></select></div>
         </div>`}
+      </div>
       <div class="sp-q">Needs the office?</div>
       <div class="tog-row"><button type="button" class="tog ${!d.needsOffice?'on':''}" onclick="subDraft.needsOffice=false; renderSubForm();">No</button><button type="button" class="tog warn ${d.needsOffice?'on':''}" onclick="subDraft.needsOffice=true; renderSubForm();">Yes</button></div>
       ${d.needsOffice ? `<div class="tog-row">${SUB_FLAGS.map(f=>`<button type="button" class="tog ${d.flags.includes(f)?'on':''}" onclick="subToggle('flags', ${JSON.stringify(f).replace(/"/g,'&quot;')})">${escapeHtml(f)}</button>`).join('')}</div>
@@ -5803,13 +5880,21 @@ function latestEstBefore(job, excludeId){
 async function submitSubUpdate(){
   const d = subDraft, job0 = getJob(subJobId); if(!d || !job0) return;
   if(!d.notes || !d.notes.trim()){ showToast('Add your daily notes first', true); return; }
+  const st = d.status || 'progress';
+  if(st!=='progress'){
+    d.estCompletion = d.estCompletion && d.estCompletion<=d.date ? d.estCompletion : d.date; d.slipReason = '';
+    if(st==='complete' || !d.nextVisit.date || d.nextVisit.notScheduled){ d.nextVisit = { notScheduled:true, reason: st==='walk' ? 'Ready for final walk' : 'Work complete', date:'', window:'' }; }
+    else d.nextVisit = { date:d.nextVisit.date, window:d.nextVisit.window||'', walk:true, notScheduled:false };
+  }
   if(!d.estCompletion || !dateReady(d.estCompletion)){ showToast('Enter the estimated completion date', true); return; }
   const prevEst = latestEstBefore(job0, subEditId);
-  if(prevEst && d.estCompletion > prevEst && !d.slipReason){ showToast('Pick why the completion date moved later', true); return; }
-  if(d.nextVisit.notScheduled){ if(!d.nextVisit.reason){ showToast('Pick why the next visit isn’t scheduled', true); return; } d.nextVisit.date=''; d.nextVisit.window=''; }
+  if(st==='progress' && prevEst && d.estCompletion > prevEst && !d.slipReason){ showToast('Pick why the completion date moved later', true); return; }
+  if(st!=='progress'){ /* next visit set above */ }
+  else if(d.nextVisit.notScheduled){ if(!d.nextVisit.reason){ showToast('Pick why the next visit isn’t scheduled', true); return; } d.nextVisit.date=''; d.nextVisit.window=''; }
   else if(!d.nextVisit.date || !dateReady(d.nextVisit.date)){ showToast('Enter the next visit date (or check "Not scheduled yet")', true); return; }
   if(d.needsOffice && !d.flags.length){ showToast('Pick what the office needs to know about', true); return; }
-  const btn = document.getElementById('subSubmitBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+  if(subPreviewAs){ showToast('Preview only \u2014 nothing was saved. This is what the sub would see after sending.'); subView = 'job'; subDraft = null; subEditId = null; renderSubPortal(); return; }
+  const btn = document.getElementById('subSubmitBtn'); btn.disabled = true; btn.textContent = 'Sending\u2026';
   const customAreas = (job0.subAreas||[]).slice(), customTasks = (job0.subTasks||[]).slice();
   // load the latest data first so this update never overwrites the office's work
   try{ const data = await apiGetAll(); jobs = extractTeamSettings(data.jobs || []); }catch(e){ /* offline: save onto what we have */ }
@@ -5826,6 +5911,7 @@ async function submitSubUpdate(){
     logActivity(job, `Sub update edited by ${pinUser} (${fmtDate(clean.date)})`);
   } else {
     job.subLog.push({ ...clean, id: uid('SU'), ...stamp() });
+    if(st!=='progress') logActivity(job, `${pinUser}: ${subStatusLabel(st).toUpperCase()}`);
     logActivity(job, `Sub update from ${pinUser}: ${clean.notes.slice(0,120)}${clean.notes.length>120?'…':''}${d.needsOffice?' — NEEDS OFFICE: '+d.flags.join(', '):''}`);
   }
   job.updatedAt = new Date().toISOString();
@@ -5850,12 +5936,24 @@ function subSectionHtml(job){
       <div style="flex:1 1 50%;">Next visit<br><b>${nv ? visitText(nv) : (log[0] && log[0].nextVisit && log[0].nextVisit.notScheduled ? 'Not scheduled' : '—')}</b></div>
     </div>
     ${estHist.length>1 ? `<div class="coll-meta">Completion estimate history: ${estHist.map((e,i)=>fmtDate(e.d)+(i>0&&e.why?' ('+escapeHtml(e.why)+')':'')).join(' → ')}</div>` : ''}
+    ${(()=>{ const st = subStatuses(job); return st.length ? `<div class="sub-status-row">${st.map(x=>`<span class="sub-st ${x.status}">${escapeHtml(x.by)}: ${subStatusLabel(x.status)}${x.status!=='progress'?' ('+fmtDate(x.date)+')':''}</span>`).join('')}</div>` : ''; })()}
+    ${walkPending(job) ? `<div class="sub-walk"><b>Ready for final walk / sign-off.</b> ${walkPending(job).map(x=>escapeHtml(x.by)+' \u2014 '+subStatusLabel(x.status).toLowerCase()).join('; ')}
+      <button class="sub-handled" style="border-color:#1F7A50;color:#1F7A50;" onclick="markFinalWalkDone('${job.id}')">Final walk done</button></div>` : (job.finalWalk ? `<div class="coll-meta">\u2713 Final walk done ${fmtDate(dateOnly(job.finalWalk.at))} by ${escapeHtml(job.finalWalk.by)}${job.finalWalk.note?' \u2014 '+escapeHtml(job.finalWalk.note):''}</div>` : '')}
     ${missed ? `<div class="sub-alert">Visit was planned ${visitText(missed)} but no update came in.</div>` : ''}
     ${flags.map(u=>`<div class="sub-alert"><b>${escapeHtml(u.by)} needs the office</b> (${fmtDate(u.date)}): ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}
       <button class="sub-handled" onclick="markSubFlagHandled('${job.id}','${u.id}')">Mark handled</button></div>`).join('')}
     <div class="sp-title" style="margin-top:12px;">Daily log (${log.length})</div>
     ${log.length ? log.slice(0, 5).map(u=>subUpdateCardHtml(u, false)).join('') + (log.length>5 ? `<div class="hint">Showing the latest 5. The full log prints on the Job Report.</div>` : '') : '<div class="empty" style="padding:6px 0;">No updates yet.</div>'}
   </div>`;
+}
+function markFinalWalkDone(jobId){
+  const job = getJob(jobId); if(!job) return;
+  const note = prompt('Final walk done. Any punch-list items or notes? (optional)');
+  if(note===null) return;
+  job.finalWalk = { ...stamp(), note: note.trim() };
+  logActivity(job, `Final walk done${note.trim() ? ' \u2014 '+note.trim() : ''}`);
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Final walk recorded'); renderJobDetail(); if(document.getElementById('modalSubSchedule').classList.contains('active')) renderSubSchedule();
 }
 function markSubFlagHandled(jobId, uid_){
   const job = getJob(jobId); const u = (job.subLog||[]).find(x=>x.id===uid_); if(!u) return;
@@ -5869,8 +5967,8 @@ function reportSubLogHtml(job){
   if(!log.length) return '';
   let h = `<div class="report-section"><div class="report-h">Subcontractor Daily Log</div><table class="report-table"><thead><tr><th style="width:80px;">Date</th><th style="width:80px;">Sub</th><th>Work &amp; notes</th><th style="width:96px;">Est. complete</th><th style="width:110px;">Next visit</th></tr></thead><tbody>`;
   h += log.map(u=>`<tr><td>${fmtDate(u.date)}${(u.timeIn||u.timeOut)?`<div style="font-size:10px;color:#647184;">${fmtTime12(u.timeIn)}–${fmtTime12(u.timeOut)}</div>`:''}</td><td>${escapeHtml(u.by)}${u.crew?`<div style="font-size:10px;color:#647184;">crew ${escapeHtml(String(u.crew))}</div>`:''}</td>
-    <td>${(u.areas||[]).length?`<b>Areas:</b> ${u.areas.map(escapeHtml).join(', ')}<br>`:''}${(u.completed||[]).length?`<b>Completed:</b> ${u.completed.map(escapeHtml).join(', ')}<br>`:''}${escapeHtml(u.notes||'')}${u.todo?`<br><b>To do:</b> ${escapeHtml(u.todo)}`:''}${u.needsOffice?`<br><b>Office:</b> ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}${u.handled?' (handled)':''}`:''}</td>
-    <td>${u.estCompletion?fmtDate(u.estCompletion):'—'}${u.prevEst&&u.prevEst!==u.estCompletion?`<div style="font-size:10px;color:#647184;">was ${fmtDate(u.prevEst)}</div>`:''}</td>
+    <td>${u.status && u.status!=='progress' ? `<b>${subStatusLabel(u.status).toUpperCase()}</b><br>` : ''}${(u.areas||[]).length?`<b>Areas:</b> ${u.areas.map(escapeHtml).join(', ')}<br>`:''}${(u.completed||[]).length?`<b>Completed:</b> ${u.completed.map(escapeHtml).join(', ')}<br>`:''}${escapeHtml(u.notes||'')}${u.todo?`<br><b>To do:</b> ${escapeHtml(u.todo)}`:''}${u.needsOffice?`<br><b>Office:</b> ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}${u.handled?' (handled)':''}`:''}${u.photos?'<br><span style="font-size:10px;color:#647184;">✓ Photos in TruRestore</span>':''}</td>
+    <td>${u.estCompletion?fmtDate(u.estCompletion):'—'}${u.prevEst&&u.prevEst!==u.estCompletion?`<div style="font-size:10px;color:#647184;">was ${fmtDate(u.prevEst)}${u.slipReason?' — '+escapeHtml(u.slipReason):''}</div>`:''}</td>
     <td>${escapeHtml(visitText(u.nextVisit))}</td></tr>`).join('');
   return h + `</tbody></table></div>`;
 }
@@ -5879,17 +5977,19 @@ function reportSubLogHtml(job){
 function openSubSchedule(){ renderSubSchedule(); openModal('modalSubSchedule'); }
 function renderSubSchedule(){
   const subJobs = visibleJobs().filter(j=>!j.completed && (jobSubs(j).some(isSub) || (j.subLog||[]).length));
-  const flags = [], missed = [], visits = [], unsched = [];
+  const flags = [], missed = [], visits = [], unsched = [], walks = [];
   subJobs.forEach(j=>{
     openSubFlags(j).forEach(u=>flags.push({ j, u }));
+    const wp = walkPending(j); if(wp) walks.push({ j, wp });
     const m = missedUpdate(j); if(m) missed.push({ j, nv:m });
     const u = latestSubUpdate(j), nv = nextVisitOf(j);
     if(nv && nv.date >= todayStr()) visits.push({ j, nv, est: latestEst(j), who: u ? u.by : '' });
-    else if(u && u.nextVisit && u.nextVisit.notScheduled) unsched.push({ j, u });
+    else if(u && u.nextVisit && u.nextVisit.notScheduled && !['Work complete','Ready for final walk'].includes(u.nextVisit.reason)) unsched.push({ j, u });
   });
   visits.sort((a,b)=>a.nv.date.localeCompare(b.nv.date));
   const row = (j, right, sub) => `<div class="report-row" onclick="closeModal('modalSubSchedule');openJobDetail('${j.id}')" style="cursor:pointer;"><div class="report-row-head"><div class="nm">${escapeHtml(j.customerName)}</div><div class="ct">${right}</div></div>${sub?`<div style="font-size:11.5px;color:var(--muted);padding:2px 2px 4px;">${sub}</div>`:''}</div>`;
   let h = '';
+  h += `<div class="coll-h">Ready for final walk / sign-off (${walks.length})</div>` + (walks.length ? walks.map(({j,wp})=>row(j, '<span style="color:#1F7A50;">Ready</span>', wp.map(x=>escapeHtml(x.by)+': '+subStatusLabel(x.status).toLowerCase()+' ('+fmtDate(x.date)+')').join(' \u00b7 '))).join('') : '<div class="empty" style="padding:6px 0;">None right now.</div>');
   h += `<div class="coll-h">Needs the office (${flags.length})</div>` + (flags.length ? flags.map(({j,u})=>row(j, escapeHtml(u.by), `${fmtDate(u.date)}: ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}`)).join('') : '<div class="empty" style="padding:6px 0;">Nothing waiting on the office.</div>');
   h += `<div class="coll-h">Missed updates (${missed.length})</div>` + (missed.length ? missed.map(({j,nv})=>row(j, '<span style="color:var(--red);">No update</span>', `Visit was planned ${visitText(nv)}`)).join('') : '<div class="empty" style="padding:6px 0;">No missed updates.</div>');
   let lastDay = '';
@@ -5907,6 +6007,118 @@ async function toggleMemberSub(name){
   setMemberInfo(name, { sub: on, ...(on ? { manager:false } : {}) });
   renderTeam();
   await saveJobs(on ? `${name} is now a subcontractor` : `${name} is no longer a subcontractor`);
+}
+
+/* ---------- "How to use" guide on the sub's screen ---------- */
+function subHelpHtml(){
+  return `<button class="sp-back" onclick="${subDraft ? "subView='form'; renderSubForm();" : "subView='list'; renderSubPortal();"}">&larr; ${subDraft ? 'Back to my update' : 'Back to my jobs'}</button>
+  <div class="sp-job sp-help">
+    <div class="sp-job-name">How to send your daily update</div>
+    <p>Send one update for each job, every day you work there, before you leave the site. It takes about 2 minutes and keeps the office, the customer and the other trades on the same page.</p>
+    <ol>
+      <li><b>Open the job.</b> Tap the customer's name on "Your jobs," then tap <b>+ Today's update</b>. You only see jobs the office has assigned to you.</li>
+      <li><b>Where does your work stand?</b> Leave it on <b>Still working</b> most days. When the job is done and ready for the customer walk-through, tap <b>Ready for final walk</b> (add the walk-through day if you set one with the customer). If your trade is finished but someone else is still working, tap <b>My work is complete</b>. The office is notified either way.</li>
+      <li><b>Time on site &amp; crew.</b> Enter when you arrived and left, and how many people worked (including you).</li>
+      <li><b>Areas worked on.</b> Tap every area you worked in today. If it's not listed, tap <b>+ Add area</b> and type the exact name (for example, "Upstairs closet"). It stays as a button on this job for next time. Typo? Tap the &#9998; next to it to fix or remove it.</li>
+      <li><b>Completed today.</b> Tap each item you finished. Use <b>+ Other</b> for anything not listed.</li>
+      <li><b>Daily notes (required).</b> In your own words, what you did and anything the office should know: problems found, what the customer said, materials used or still needed.<br><i>Example: "Hung and taped hall bath. Found soft subfloor by toilet &mdash; customer aware."</i></li>
+      <li><b>Still to do.</b> What's left on this job, so the next visit can pick right up.<br><i>Example: "Texture &amp; paint hall bath, install vanity."</i></li>
+      <li><b>Estimated completion (required).</b> Your best guess for the day the work will be finished. Update it each visit. If it moves later, pick the reason (pulled to another job, waiting on materials, extra work, etc.).</li>
+      <li><b>Next visit.</b> The day and time you agreed with the customer. If it's not set yet, check <b>Not scheduled yet</b> and pick why.</li>
+      <li><b>Needs the office?</b> Tap <b>Yes</b> if the office needs to act: <b>extra work found</b> (hidden damage, anything not in the original scope &mdash; please don't start it without approval), materials needed, a customer decision, an access problem, or anything else. Add details in the box.</li>
+      <li><b>Photos.</b> Upload your photos to TruRestore as usual, then check <b>Photos uploaded to TruRestore</b>.</li>
+      <li>Tap <b>Submit update</b>. You'll see "Update sent &mdash; thank you!"</li>
+    </ol>
+    <p><b>Made a mistake?</b> Tap <b>Edit</b> on your update. You can change it until the end of the next day; after that, call the office.</p>
+    <p><b>Customer contact.</b> Tap the phone number to call the customer, or the address for directions.</p>
+    <p><b>Done for the day?</b> Tap <b>Switch user</b> so the next person can sign in with their own PIN.</p>
+  </div>`;
+}
+
+/* ---------- Daily Sub Report (office): every job worked on a day + what's scheduled next ---------- */
+let subReportDate = '';
+function openSubDailyReport(){
+  subReportDate = subReportDate || todayStr();
+  document.getElementById('srDate').value = subReportDate;
+  renderSubDailyReport();
+  openModal('modalSubReport');
+}
+function renderSubDailyReport(){
+  subReportDate = document.getElementById('srDate').value || todayStr();
+  document.getElementById('subReportBody').innerHTML = subDailyReportHtml(subReportDate);
+}
+function printSubReport(){
+  setPrintOrientation(true);
+  const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  printActiveModal();
+}
+function subDailyReportHtml(day){
+  const dayLong = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const dayShort = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const worked = [];
+  visibleJobs().forEach(j=>(j.subLog||[]).forEach(u=>{ if(u.date===day) worked.push({ j, u }); }));
+  worked.sort((a,b)=>a.j.customerName.localeCompare(b.j.customerName) || (a.u.by||'').localeCompare(b.u.by||''));
+  // what's scheduled next: each job's latest plan, for the 7 days after this report's day
+  const upcoming = [], unsched = [];
+  visibleJobs().filter(j=>!j.completed).forEach(j=>{
+    // each sub's own latest plan on the job (two trades can be coming on different days)
+    const seen = new Set();
+    subLog(j).filter(x=>x.date<=day).forEach(u=>{
+      const who = normName(u.by); if(seen.has(who) || !u.nextVisit) return; seen.add(who);
+      if(u.nextVisit.notScheduled){ if(!['Work complete','Ready for final walk'].includes(u.nextVisit.reason)) unsched.push({ j, u }); return; }
+      if(u.nextVisit.date && u.nextVisit.date>day && u.nextVisit.date<=addDays(day,7)) upcoming.push({ j, u, nv:u.nextVisit });
+    });
+  });
+  upcoming.sort((a,b)=>a.nv.date.localeCompare(b.nv.date) || (a.nv.window||'').localeCompare(b.nv.window||''));
+  const subsOn = j => jobSubs(j).filter(isSub).join(', ') || '—';
+  const totalHrs = worked.reduce((s,{u})=>{ if(!u.timeIn||!u.timeOut) return s; const [h1,m1]=u.timeIn.split(':').map(Number),[h2,m2]=u.timeOut.split(':').map(Number); const hrs=((h2*60+m2)-(h1*60+m1))/60; return s + (hrs>0 ? hrs*(Number(u.crew)||1) : 0); },0);
+  const flags = worked.filter(({u})=>u.needsOffice && !u.handled).length;
+  const jobsCount = new Set(worked.map(x=>x.j.id)).size;
+
+  let h = letterheadHtml('Daily Subcontractor Report', `${dayLong(day)} &middot; Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
+  h += `<table class="rpt-summary"><tr>
+    <td><div class="v">${jobsCount}</div><div class="k">Jobs worked</div></td>
+    <td><div class="v">${worked.length}</div><div class="k">Updates</div></td>
+    <td><div class="v">${totalHrs ? Math.round(totalHrs*10)/10 : '—'}</div><div class="k">Crew hours on site</div></td>
+    <td><div class="v ${flags?'red':''}">${flags}</div><div class="k">Need the office</div></td>
+    <td><div class="v">${upcoming.length}</div><div class="k">Visits next 7 days</div></td>
+  </tr></table>`;
+
+  h += `<div class="rpt-sec">Work completed ${dayShort(day)} <span>(${worked.length})</span></div>`;
+  h += worked.length ? `<table class="rpt-grid"><thead><tr><th>Job / address</th><th>Sub</th><th>On site</th><th>Areas</th><th>Completed</th><th>Notes</th><th>Still to do</th><th>Est. complete</th><th>Next visit</th><th>Office</th></tr></thead><tbody>` +
+    worked.map(({j,u})=>`<tr class="${u.needsOffice && !u.handled ? 'row-red' : ''}">
+      <td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}${j.phone?`<div class="sm">${escapeHtml(j.phone)}</div>`:''}</td>
+      <td>${escapeHtml(u.by)}</td>
+      <td style="white-space:nowrap;">${(u.timeIn||u.timeOut) ? `${fmtTime12(u.timeIn)}–${fmtTime12(u.timeOut)}` : '—'}${u.crew?`<div class="sm">crew of ${escapeHtml(String(u.crew))}</div>`:''}</td>
+      <td>${(u.areas||[]).map(escapeHtml).join(', ')||'—'}</td>
+      <td>${(u.completed||[]).map(escapeHtml).join(', ')||'—'}</td>
+      <td>${u.status && u.status!=='progress' ? `<b style="color:#1F7A50;">${subStatusLabel(u.status).toUpperCase()}</b><br>` : ''}${escapeHtml(u.notes||'')}${u.photos?'<div class="sm">\u2713 Photos in TruRestore</div>':''}</td>
+      <td>${escapeHtml(u.todo||'—')}</td>
+      <td style="white-space:nowrap;">${u.estCompletion?fmtDate(u.estCompletion):'—'}${u.prevEst&&u.prevEst!==u.estCompletion?`<div class="sm red">was ${fmtDate(u.prevEst)}${u.slipReason?' — '+escapeHtml(u.slipReason):''}</div>`:''}</td>
+      <td>${escapeHtml(visitText(u.nextVisit))}</td>
+      <td>${u.needsOffice ? `<b class="red">${(u.flags||[]).map(escapeHtml).join(', ')}</b>${u.flagNote?`<div class="sm">${escapeHtml(u.flagNote)}</div>`:''}${u.handled?'<div class="sm">handled</div>':''}` : '—'}</td>
+    </tr>`).join('') + `</tbody></table>` : `<div class="rpt-empty">No subcontractor updates for ${dayShort(day)}.</div>`;
+
+  let lastDay = '';
+  h += `<div class="rpt-sec">Schedule &mdash; next visits after ${dayShort(day)} <span>(${upcoming.length})</span></div>`;
+  h += upcoming.length ? `<table class="rpt-grid"><thead><tr><th class="ck">&#10003;</th><th>Day</th><th>Time</th><th>Job / address</th><th>Sub</th><th>Planned work (still to do)</th><th>Est. complete</th></tr></thead><tbody>` +
+    upcoming.map(({j,u,nv})=>{ const first = nv.date!==lastDay; lastDay = nv.date;
+      return `<tr><td class="ck"><span class="box"></span></td><td style="white-space:nowrap;">${first?`<b>${dayShort(nv.date)}</b>`:''}</td><td style="white-space:nowrap;">${escapeHtml(nv.window||'—')}</td>
+      <td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}${j.phone?`<div class="sm">${escapeHtml(j.phone)}</div>`:''}</td>
+      <td>${escapeHtml(u.by)}</td><td>${escapeHtml(u.todo||'—')}</td><td style="white-space:nowrap;">${latestEst(j)?fmtDate(latestEst(j)):'—'}</td></tr>`; }).join('') + `</tbody></table>` : `<div class="rpt-empty">No visits scheduled in the next 7 days.</div>`;
+
+  const walkJobs = visibleJobs().filter(j=>!j.completed && walkPending(j));
+  if(walkJobs.length){
+    h += `<div class="rpt-sec">Ready for final walk / sign-off <span>(${walkJobs.length})</span></div><table class="rpt-grid"><thead><tr><th class="ck">&#10003;</th><th>Job / address</th><th>Sub status</th><th>Final walk set for</th></tr></thead><tbody>` +
+      walkJobs.map(j=>{ const wp = walkPending(j); const nv = wp.map(x=>x.u.nextVisit).find(v=>v && v.walk && v.date); return `<tr><td class="ck"><span class="box"></span></td><td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}${j.phone?`<div class="sm">${escapeHtml(j.phone)}</div>`:''}</td><td>${wp.map(x=>escapeHtml(x.by)+': '+subStatusLabel(x.status)+' ('+fmtDate(x.date)+')').join('<br>')}</td><td>${nv ? escapeHtml(visitText(nv)) : 'Not set \u2014 call customer'}</td></tr>`; }).join('') + `</tbody></table>`;
+  }
+  if(unsched.length){
+    h += `<div class="rpt-sec">Not scheduled yet <span>(${unsched.length})</span></div><table class="rpt-grid"><thead><tr><th>Job</th><th>Sub</th><th>Why</th><th>Still to do</th><th>Last update</th></tr></thead><tbody>` +
+      unsched.map(({j,u})=>`<tr><td><b>${escapeHtml(j.customerName)}</b></td><td>${escapeHtml(u.by)}</td><td>${escapeHtml(u.nextVisit.reason||'')}${u.nextVisit.reasonNote?' — '+escapeHtml(u.nextVisit.reasonNote):''}</td><td>${escapeHtml(u.todo||'—')}</td><td>${fmtDate(u.date)} (${escapeHtml(u.by)})</td></tr>`).join('') + `</tbody></table>`;
+  }
+  h += `<div class="report-footer">Voda Job Tracker &middot; Daily Subcontractor Report &middot; ${fmtDate(day)}</div>`;
+  return h;
 }
 
 /* ============ REPORTS ============ */
