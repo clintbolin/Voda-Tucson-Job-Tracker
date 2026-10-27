@@ -379,7 +379,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .toast{
   position:fixed;top:14px;left:50%;transform:translateX(-50%);
   background:var(--navy);color:#fff;font-size:13px;font-weight:600;
-  padding:10px 18px;border-radius:99px;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,0.25);
+  padding:10px 18px;border-radius:99px;z-index:10050;box-shadow:0 6px 20px rgba(0,0,0,0.25);
   display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
@@ -562,6 +562,24 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .sub-st.walk, .sub-st.complete{ background:var(--green-bg); color:#1F7A50; }
 .sub-walk{ margin-top:8px; padding:8px 10px; border-radius:9px; background:var(--green-bg); color:#1F7A50; font-size:12.5px; }
 [data-theme="dark"] .sub-st.walk, [data-theme="dark"] .sub-st.complete, [data-theme="dark"] .sub-walk, [data-theme="dark"] .sp-status{ color:#7FD6A8; }
+.hs-box{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:12px; }
+.hs-head{ display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:13.5px; margin-bottom:4px; }
+.hs-count{ font-size:12px; font-weight:600; color:var(--muted); }
+.hs-row{ display:flex; align-items:center; gap:7px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; cursor:pointer; flex-wrap:wrap; }
+.hs-ok{ width:20px; height:20px; border-radius:50%; background:#1F9254; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+.hs-wait{ width:20px; height:20px; border-radius:50%; background:var(--red); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+.hs-time{ color:var(--muted); font-size:11.5px; min-width:58px; } .hs-job{ font-weight:700; }
+.hs-tag{ font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:6px; } .hs-tag.red{ background:var(--red-bg); color:var(--red); } .hs-tag.go{ background:var(--green-bg); color:#1F7A50; }
+.hs-empty{ font-size:12px; color:var(--muted); padding:6px 0; border-top:1px solid var(--line); }
+.hs-foot{ border-top:1px solid var(--line); padding-top:8px; margin-top:2px; font-size:12px; font-weight:700; color:var(--cyan-dark); cursor:pointer; }
+.sp-err{ margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--red-bg); color:var(--red); font-weight:700; font-size:13px; border:1.5px solid var(--red); }
+#subConfirm{ position:fixed; inset:0; z-index:9500; background:rgba(10,20,30,.6); align-items:flex-end; justify-content:center; }
+.sc-card{ background:var(--card); color:var(--ink); width:100%; max-width:560px; max-height:88vh; overflow-y:auto; border-radius:18px 18px 0 0; padding:18px 18px 22px; }
+.sc-title{ font-size:18px; font-weight:800; } .sc-sub{ font-size:12.5px; color:var(--muted); margin:3px 0 10px; }
+.sc-row{ display:flex; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+.sc-k{ width:96px; flex-shrink:0; color:var(--muted); font-size:12px; font-weight:700; } .sc-v{ flex:1; line-height:1.4; }
+.sp-submitted{ display:flex; gap:12px; align-items:center; background:#1F9254; color:#fff; border-radius:14px; padding:14px 16px; margin-bottom:12px; font-size:13px; }
+.sp-submitted b{ font-size:17px; } .sp-sub-ic{ width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; flex-shrink:0; }
 .sp-helplink{ background:var(--blue-bg); color:var(--ink); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:12px; cursor:pointer; }
 .sp-helplink b{ color:var(--cyan-dark); }
 .sp-help p{ font-size:13px; line-height:1.5; margin:8px 0; }
@@ -742,7 +760,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 </head>
 <body>
 <div id="pinGate" style="display:none;"><div id="pinGateBox"></div></div>
-<div id="subPortal" style="display:none;"><div id="subPortalBody"></div></div>
+<div id="subPortal" style="display:none;"><div id="subPortalBody"></div><div id="subConfirm" style="display:none;"></div></div>
 <div id="authGate" style="display:flex;">
   <div id="authGateBox"></div>
 </div>
@@ -775,6 +793,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 
     <!-- HOME -->
     <div class="view active" id="view-home">
+      <div id="homeSubToday"></div>
       <div class="kpi-strip" style="margin-bottom:6px;">
         <div class="stat-card-light"><div class="n" id="kpiMitPipeline">0</div><div class="l">Mitigation pipeline</div></div>
         <div class="stat-card-light"><div class="n" id="kpiReconPipeline">0</div><div class="l">Reconstruction pipeline</div></div>
@@ -1518,7 +1537,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 26, 2026 \u00b7 6:30 PM';
+const APP_VERSION = 'Oct 27, 2026 \u00b7 11:15 AM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -2190,6 +2209,7 @@ async function loadData(silent){
     if(!pinGateShown){ restorePinUser(); maybeShowPinGate(); }
     applyUserMode();
     renderAll();
+    checkNewSubUpdates();
     renderEquipmentSyncBanner();
   }catch(e){
     console.error('load failed', e);
@@ -2283,6 +2303,7 @@ function renderAll(){
 
 /* ============ RENDER: HOME ============ */
 function renderHome(){
+  renderHomeSubToday();
   const mitPipeline = visibleJobs().filter(j=>scopeStatus(j.scopes.mitigation)==='Pipeline');
   const reconPipeline = visibleJobs().filter(j=>scopeStatus(j.scopes.reconstruction)==='Pipeline');
   const activeJobs = visibleJobs().filter(j=>
@@ -5736,19 +5757,22 @@ function renderSubPortal(){
     const mine = (j.subLog||[]).some(x=>normName(x.by)===normName(subUser()) && x.date===todayStr());
     const visitToday = nv && nv.date===todayStr();
     return `<div class="sp-card" onclick="subOpenJob('${j.id}')">
-      <div class="sp-card-top"><b>${escapeHtml(j.customerName)}</b>${(()=>{ const me = subStatuses(j).find(x=>normName(x.by)===normName(subUser())); return me && me.status!=='progress' ? `<span class="sp-badge go">${subStatusLabel(me.status)}</span>` : (visitToday && !mine ? '<span class="sp-badge">Update due today</span>' : ''); })()}</div>
+      <div class="sp-card-top"><b>${escapeHtml(j.customerName)}</b>${(()=>{ const me = subStatuses(j).find(x=>normName(x.by)===normName(subUser())); const sentToday = (j.subLog||[]).filter(x=>normName(x.by)===normName(subUser()) && x.date===todayStr()).map(x=>x.at).sort().pop();
+        if(sentToday) return `<span class="sp-badge go">✓ Submitted ${new Date(sentToday).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})}</span>`;
+        return me && me.status!=='progress' ? `<span class="sp-badge go">${subStatusLabel(me.status)}</span>` : (visitToday && !mine ? '<span class="sp-badge">Update due today</span>' : ''); })()}</div>
       <div class="sp-line">${escapeHtml(j.address||'No address on file')}</div>
       <div class="sp-line">Next visit: <b>${nv ? visitText(nv) : (u && u.nextVisit && u.nextVisit.notScheduled ? 'not scheduled' : '—')}</b>${est ? ` &middot; Est. completion <b>${fmtDate(est)}</b>` : ''}</div>
       <div class="sp-line muted">${u ? `Last update ${fmtDate(u.date)} by ${escapeHtml(u.by)}` : 'No updates yet'}</div>
     </div>`; }).join('') : `<div class="empty">You're not listed on any open jobs yet. The office adds you to a job as a contractor.</div>`);
 }
 function subOpenJob(id){ subView = 'job'; subJobId = id; renderSubPortal(); }
-function subBack(){ subView = 'list'; subJobId = null; renderSubPortal(); }
+function subBack(){ subView = 'list'; subJobId = null; subLastSubmitted = null; renderSubPortal(); }
 function subJobHtml(job){
   const others = jobSubs(job).filter(n=>normName(n)!==normName(subUser()));
   const est = latestEst(job), nv = nextVisitOf(job);
   const log = subLog(job);
   return `<button class="sp-back" onclick="subBack()">&larr; All my jobs</button>
+    ${subSubmittedBanner(job)}
     <div class="sp-job">
       <div class="sp-job-name">${escapeHtml(job.customerName)}</div>
       ${job.address ? `<a class="sp-link" href="https://maps.google.com/?q=${encodeURIComponent(job.address)}" target="_blank" rel="noopener">${escapeHtml(job.address)}</a>` : '<div class="sp-line muted">No address on file</div>'}
@@ -5765,6 +5789,7 @@ function subUpdateCardHtml(u, forSub){
   const time = (u.timeIn||u.timeOut) ? `${fmtTime12(u.timeIn)||'?'}–${fmtTime12(u.timeOut)||'?'}` : '';
   return `<div class="sp-upd" style="border-left-color:${userColor(u.by)};">
     <div class="sp-upd-top">${nameChip(u.by)} <b>${new Date(u.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</b>${time?` <span class="muted">${time}${u.crew?' · crew of '+u.crew:''}</span>`:''}
+      ${u.at ? `<span class="muted">sent ${new Date(u.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})}${dateOnly(u.at)!==u.date?' '+fmtDate(dateOnly(u.at)):''}</span>` : ''}
       ${u.editedAt ? '<span class="muted">(edited)</span>' : ''}
       ${forSub && canEditSubUpdate(u) ? `<button class="sp-edit" onclick="subEditUpdate('${u.id}')">Edit</button>` : ''}</div>
     ${u.status && u.status!=='progress' ? `<div class="sp-status">${u.status==='walk'?'\u2691':'\u2713'} ${subStatusLabel(u.status)}</div>` : ''}
@@ -5870,54 +5895,163 @@ function renderSubForm(){
       ${d.needsOffice ? `<div class="tog-row">${SUB_FLAGS.map(f=>`<button type="button" class="tog ${d.flags.includes(f)?'on':''}" onclick="subToggle('flags', ${JSON.stringify(f).replace(/"/g,'&quot;')})">${escapeHtml(f)}</button>`).join('')}</div>
         <textarea rows="2" placeholder="Details for the office" oninput="subField('flagNote', this.value)">${escapeHtml(d.flagNote||'')}</textarea>` : ''}
       <label class="sp-check" style="margin-top:12px;"><input type="checkbox" ${d.photos?'checked':''} onchange="subField('photos', this.checked)"> Photos uploaded to TruRestore</label>
-      <button class="btn btn-primary" id="subSubmitBtn" style="width:100%;margin-top:16px;" onclick="submitSubUpdate()">${subEditId?'Save changes':'Submit update'}</button>
+      <div id="subFormErr" class="sp-err" style="display:none;"></div>
+      <button class="btn btn-primary" id="subSubmitBtn" style="width:100%;margin-top:16px;" onclick="submitSubUpdate()">${subEditId?'Review &amp; save changes':'Review &amp; submit'}</button>
     </div>`;
 }
 function latestEstBefore(job, excludeId){
   const u = subLog(job).find(x=>x.estCompletion && x.id!==excludeId);
   return u ? u.estCompletion : '';
 }
-async function submitSubUpdate(){
-  const d = subDraft, job0 = getJob(subJobId); if(!d || !job0) return;
-  if(!d.notes || !d.notes.trim()){ showToast('Add your daily notes first', true); return; }
+// Step 1: check the form. Problems show right above the Submit button (and
+// the screen scrolls to them), so a sub can always see what's missing.
+function subFormError(msg){
+  const box = document.getElementById('subFormErr');
+  if(box){ box.innerHTML = '⚠ ' + msg; box.style.display = 'block'; box.scrollIntoView({block:'center', behavior:'smooth'}); }
+  showToast(msg, true);
+  return false;
+}
+function validateSubDraft(){
+  const d = subDraft, job0 = getJob(subJobId); if(!d || !job0) return false;
+  const e = document.getElementById('subFormErr'); if(e) e.style.display = 'none';
+  if(!d.notes || !d.notes.trim()) return subFormError('Add your daily notes (what you did today).');
   const st = d.status || 'progress';
   if(st!=='progress'){
     d.estCompletion = d.estCompletion && d.estCompletion<=d.date ? d.estCompletion : d.date; d.slipReason = '';
     if(st==='complete' || !d.nextVisit.date || d.nextVisit.notScheduled){ d.nextVisit = { notScheduled:true, reason: st==='walk' ? 'Ready for final walk' : 'Work complete', date:'', window:'' }; }
     else d.nextVisit = { date:d.nextVisit.date, window:d.nextVisit.window||'', walk:true, notScheduled:false };
   }
-  if(!d.estCompletion || !dateReady(d.estCompletion)){ showToast('Enter the estimated completion date', true); return; }
+  if(!d.estCompletion || !dateReady(d.estCompletion)) return subFormError('Enter the estimated completion date.');
   const prevEst = latestEstBefore(job0, subEditId);
-  if(st==='progress' && prevEst && d.estCompletion > prevEst && !d.slipReason){ showToast('Pick why the completion date moved later', true); return; }
-  if(st!=='progress'){ /* next visit set above */ }
-  else if(d.nextVisit.notScheduled){ if(!d.nextVisit.reason){ showToast('Pick why the next visit isn’t scheduled', true); return; } d.nextVisit.date=''; d.nextVisit.window=''; }
-  else if(!d.nextVisit.date || !dateReady(d.nextVisit.date)){ showToast('Enter the next visit date (or check "Not scheduled yet")', true); return; }
-  if(d.needsOffice && !d.flags.length){ showToast('Pick what the office needs to know about', true); return; }
-  if(subPreviewAs){ showToast('Preview only \u2014 nothing was saved. This is what the sub would see after sending.'); subView = 'job'; subDraft = null; subEditId = null; renderSubPortal(); return; }
-  const btn = document.getElementById('subSubmitBtn'); btn.disabled = true; btn.textContent = 'Sending\u2026';
+  if(st==='progress' && prevEst && d.estCompletion > prevEst && !d.slipReason) return subFormError('The completion date moved later — pick the reason under the date.');
+  if(st==='progress'){
+    if(d.nextVisit.notScheduled){ if(!d.nextVisit.reason) return subFormError('Pick why the next visit isn’t scheduled.'); d.nextVisit.date=''; d.nextVisit.window=''; }
+    else if(!d.nextVisit.date || !dateReady(d.nextVisit.date)) return subFormError('Enter the next visit date, or check "Not scheduled yet."');
+    else if(!d.nextVisit.window) return subFormError('Pick the time for the next visit.');
+  }
+  if(d.needsOffice && !d.flags.length) return subFormError('You tapped "Yes" for Needs the office — pick what it’s about.');
+  return true;
+}
+function hideToast(){ const t=document.getElementById('toast'); if(t) t.classList.remove('show'); }
+function submitSubUpdate(){ if(validateSubDraft()){ hideToast(); showSubConfirm(); } }
+
+// Step 2: review screen ("Is everything correct?")
+function showSubConfirm(){
+  const d = subDraft, job = getJob(subJobId);
+  const row = (k,v) => v ? `<div class="sc-row"><div class="sc-k">${k}</div><div class="sc-v">${v}</div></div>` : '';
+  const time = (d.timeIn||d.timeOut) ? `${fmtTime12(d.timeIn)||'?'} – ${fmtTime12(d.timeOut)||'?'}${d.crew?' · crew of '+escapeHtml(String(d.crew)):''}` : (d.crew ? 'crew of '+escapeHtml(String(d.crew)) : '');
+  const box = document.getElementById('subConfirm');
+  box.innerHTML = `<div class="sc-card">
+    <div class="sc-title">Is everything correct?</div>
+    <div class="sc-sub">${escapeHtml(job.customerName)} &middot; ${new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</div>
+    ${row('Status', `<b>${subStatusLabel(d.status||'progress')}</b>`)}
+    ${row('On site', time)}
+    ${row('Areas', (d.areas||[]).map(escapeHtml).join(', '))}
+    ${row('Completed', (d.completed||[]).map(escapeHtml).join(', '))}
+    ${row('Notes', escapeHtml(d.notes||'').replace(/\n/g,'<br>'))}
+    ${row('Still to do', escapeHtml(d.todo||'').replace(/\n/g,'<br>'))}
+    ${(d.status||'progress')==='progress' ? row('Est. completion', fmtDate(d.estCompletion) + (d.slipReason ? ' ('+escapeHtml(d.slipReason)+')' : '')) : ''}
+    ${row((d.status==='walk'?'Final walk':'Next visit'), escapeHtml(visitText(d.nextVisit)))}
+    ${row('Needs office', d.needsOffice ? `<b style="color:var(--red);">${d.flags.map(escapeHtml).join(', ')}</b>${d.flagNote?'<br>'+escapeHtml(d.flagNote):''}` : 'No')}
+    ${row('Photos', d.photos ? 'Uploaded to TruRestore' : 'Not checked')}
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="hideSubConfirm()">Go back &amp; edit</button>
+      <button class="btn btn-green" id="subConfirmBtn" onclick="sendSubUpdate()">Yes, submit</button>
+    </div>
+  </div>`;
+  box.style.display = 'flex';
+}
+function hideSubConfirm(){ const b = document.getElementById('subConfirm'); b.style.display = 'none'; b.innerHTML = ''; }
+
+// Step 3: send it, then show "Submitted" with the date and time
+let subLastSubmitted = null; // { jobId, at, edited }
+async function sendSubUpdate(){
+  const d = subDraft, job0 = getJob(subJobId); if(!d || !job0) return;
+  const btn = document.getElementById('subConfirmBtn');
+  if(subPreviewAs){ hideSubConfirm(); subLastSubmitted = { jobId: subJobId, at: new Date().toISOString(), preview: true }; subView = 'job'; subDraft = null; subEditId = null; renderSubPortal(); return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const st = d.status || 'progress';
+  const prevEst = latestEstBefore(job0, subEditId);
   const customAreas = (job0.subAreas||[]).slice(), customTasks = (job0.subTasks||[]).slice();
   // load the latest data first so this update never overwrites the office's work
-  try{ const data = await apiGetAll(); jobs = extractTeamSettings(data.jobs || []); }catch(e){ /* offline: save onto what we have */ }
+  try{ const data = await apiGetAll(); jobs = extractTeamSettings(data.jobs || []); }catch(e){ /* weak signal: save onto what we have */ }
   const job = getJob(subJobId);
-  if(!job){ showToast('That job is no longer available', true); btn.disabled=false; return; }
+  if(!job){ hideSubConfirm(); subFormError('That job is no longer available. Call the office.'); return; }
   job.subAreas = [...new Set([...(job.subAreas||[]), ...customAreas])];
   job.subTasks = [...new Set([...(job.subTasks||[]), ...customTasks])];
   if(!job.subLog) job.subLog = [];
   const clean = { ...d, prevEst: (prevEst && prevEst!==d.estCompletion) ? prevEst : '', slipReason: (prevEst && d.estCompletion > prevEst) ? d.slipReason : '', notes: d.notes.trim(), todo: (d.todo||'').trim() };
   if(!d.needsOffice){ clean.flags = []; clean.flagNote = ''; }
+  const nowIso = new Date().toISOString();
   if(subEditId){
     const i = job.subLog.findIndex(x=>x.id===subEditId);
-    if(i>=0) job.subLog[i] = { ...job.subLog[i], ...clean, editedAt: new Date().toISOString() };
+    if(i>=0) job.subLog[i] = { ...job.subLog[i], ...clean, editedAt: nowIso };
     logActivity(job, `Sub update edited by ${pinUser} (${fmtDate(clean.date)})`);
   } else {
     job.subLog.push({ ...clean, id: uid('SU'), ...stamp() });
     if(st!=='progress') logActivity(job, `${pinUser}: ${subStatusLabel(st).toUpperCase()}`);
     logActivity(job, `Sub update from ${pinUser}: ${clean.notes.slice(0,120)}${clean.notes.length>120?'…':''}${d.needsOffice?' — NEEDS OFFICE: '+d.flags.join(', '):''}`);
   }
-  job.updatedAt = new Date().toISOString();
-  const ok = await saveJobs(subEditId ? 'Update saved' : 'Update sent — thank you!');
-  if(!ok){ btn.disabled = false; btn.textContent = 'Try again'; return; }
+  job.updatedAt = nowIso;
+  const ok = await saveJobs();
+  if(!ok){ btn.disabled = false; btn.textContent = 'Try again'; const t = btn.closest('.sc-card').querySelector('.sc-sub'); if(t) t.innerHTML = '<b style="color:var(--red);">Couldn’t send — check your signal and tap Try again. Nothing is lost.</b>'; return; }
+  hideSubConfirm(); hideToast();
+  subLastSubmitted = { jobId: subJobId, at: nowIso, edited: !!subEditId };
   subView = 'job'; subDraft = null; subEditId = null; renderSubPortal();
+}
+/* ---------- Home: today's sub updates + who hasn't sent one ---------- */
+function subTodayInfo(){
+  const today = todayStr(), sent = [], waiting = [];
+  visibleJobs().forEach(j=>{
+    (j.subLog||[]).forEach(u=>{ if(u.date===today) sent.push({ j, u }); });
+    // each sub whose last plan put them on this job today
+    const seen = new Set();
+    subLog(j).forEach(u=>{
+      const k = normName(u.by); if(seen.has(k)) return; seen.add(k);
+      const nv = u.nextVisit;
+      if(nv && !nv.notScheduled && !nv.walk && nv.date===today && u.date!==today && !(j.subLog||[]).some(x=>normName(x.by)===k && x.date===today)) waiting.push({ j, by:u.by, nv });
+    });
+  });
+  sent.sort((a,b)=>(b.u.at||'').localeCompare(a.u.at||''));
+  return { sent, waiting };
+}
+function renderHomeSubToday(){
+  const el = document.getElementById('homeSubToday'); if(!el) return;
+  const anySubs = personnel.some(isSub);
+  const { sent, waiting } = subTodayInfo();
+  if(!anySubs && !sent.length){ el.innerHTML = ''; return; }
+  const tm = iso => new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ});
+  el.innerHTML = `<div class="hs-box">
+    <div class="hs-head"><span>Sub updates today</span><span class="hs-count">${sent.length} sent${waiting.length?` &middot; <b style="color:var(--red);">${waiting.length} waiting</b>`:''}</span></div>
+    ${sent.map(({j,u})=>`<div class="hs-row" onclick="openJobDetail('${j.id}')">
+        <span class="hs-ok">✓</span><span class="hs-time">${u.at?tm(u.at):''}</span>${nameChip(u.by)}
+        <span class="hs-job">${escapeHtml(j.customerName)}</span>
+        ${u.status && u.status!=='progress' ? `<span class="hs-tag go">${subStatusLabel(u.status)}</span>` : ''}
+        ${u.needsOffice && !u.handled ? '<span class="hs-tag red">Needs office</span>' : ''}
+      </div>`).join('')}
+    ${waiting.map(({j,by,nv})=>`<div class="hs-row" onclick="openJobDetail('${j.id}')">
+        <span class="hs-wait">!</span><span class="hs-time">${escapeHtml(nv.window||'today')}</span>${nameChip(by)}
+        <span class="hs-job">${escapeHtml(j.customerName)}</span><span class="hs-tag red">No update yet</span>
+      </div>`).join('')}
+    ${!sent.length && !waiting.length ? '<div class="hs-empty">No sub updates yet today.</div>' : ''}
+    <div class="hs-foot" onclick="openSubSchedule()">Sub schedule &amp; daily report &rarr;</div>
+  </div>`;
+}
+// pop-up in the office app when a new sub update comes in
+let seenSubUpdateIds = null;
+function checkNewSubUpdates(){
+  const ids = new Set(); const fresh = [];
+  visibleJobs().forEach(j=>(j.subLog||[]).forEach(u=>{ ids.add(u.id); if(seenSubUpdateIds && !seenSubUpdateIds.has(u.id) && u.by!==pinUser) fresh.push({ j, u }); }));
+  seenSubUpdateIds = ids;
+  if(!fresh.length || subMode()) return;
+  const f = fresh[fresh.length-1];
+  showToast(fresh.length===1 ? `New sub update: ${f.u.by} — ${f.j.customerName}${f.u.needsOffice?' (needs office)':''}` : `${fresh.length} new sub updates — see Home`);
+}
+function subSubmittedBanner(job){
+  if(!subLastSubmitted || subLastSubmitted.jobId!==job.id) return '';
+  const t = new Date(subLastSubmitted.at);
+  const when = `${t.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:BUSINESS_TZ})} at ${t.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})}`;
+  return `<div class="sp-submitted"><div class="sp-sub-ic">✓</div><div><b>${subLastSubmitted.preview ? 'Preview — not saved' : (subLastSubmitted.edited ? 'Changes saved' : 'Submitted')}</b><div>${when}${subLastSubmitted.preview ? '' : ' — the office can see it now. Thank you!'}</div></div></div>`;
 }
 
 /* ---------- office side ---------- */
@@ -6027,7 +6161,7 @@ function subHelpHtml(){
       <li><b>Next visit.</b> The day and time you agreed with the customer. If it's not set yet, check <b>Not scheduled yet</b> and pick why.</li>
       <li><b>Needs the office?</b> Tap <b>Yes</b> if the office needs to act: <b>extra work found</b> (hidden damage, anything not in the original scope &mdash; please don't start it without approval), materials needed, a customer decision, an access problem, or anything else. Add details in the box.</li>
       <li><b>Photos.</b> Upload your photos to TruRestore as usual, then check <b>Photos uploaded to TruRestore</b>.</li>
-      <li>Tap <b>Submit update</b>. You'll see "Update sent &mdash; thank you!"</li>
+      <li>Tap <b>Review &amp; submit</b>. Check the summary that pops up, then tap <b>Yes, submit</b>. You'll see a green <b>Submitted</b> box with the date and time &mdash; that means the office has it. If something is missing, a red note above the button tells you what.</li>
     </ol>
     <p><b>Made a mistake?</b> Tap <b>Edit</b> on your update. You can change it until the end of the next day; after that, call the office.</p>
     <p><b>Customer contact.</b> Tap the phone number to call the customer, or the address for directions.</p>
