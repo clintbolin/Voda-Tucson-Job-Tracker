@@ -517,6 +517,41 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .sched-paid{ font-size:11.5px; color:var(--muted); min-width:80px; text-align:right; }
 .scope-na-link{ margin-top:14px; padding-top:10px; border-top:1px dashed var(--line); font-size:12px; color:var(--muted); cursor:pointer; text-align:center; }
 .scope-na-link b{ color:var(--cyan-dark); }
+#subPortal{ position:fixed; inset:0; z-index:9000; background:var(--bg); overflow-y:auto; }
+#subPortalBody{ max-width:640px; margin:0 auto; padding:16px 16px 60px; }
+.sp-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--navy); color:#fff; border-radius:14px; padding:14px 16px; margin-bottom:14px; }
+.sp-hi{ font-size:18px; font-weight:800; } .sp-sub{ font-size:11.5px; opacity:.75; margin-top:2px; }
+.sp-switch{ background:rgba(255,255,255,.12); color:#fff; border:none; border-radius:9px; padding:8px 11px; font-weight:700; font-size:12px; cursor:pointer; }
+.sp-title{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); margin:6px 0 8px; }
+.sp-card, .sp-job, .sp-form{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:10px; }
+.sp-card{ cursor:pointer; }
+.sp-card-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:15px; }
+.sp-badge{ background:var(--amber); color:#fff; font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:99px; white-space:nowrap; }
+.sp-line{ font-size:12.5px; margin-top:4px; } .muted{ color:var(--muted); }
+.sp-job-name{ font-size:18px; font-weight:800; margin-bottom:4px; }
+.sp-link{ display:block; font-size:14px; color:var(--cyan-dark); font-weight:700; margin-top:5px; text-decoration:none; }
+.sp-back{ background:none; border:none; color:var(--cyan-dark); font-weight:700; font-size:13.5px; padding:4px 0 10px; cursor:pointer; }
+.sp-upd{ background:var(--card); border:1px solid var(--line); border-left:4px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:12.5px; }
+.sp-upd-top{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+.sp-edit{ margin-left:auto; border:1px solid var(--line); background:var(--gray-bg); color:var(--ink); border-radius:7px; padding:3px 9px; font-size:11.5px; font-weight:700; cursor:pointer; }
+.sp-tags{ display:flex; flex-wrap:wrap; gap:4px; margin:4px 0; } .sp-tags span{ background:var(--blue-bg); color:var(--blue); font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; }
+.sp-l{ margin-top:4px; line-height:1.45; }
+.sp-flag{ margin-top:6px; padding:6px 8px; border-radius:7px; background:var(--red-bg); color:var(--red); } .sp-flag.done{ background:var(--green-bg); color:#1F7A50; }
+.sp-q{ font-size:13px; font-weight:800; margin:14px 0 6px; } .sp-q span{ font-weight:500; font-size:11.5px; color:var(--muted); margin-left:4px; } .sp-q .req{ color:var(--red); font-weight:700; }
+.sp-form textarea, .sp-input{ width:100%; box-sizing:border-box; padding:10px 11px; border:1px solid var(--line); border-radius:10px; font-size:14px; font-family:inherit; background:var(--card); color:var(--ink); margin-bottom:4px; }
+.sp-hint{ font-size:11.5px; color:var(--muted); }
+.sp-slip{ margin-top:6px; padding:8px 10px; border-radius:10px; background:var(--amber-bg); } .sp-slip label{ font-size:12px; font-weight:700; display:block; margin-bottom:4px; } .sp-slip select{ width:100%; padding:8px; border-radius:8px; border:1px solid var(--line); }
+.sp-check{ display:flex; align-items:center; gap:8px; font-size:13.5px; margin:4px 0 8px; } .sp-check input{ width:18px; height:18px; }
+.tog-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.tog{ border:1.5px solid var(--line); background:var(--card); color:var(--ink); border-radius:99px; padding:7px 12px; font-size:12.5px; font-weight:600; cursor:pointer; }
+.tog.on{ background:var(--navy); color:#fff; border-color:var(--navy); } .tog.warn.on{ background:var(--red); border-color:var(--red); }
+.tog.add{ border-style:dashed; color:var(--cyan-dark); }
+.tog-wrap{ display:inline-flex; align-items:center; gap:2px; } .tog-edit{ border:none; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 4px; }
+.sub-who{ display:flex; gap:4px; flex-wrap:wrap; }
+.sub-alert{ margin-top:8px; padding:8px 10px; border-radius:9px; background:var(--red-bg); color:var(--red); font-size:12.5px; }
+.sub-handled{ display:inline-block; margin-left:6px; border:1px solid var(--red); background:var(--card); color:var(--red); border-radius:7px; padding:2px 8px; font-size:11.5px; font-weight:700; cursor:pointer; }
+.sub-day{ font-size:12px; font-weight:800; margin:10px 0 4px; color:var(--ink); }
+[data-theme="dark"] .sp-head{ background:#0E2238; }
 .who-chip{ display:inline-block; color:#fff; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:99px; vertical-align:1px; }
 .jobs-filters{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
 .jobs-filters select{ flex:1 1 30%; min-width:0; padding:8px 8px; border:1px solid var(--line); border-radius:9px; font-size:12.5px; background:var(--card); color:var(--ink); }
@@ -634,6 +669,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   body.printing-overlay .jd-done-bar,
   body.printing-overlay .report-actions{ display:none !important; }
   #pinGate{ display:none !important; }
+  #subPortal{ display:none !important; }
   body.printing-area > *:not(#printArea){ display:none !important; }
   body.printing-area #printArea{ display:block !important; }
   body.printing-area #printArea .sheet{ max-height:none !important; overflow:visible !important; box-shadow:none !important; border-radius:0 !important; padding:0 !important; max-width:none !important; width:100% !important; animation:none !important; }
@@ -692,6 +728,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 </head>
 <body>
 <div id="pinGate" style="display:none;"><div id="pinGateBox"></div></div>
+<div id="subPortal" style="display:none;"><div id="subPortalBody"></div></div>
 <div id="authGate" style="display:flex;">
   <div id="authGateBox"></div>
 </div>
@@ -756,6 +793,11 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <div class="t">Manage team</div>
           <div class="d">Add or remove personnel</div>
+        </button>
+        <button class="quick-btn" onclick="openSubSchedule()">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="t">Sub schedule</div>
+          <div class="d">Visits, updates &amp; requests</div>
         </button>
         <button class="quick-btn" onclick="openSearchAll()">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
@@ -1419,6 +1461,13 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
   <div id="edBody"></div>
   <div class="btn-row" style="margin-top:12px;"><button class="btn btn-primary" onclick="confirmEditDates()">Save dates</button></div>
 </div></div>
+
+<!-- Sub schedule (office) -->
+<div class="overlay" id="modalSubSchedule"><div class="sheet" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title">Sub schedule</div><div class="sheet-sub">Subcontractor visits, missed updates &amp; requests</div></div><button class="close-x" onclick="closeModal('modalSubSchedule')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="subScheduleBody"></div>
+</div></div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
 
 <script>
@@ -1438,7 +1487,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 25, 2026 \u00b7 10:30 PM';
+const APP_VERSION = 'Oct 26, 2026 \u00b7 5:30 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -2108,6 +2157,7 @@ async function loadData(silent){
     });
     setSyncing(false);
     if(!pinGateShown){ restorePinUser(); maybeShowPinGate(); }
+    applyUserMode();
     renderAll();
     renderEquipmentSyncBanner();
   }catch(e){
@@ -2189,6 +2239,7 @@ function printCurrentPage(){
   window.print();
 }
 function renderAll(){
+  if(subMode()){ renderSubPortal(); return; } // subs only ever get their own screen
   const genEl = document.getElementById('globalGenerated');
   if(genEl) genEl.textContent = 'Generated ' + fmtDate(todayStr()) + ' ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
   renderHome();
@@ -2876,6 +2927,7 @@ function generateJobReportHtml(job){
     html += `</ul></div>`;
   }
 
+  html += reportSubLogHtml(job);
   html += reportDeductibleHtml(job);
 
   if(job.workComplete || job.completed){
@@ -2974,7 +3026,8 @@ function renderJobDetail(){
       if(sc) migrateContractors(sc).forEach(c=>{ if(c.name) contractorsKnown.add(c.name); });
     });
   });
-  document.getElementById('contractorListDL').innerHTML = [...contractorsKnown].map(c=>`<option value="${c}">`).join('');
+  personnel.filter(isSub).forEach(n=>contractorsKnown.add(n));
+  document.getElementById('contractorListDL').innerHTML = [...contractorsKnown].map(c=>`<option value="${escapeHtml(c)}">`).join('');
 
   const vendorsKnown = new Set();
   jobs.forEach(j=>{
@@ -3016,6 +3069,7 @@ function renderJobDetail(){
   if(job.scopes.mitigation && job.scopes.reconstruction){
     html += totalFinancialSummaryHtml(job);
   }
+  html += subSectionHtml(job);
   html += deductibleSectionHtml(job);
   html += completeSectionHtml(job);
   html += `<div class="jd-section">
@@ -4131,7 +4185,8 @@ function renderTeam(){
       <div class="nm"><div class="avatar" style="background:${userColor(name)};color:#fff;">${initials(name)}</div>${escapeHtml(name)}${activeCount? ` <span style="color:var(--muted);font-weight:500;font-size:11.5px;">(${activeCount} jobs)</span>`:''}</div>
       <div class="team-ctl">
       ${canEdit ? `<button class="tc ${mi.pin?'on':''}" onclick="${mi.pin?`if(confirm('Change PIN for ${esc}? (Cancel to remove it instead)')) setMemberPin('${esc}'); else clearMemberPin('${esc}');`:`setMemberPin('${esc}')`}">${mi.pin?'PIN ✓':'Set PIN'}</button>
-      <button class="tc ${mi.manager?'on':''}" onclick="toggleMemberManager('${esc}')">Manager</button>` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}`}
+      <button class="tc ${mi.manager?'on':''}" onclick="toggleMemberManager('${esc}')">Manager</button>
+      <button class="tc ${mi.sub?'on':''}" onclick="toggleMemberSub('${esc}')">Sub</button>` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}${mi.sub?'<span class="chip-sm">Sub</span>':''}`}
       <button class="del-btn" onclick="removePersonnel('${esc}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
       </div>
     </div>`;
@@ -4265,13 +4320,15 @@ function finishPinLogin(name){
   pinUser = name; rememberPinUser();
   document.getElementById('pinGate').style.display = 'none';
   updateUserPill();
+  subView = 'list'; subJobId = null; subDraft = null;
+  applyUserMode();
   renderAll();
   showToast(`Signed in as ${name}`);
   if(!memberInfo(name).pin && anyPinsSet()) setTimeout(()=>showToast('You don’t have a PIN yet — ask a manager to set one'), 2900);
 }
 function switchUser(){
   if(!confirm(`Signed in as ${pinUser||'nobody'}.\n\nSwitch to a different person?`)) return;
-  pinUser = null; rememberPinUser(); updateUserPill(); showPinGate();
+  pinUser = null; rememberPinUser(); updateUserPill(); subView = 'list'; subDraft = null; applyUserMode(); showPinGate();
 }
 function updateUserPill(){
   const el = document.getElementById('pinUserPill');
@@ -5545,6 +5602,311 @@ function confirmEditDates(){
   job.updatedAt = new Date().toISOString();
   saveJobs(`${changes.length} date${changes.length>1?'s':''} updated`);
   renderJobDetail(); renderAll();
+}
+
+/* =====================================================================
+   SUBCONTRACTOR DAILY UPDATES
+   Subs sign in with their PIN and see ONLY a stripped-down screen: the
+   jobs they're listed on as a contractor, the customer's name / address /
+   phone, the daily updates on those jobs, and the update form. No money,
+   no other jobs, no reports.
+   ===================================================================== */
+const SUB_AREAS = ['Kitchen','Living Room','Dining Room','Hall Bath','Master Bath','Master Bedroom','Bedroom 2','Bedroom 3','Hallway','Laundry','Garage','Closet','Exterior'];
+const SUB_TASKS = ['Demo','Framing','Insulation','Drywall hung','Tape & mud','Texture','Paint','Cabinets','Countertops','Tile','Flooring','Trim / baseboard','Doors','Plumbing fixtures','Electrical fixtures','Punch list','Clean-up'];
+const SUB_WINDOWS = ['7–9 AM','8–10 AM','9–11 AM','10 AM–12 PM','12–2 PM','1–3 PM','2–4 PM','All day'];
+const SUB_NOT_SCHED = ['Waiting on materials','Waiting on customer selections','Waiting on inspection','Pulled to another job','Customer unavailable','Work complete','Other'];
+const SUB_FLAGS = ['Extra work found (possible change order / supplement)','Materials needed','Customer decision needed','Access problem','Other'];
+const SUB_SLIP = ['Pulled to another job','Waiting on materials','Extra work found','Customer delay','Weather','Other'];
+
+function isSub(name){ return personnel.some(n=>String(n).trim().toLowerCase()===String(name||'').trim().toLowerCase() && !!memberInfo(n).sub); }
+function subMode(){ return !!(pinUser && isSub(pinUser)); }
+function normName(s){ return String(s||'').trim().toLowerCase(); }
+function jobSubs(job){
+  const names = new Set();
+  ['mitigation','reconstruction'].forEach(k=>{ const sc = job.scopes && job.scopes[k]; if(sc) migrateContractors(sc).forEach(c=>{ if(c.name) names.add(c.name.trim()); }); });
+  return [...names];
+}
+function subOnJob(job, name){ return jobSubs(job).some(n=>normName(n)===normName(name)); }
+function jobsForSub(name){ return visibleJobs().filter(j=>!j.completed && subOnJob(j, name)); }
+function subLog(job){ return (job.subLog||[]).slice().sort((a,b)=>((b.date||'')+(b.at||'')).localeCompare((a.date||'')+(a.at||''))); }
+function latestSubUpdate(job){ return subLog(job)[0] || null; }
+function latestEst(job){ const u = subLog(job).find(x=>x.estCompletion); return u ? u.estCompletion : ''; }
+function nextVisitOf(job){ const u = latestSubUpdate(job); return u && u.nextVisit && !u.nextVisit.notScheduled ? u.nextVisit : null; }
+// a visit was planned for a day that's now passed, and no update came in for it
+function missedUpdate(job){
+  const nv = nextVisitOf(job); if(!nv || !nv.date) return null;
+  if(nv.date >= todayStr()) return null;
+  return subLog(job).some(u=>u.date >= nv.date) ? null : nv;
+}
+function openSubFlags(job){ return (job.subLog||[]).filter(u=>u.needsOffice && !u.handled); }
+function canEditSubUpdate(u){ return u.by===pinUser && todayStr() <= addDays(u.date, 1); }
+function fmtTime12(t){ if(!t) return ''; const [h,m] = t.split(':').map(Number); return `${((h+11)%12)+1}:${String(m).padStart(2,'0')} ${h<12?'AM':'PM'}`; }
+function visitText(nv){ if(!nv) return ''; if(nv.notScheduled) return `Not scheduled — ${nv.reason||''}${nv.reasonNote?' ('+nv.reasonNote+')':''}`; return `${new Date(nv.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${nv.window?' · '+nv.window:''}`; }
+
+/* ---------- switch between the office app and the sub screen ---------- */
+function applyUserMode(){
+  const on = subMode();
+  document.querySelector('.app').style.display = on ? 'none' : '';
+  document.getElementById('subPortal').style.display = on ? 'block' : 'none';
+  if(on){ document.querySelectorAll('.overlay.active').forEach(o=>closeModal(o.id)); renderSubPortal(); }
+}
+
+/* ---------- sub screen ---------- */
+let subView = 'list', subJobId = null, subEditId = null, subDraft = null;
+function renderSubPortal(){
+  if(!subMode()) return;
+  if(subView==='form') return; // never redraw while they're typing
+  const box = document.getElementById('subPortalBody');
+  const head = `<div class="sp-head"><div><div class="sp-hi">Hi, ${escapeHtml(pinUser)}</div><div class="sp-sub">Voda Cleaning &amp; Restoration &middot; Daily job updates</div></div>
+    <button class="sp-switch" onclick="switchUser()">Switch user</button></div>`;
+  if(subView==='job' && getJob(subJobId) && subOnJob(getJob(subJobId), pinUser)){ box.innerHTML = head + subJobHtml(getJob(subJobId)); window.scrollTo(0,0); return; }
+  subView = 'list';
+  const list = jobsForSub(pinUser);
+  box.innerHTML = head + `<div class="sp-title">Your jobs (${list.length})</div>` + (list.length ? list.map(j=>{
+    const u = latestSubUpdate(j), nv = nextVisitOf(j), est = latestEst(j);
+    const mine = (j.subLog||[]).some(x=>x.by===pinUser && x.date===todayStr());
+    const visitToday = nv && nv.date===todayStr();
+    return `<div class="sp-card" onclick="subOpenJob('${j.id}')">
+      <div class="sp-card-top"><b>${escapeHtml(j.customerName)}</b>${visitToday && !mine ? '<span class="sp-badge">Update due today</span>' : ''}</div>
+      <div class="sp-line">${escapeHtml(j.address||'No address on file')}</div>
+      <div class="sp-line">Next visit: <b>${nv ? visitText(nv) : (u && u.nextVisit && u.nextVisit.notScheduled ? 'not scheduled' : '—')}</b>${est ? ` &middot; Est. completion <b>${fmtDate(est)}</b>` : ''}</div>
+      <div class="sp-line muted">${u ? `Last update ${fmtDate(u.date)} by ${escapeHtml(u.by)}` : 'No updates yet'}</div>
+    </div>`; }).join('') : `<div class="empty">You're not listed on any open jobs yet. The office adds you to a job as a contractor.</div>`);
+}
+function subOpenJob(id){ subView = 'job'; subJobId = id; renderSubPortal(); }
+function subBack(){ subView = 'list'; subJobId = null; renderSubPortal(); }
+function subJobHtml(job){
+  const others = jobSubs(job).filter(n=>normName(n)!==normName(pinUser));
+  const est = latestEst(job), nv = nextVisitOf(job);
+  const log = subLog(job);
+  return `<button class="sp-back" onclick="subBack()">&larr; All my jobs</button>
+    <div class="sp-job">
+      <div class="sp-job-name">${escapeHtml(job.customerName)}</div>
+      ${job.address ? `<a class="sp-link" href="https://maps.google.com/?q=${encodeURIComponent(job.address)}" target="_blank" rel="noopener">${escapeHtml(job.address)}</a>` : '<div class="sp-line muted">No address on file</div>'}
+      ${job.phone ? `<a class="sp-link" href="tel:${escapeHtml(job.phone.replace(/[^0-9+]/g,''))}">&#128222; ${escapeHtml(job.phone)}</a>` : ''}
+      ${others.length ? `<div class="sp-line">Also on this job: ${others.map(escapeHtml).join(', ')}</div>` : ''}
+      <div class="sp-line">Next visit: <b>${nv ? visitText(nv) : '—'}</b></div>
+      <div class="sp-line">Estimated completion: <b>${est ? fmtDate(est) : '—'}</b></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin:10px 0 16px;" onclick="subNewUpdate('${job.id}')">+ Today's update</button>
+    <div class="sp-title">Daily updates (${log.length})</div>
+    ${log.length ? log.map(u=>subUpdateCardHtml(u, true)).join('') : '<div class="empty">No updates yet.</div>'}`;
+}
+function subUpdateCardHtml(u, forSub){
+  const time = (u.timeIn||u.timeOut) ? `${fmtTime12(u.timeIn)||'?'}–${fmtTime12(u.timeOut)||'?'}` : '';
+  return `<div class="sp-upd" style="border-left-color:${userColor(u.by)};">
+    <div class="sp-upd-top">${nameChip(u.by)} <b>${new Date(u.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</b>${time?` <span class="muted">${time}${u.crew?' · crew of '+u.crew:''}</span>`:''}
+      ${u.editedAt ? '<span class="muted">(edited)</span>' : ''}
+      ${forSub && canEditSubUpdate(u) ? `<button class="sp-edit" onclick="subEditUpdate('${u.id}')">Edit</button>` : ''}</div>
+    ${(u.areas||[]).length ? `<div class="sp-tags">${u.areas.map(a=>`<span>${escapeHtml(a)}</span>`).join('')}</div>` : ''}
+    ${(u.completed||[]).length ? `<div class="sp-l"><b>Completed:</b> ${u.completed.map(escapeHtml).join(', ')}</div>` : ''}
+    ${u.notes ? `<div class="sp-l"><b>Notes:</b> ${escapeHtml(u.notes).replace(/\n/g,'<br>')}</div>` : ''}
+    ${u.todo ? `<div class="sp-l"><b>Still to do:</b> ${escapeHtml(u.todo).replace(/\n/g,'<br>')}</div>` : ''}
+    <div class="sp-l">${u.estCompletion ? `<b>Est. completion:</b> ${fmtDate(u.estCompletion)}${u.prevEst && u.prevEst!==u.estCompletion ? ` <span class="muted">(was ${fmtDate(u.prevEst)}${u.slipReason?' — '+escapeHtml(u.slipReason):''})</span>`:''}` : ''}
+      ${u.nextVisit ? ` &middot; <b>Next visit:</b> ${escapeHtml(visitText(u.nextVisit))}` : ''}</div>
+    ${u.photos ? `<div class="sp-l muted">✓ Photos uploaded to TruRestore</div>` : ''}
+    ${u.needsOffice ? `<div class="sp-flag ${u.handled?'done':''}"><b>${u.handled ? '✓ Office handled' : '⚠ Needs the office'}:</b> ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}${u.handled ? ` <span class="muted">(${escapeHtml(u.handled.by)}, ${fmtStamp(u.handled.at)})</span>` : ''}</div>` : ''}
+  </div>`;
+}
+
+/* ---------- the daily update form ---------- */
+function subNewUpdate(jobId){
+  subJobId = jobId; subEditId = null;
+  const job = getJob(jobId);
+  const prev = subLog(job)[0];
+  subDraft = { date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===pinUser ? prev.crew : '', areas:[], completed:[], notes:'', todo: '', estCompletion: latestEst(job)||'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, needsOffice:false, flags:[], flagNote:'', photos:false, slipReason:'' };
+  subView = 'form'; renderSubForm();
+}
+function subEditUpdate(id){
+  const job = getJob(subJobId); const u = (job.subLog||[]).find(x=>x.id===id); if(!u || !canEditSubUpdate(u)) return;
+  subEditId = id; subDraft = JSON.parse(JSON.stringify(u));
+  if(!subDraft.nextVisit) subDraft.nextVisit = { date:'', window:'', notScheduled:false, reason:'' };
+  subView = 'form'; renderSubForm();
+}
+function subCancel(){ subView = 'job'; subDraft = null; subEditId = null; renderSubPortal(); }
+function subToggle(list, val){ const a = subDraft[list]; const i = a.indexOf(val); if(i>=0) a.splice(i,1); else a.push(val); renderSubForm(); }
+function subAddCustom(kind){
+  const v = prompt(kind==='areas' ? 'Area name (e.g. Upstairs closet):' : 'What was completed (e.g. Shower valve replaced):');
+  if(!v || !v.trim()) return;
+  const job = getJob(subJobId); const key = kind==='areas' ? 'subAreas' : 'subTasks';
+  if(!job[key]) job[key] = [];
+  if(!job[key].includes(v.trim())) job[key].push(v.trim());
+  if(!subDraft[kind].includes(v.trim())) subDraft[kind].push(v.trim());
+  renderSubForm();
+}
+function subRenameCustom(kind, oldName){
+  const job = getJob(subJobId); const key = kind==='areas' ? 'subAreas' : 'subTasks';
+  const v = prompt(`Rename "${oldName}" (leave blank to remove it):`, oldName);
+  if(v===null) return;
+  job[key] = (job[key]||[]).filter(x=>x!==oldName);
+  subDraft[kind] = subDraft[kind].filter(x=>x!==oldName);
+  if(v.trim()){ job[key].push(v.trim()); subDraft[kind].push(v.trim()); }
+  renderSubForm();
+}
+function subField(k, v){ subDraft[k] = v; }
+function renderSubForm(){
+  const job = getJob(subJobId); if(!job) return;
+  const d = subDraft;
+  const prevEst = latestEstBefore(job, subEditId);
+  const slip = prevEst && d.estCompletion && d.estCompletion > prevEst;
+  const chips = (kind, base, custom) => base.map(v=>`<button type="button" class="tog ${d[kind].includes(v)?'on':''}" onclick="subToggle('${kind}', ${JSON.stringify(v).replace(/"/g,'&quot;')})">${escapeHtml(v)}</button>`).join('')
+    + (custom||[]).map(v=>`<span class="tog-wrap"><button type="button" class="tog ${d[kind].includes(v)?'on':''}" onclick="subToggle('${kind}', ${JSON.stringify(v).replace(/"/g,'&quot;')})">${escapeHtml(v)}</button><button type="button" class="tog-edit" title="Rename or remove" onclick="subRenameCustom('${kind}', ${JSON.stringify(v).replace(/"/g,'&quot;')})">&#9998;</button></span>`).join('')
+    + `<button type="button" class="tog add" onclick="subAddCustom('${kind}')">+ ${kind==='areas'?'Add area':'Other'}</button>`;
+  const winOpts = SUB_WINDOWS.map(w=>`<option ${d.nextVisit.window===w?'selected':''}>${w}</option>`).join('');
+  const customWin = d.nextVisit.window && !SUB_WINDOWS.includes(d.nextVisit.window);
+  document.getElementById('subPortalBody').innerHTML = `
+    <button class="sp-back" onclick="subCancel()">&larr; Cancel</button>
+    <div class="sp-title" style="margin-top:4px;">${subEditId?'Edit update':'Daily update'} &mdash; ${escapeHtml(job.customerName)}</div>
+    <div class="sp-form">
+      <div class="jd-field-row">
+        <div class="field"><label>Date</label><input type="date" value="${d.date}" ${subEditId?'disabled':''} onchange="subField('date', this.value)"></div>
+        <div class="field"><label>Crew size</label><input type="number" min="1" value="${d.crew||''}" placeholder="1" onchange="subField('crew', this.value)"></div>
+      </div>
+      <div class="jd-field-row">
+        <div class="field"><label>Arrived</label><input type="time" value="${d.timeIn||''}" onchange="subField('timeIn', this.value)"></div>
+        <div class="field"><label>Left</label><input type="time" value="${d.timeOut||''}" onchange="subField('timeOut', this.value)"></div>
+      </div>
+      <div class="sp-q">Areas worked on <span>tap all that apply</span></div>
+      <div class="tog-row">${chips('areas', SUB_AREAS, job.subAreas)}</div>
+      <div class="sp-q">Completed today <span>tap all that apply</span></div>
+      <div class="tog-row">${chips('completed', SUB_TASKS, job.subTasks)}</div>
+      <div class="sp-q">Daily notes <span class="req">required</span></div>
+      <textarea rows="4" placeholder="What was done and anything important. e.g. &quot;Hung and taped hall bath. Found soft subfloor by toilet &mdash; customer aware.&quot;" oninput="subField('notes', this.value)">${escapeHtml(d.notes||'')}</textarea>
+      <div class="sp-q">Still to do</div>
+      <textarea rows="3" placeholder="e.g. Texture &amp; paint hall bath, install vanity" oninput="subField('todo', this.value)">${escapeHtml(d.todo||'')}</textarea>
+      <div class="sp-q">Estimated completion <span class="req">required</span></div>
+      <input type="date" class="sp-input" value="${d.estCompletion||''}" onchange="subField('estCompletion', this.value); renderSubForm();">
+      ${prevEst ? `<div class="sp-hint">Last estimate: <b>${fmtDate(prevEst)}</b></div>` : ''}
+      ${slip ? `<div class="sp-slip"><label>The date moved later &mdash; why?</label>
+        <select onchange="subField('slipReason', this.value)"><option value="">Pick a reason&hellip;</option>${SUB_SLIP.map(r=>`<option ${d.slipReason===r?'selected':''}>${r}</option>`).join('')}</select></div>` : ''}
+      <div class="sp-q">Next visit <span>agreed with the customer</span></div>
+      <label class="sp-check"><input type="checkbox" ${d.nextVisit.notScheduled?'checked':''} onchange="subDraft.nextVisit.notScheduled=this.checked; renderSubForm();"> Not scheduled yet</label>
+      ${d.nextVisit.notScheduled ? `<select class="sp-input" onchange="subDraft.nextVisit.reason=this.value; renderSubForm();"><option value="">Why not?&hellip;</option>${SUB_NOT_SCHED.map(r=>`<option ${d.nextVisit.reason===r?'selected':''}>${r}</option>`).join('')}</select>
+        ${d.nextVisit.reason==='Other' ? `<input class="sp-input" placeholder="Explain" value="${escapeHtml(d.nextVisit.reasonNote||'')}" oninput="subDraft.nextVisit.reasonNote=this.value">` : ''}`
+      : `<div class="jd-field-row">
+          <div class="field"><label>Date</label><input type="date" value="${d.nextVisit.date||''}" onchange="subDraft.nextVisit.date=this.value"></div>
+          <div class="field"><label>Time</label><select onchange="if(this.value==='Custom'){ const t=prompt('Time (e.g. 10:30 AM–12 PM):'); subDraft.nextVisit.window=t||''; renderSubForm(); } else subDraft.nextVisit.window=this.value;">
+            <option value="">Pick&hellip;</option>${winOpts}${customWin?`<option selected>${escapeHtml(d.nextVisit.window)}</option>`:''}<option value="Custom">Custom&hellip;</option></select></div>
+        </div>`}
+      <div class="sp-q">Needs the office?</div>
+      <div class="tog-row"><button type="button" class="tog ${!d.needsOffice?'on':''}" onclick="subDraft.needsOffice=false; renderSubForm();">No</button><button type="button" class="tog warn ${d.needsOffice?'on':''}" onclick="subDraft.needsOffice=true; renderSubForm();">Yes</button></div>
+      ${d.needsOffice ? `<div class="tog-row">${SUB_FLAGS.map(f=>`<button type="button" class="tog ${d.flags.includes(f)?'on':''}" onclick="subToggle('flags', ${JSON.stringify(f).replace(/"/g,'&quot;')})">${escapeHtml(f)}</button>`).join('')}</div>
+        <textarea rows="2" placeholder="Details for the office" oninput="subField('flagNote', this.value)">${escapeHtml(d.flagNote||'')}</textarea>` : ''}
+      <label class="sp-check" style="margin-top:12px;"><input type="checkbox" ${d.photos?'checked':''} onchange="subField('photos', this.checked)"> Photos uploaded to TruRestore</label>
+      <button class="btn btn-primary" id="subSubmitBtn" style="width:100%;margin-top:16px;" onclick="submitSubUpdate()">${subEditId?'Save changes':'Submit update'}</button>
+    </div>`;
+}
+function latestEstBefore(job, excludeId){
+  const u = subLog(job).find(x=>x.estCompletion && x.id!==excludeId);
+  return u ? u.estCompletion : '';
+}
+async function submitSubUpdate(){
+  const d = subDraft, job0 = getJob(subJobId); if(!d || !job0) return;
+  if(!d.notes || !d.notes.trim()){ showToast('Add your daily notes first', true); return; }
+  if(!d.estCompletion || !dateReady(d.estCompletion)){ showToast('Enter the estimated completion date', true); return; }
+  const prevEst = latestEstBefore(job0, subEditId);
+  if(prevEst && d.estCompletion > prevEst && !d.slipReason){ showToast('Pick why the completion date moved later', true); return; }
+  if(d.nextVisit.notScheduled){ if(!d.nextVisit.reason){ showToast('Pick why the next visit isn’t scheduled', true); return; } d.nextVisit.date=''; d.nextVisit.window=''; }
+  else if(!d.nextVisit.date || !dateReady(d.nextVisit.date)){ showToast('Enter the next visit date (or check "Not scheduled yet")', true); return; }
+  if(d.needsOffice && !d.flags.length){ showToast('Pick what the office needs to know about', true); return; }
+  const btn = document.getElementById('subSubmitBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+  const customAreas = (job0.subAreas||[]).slice(), customTasks = (job0.subTasks||[]).slice();
+  // load the latest data first so this update never overwrites the office's work
+  try{ const data = await apiGetAll(); jobs = extractTeamSettings(data.jobs || []); }catch(e){ /* offline: save onto what we have */ }
+  const job = getJob(subJobId);
+  if(!job){ showToast('That job is no longer available', true); btn.disabled=false; return; }
+  job.subAreas = [...new Set([...(job.subAreas||[]), ...customAreas])];
+  job.subTasks = [...new Set([...(job.subTasks||[]), ...customTasks])];
+  if(!job.subLog) job.subLog = [];
+  const clean = { ...d, prevEst: (prevEst && prevEst!==d.estCompletion) ? prevEst : '', slipReason: (prevEst && d.estCompletion > prevEst) ? d.slipReason : '', notes: d.notes.trim(), todo: (d.todo||'').trim() };
+  if(!d.needsOffice){ clean.flags = []; clean.flagNote = ''; }
+  if(subEditId){
+    const i = job.subLog.findIndex(x=>x.id===subEditId);
+    if(i>=0) job.subLog[i] = { ...job.subLog[i], ...clean, editedAt: new Date().toISOString() };
+    logActivity(job, `Sub update edited by ${pinUser} (${fmtDate(clean.date)})`);
+  } else {
+    job.subLog.push({ ...clean, id: uid('SU'), ...stamp() });
+    logActivity(job, `Sub update from ${pinUser}: ${clean.notes.slice(0,120)}${clean.notes.length>120?'…':''}${d.needsOffice?' — NEEDS OFFICE: '+d.flags.join(', '):''}`);
+  }
+  job.updatedAt = new Date().toISOString();
+  const ok = await saveJobs(subEditId ? 'Update saved' : 'Update sent — thank you!');
+  if(!ok){ btn.disabled = false; btn.textContent = 'Try again'; return; }
+  subView = 'job'; subDraft = null; subEditId = null; renderSubPortal();
+}
+
+/* ---------- office side ---------- */
+function subSectionHtml(job){
+  const subs = jobSubs(job).filter(n=>isSub(n));
+  const log = subLog(job);
+  if(!subs.length && !log.length) return '';
+  const est = latestEst(job), nv = nextVisitOf(job), flags = openSubFlags(job), missed = missedUpdate(job);
+  const ests = log.filter(u=>u.estCompletion).slice().reverse();
+  const estHist = []; ests.forEach(u=>{ if(!estHist.length || estHist[estHist.length-1].d!==u.estCompletion) estHist.push({ d:u.estCompletion, why:u.slipReason }); });
+  return `<div class="jd-section">
+    <div class="jd-section-head"><div class="h">Subcontractor updates</div><span class="sub-who">${subs.map(n=>nameChip(n)).join(' ')}</span></div>
+    ${!subs.length ? '<div class="hint" style="margin-top:0;">No subcontractor is listed on this job right now.</div>' : ''}
+    <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
+      <div style="flex:1 1 50%;">Est. completion<br><b>${est ? fmtDate(est) : '—'}</b></div>
+      <div style="flex:1 1 50%;">Next visit<br><b>${nv ? visitText(nv) : (log[0] && log[0].nextVisit && log[0].nextVisit.notScheduled ? 'Not scheduled' : '—')}</b></div>
+    </div>
+    ${estHist.length>1 ? `<div class="coll-meta">Completion estimate history: ${estHist.map((e,i)=>fmtDate(e.d)+(i>0&&e.why?' ('+escapeHtml(e.why)+')':'')).join(' → ')}</div>` : ''}
+    ${missed ? `<div class="sub-alert">Visit was planned ${visitText(missed)} but no update came in.</div>` : ''}
+    ${flags.map(u=>`<div class="sub-alert"><b>${escapeHtml(u.by)} needs the office</b> (${fmtDate(u.date)}): ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}
+      <button class="sub-handled" onclick="markSubFlagHandled('${job.id}','${u.id}')">Mark handled</button></div>`).join('')}
+    <div class="sp-title" style="margin-top:12px;">Daily log (${log.length})</div>
+    ${log.length ? log.slice(0, 5).map(u=>subUpdateCardHtml(u, false)).join('') + (log.length>5 ? `<div class="hint">Showing the latest 5. The full log prints on the Job Report.</div>` : '') : '<div class="empty" style="padding:6px 0;">No updates yet.</div>'}
+  </div>`;
+}
+function markSubFlagHandled(jobId, uid_){
+  const job = getJob(jobId); const u = (job.subLog||[]).find(x=>x.id===uid_); if(!u) return;
+  u.handled = stamp();
+  logActivity(job, `Marked handled: ${u.by}'s request (${(u.flags||[]).join(', ')})`);
+  job.updatedAt = new Date().toISOString();
+  saveJobs('Marked handled'); renderJobDetail(); if(document.getElementById('modalSubSchedule').classList.contains('active')) renderSubSchedule();
+}
+function reportSubLogHtml(job){
+  const log = subLog(job).slice().reverse();
+  if(!log.length) return '';
+  let h = `<div class="report-section"><div class="report-h">Subcontractor Daily Log</div><table class="report-table"><thead><tr><th style="width:80px;">Date</th><th style="width:80px;">Sub</th><th>Work &amp; notes</th><th style="width:96px;">Est. complete</th><th style="width:110px;">Next visit</th></tr></thead><tbody>`;
+  h += log.map(u=>`<tr><td>${fmtDate(u.date)}${(u.timeIn||u.timeOut)?`<div style="font-size:10px;color:#647184;">${fmtTime12(u.timeIn)}–${fmtTime12(u.timeOut)}</div>`:''}</td><td>${escapeHtml(u.by)}${u.crew?`<div style="font-size:10px;color:#647184;">crew ${escapeHtml(String(u.crew))}</div>`:''}</td>
+    <td>${(u.areas||[]).length?`<b>Areas:</b> ${u.areas.map(escapeHtml).join(', ')}<br>`:''}${(u.completed||[]).length?`<b>Completed:</b> ${u.completed.map(escapeHtml).join(', ')}<br>`:''}${escapeHtml(u.notes||'')}${u.todo?`<br><b>To do:</b> ${escapeHtml(u.todo)}`:''}${u.needsOffice?`<br><b>Office:</b> ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}${u.handled?' (handled)':''}`:''}</td>
+    <td>${u.estCompletion?fmtDate(u.estCompletion):'—'}${u.prevEst&&u.prevEst!==u.estCompletion?`<div style="font-size:10px;color:#647184;">was ${fmtDate(u.prevEst)}</div>`:''}</td>
+    <td>${escapeHtml(visitText(u.nextVisit))}</td></tr>`).join('');
+  return h + `</tbody></table></div>`;
+}
+
+/* ---------- Sub Schedule (office) ---------- */
+function openSubSchedule(){ renderSubSchedule(); openModal('modalSubSchedule'); }
+function renderSubSchedule(){
+  const subJobs = visibleJobs().filter(j=>!j.completed && (jobSubs(j).some(isSub) || (j.subLog||[]).length));
+  const flags = [], missed = [], visits = [], unsched = [];
+  subJobs.forEach(j=>{
+    openSubFlags(j).forEach(u=>flags.push({ j, u }));
+    const m = missedUpdate(j); if(m) missed.push({ j, nv:m });
+    const u = latestSubUpdate(j), nv = nextVisitOf(j);
+    if(nv && nv.date >= todayStr()) visits.push({ j, nv, est: latestEst(j), who: u ? u.by : '' });
+    else if(u && u.nextVisit && u.nextVisit.notScheduled) unsched.push({ j, u });
+  });
+  visits.sort((a,b)=>a.nv.date.localeCompare(b.nv.date));
+  const row = (j, right, sub) => `<div class="report-row" onclick="closeModal('modalSubSchedule');openJobDetail('${j.id}')" style="cursor:pointer;"><div class="report-row-head"><div class="nm">${escapeHtml(j.customerName)}</div><div class="ct">${right}</div></div>${sub?`<div style="font-size:11.5px;color:var(--muted);padding:2px 2px 4px;">${sub}</div>`:''}</div>`;
+  let h = '';
+  h += `<div class="coll-h">Needs the office (${flags.length})</div>` + (flags.length ? flags.map(({j,u})=>row(j, escapeHtml(u.by), `${fmtDate(u.date)}: ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}`)).join('') : '<div class="empty" style="padding:6px 0;">Nothing waiting on the office.</div>');
+  h += `<div class="coll-h">Missed updates (${missed.length})</div>` + (missed.length ? missed.map(({j,nv})=>row(j, '<span style="color:var(--red);">No update</span>', `Visit was planned ${visitText(nv)}`)).join('') : '<div class="empty" style="padding:6px 0;">No missed updates.</div>');
+  let lastDay = '';
+  h += `<div class="coll-h">Upcoming visits (${visits.length})</div>`;
+  h += visits.length ? visits.map(({j,nv,est,who})=>{ const day = nv.date===todayStr() ? 'Today' : new Date(nv.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+      const hdr = day!==lastDay ? `<div class="sub-day">${day}</div>` : ''; lastDay = day;
+      return hdr + row(j, escapeHtml(nv.window||''), `${jobSubs(j).filter(isSub).map(escapeHtml).join(', ')||escapeHtml(who)}${est?' · est. completion '+fmtDate(est):''}`); }).join('') : '<div class="empty" style="padding:6px 0;">No visits scheduled.</div>';
+  h += `<div class="coll-h">Not scheduled (${unsched.length})</div>` + (unsched.length ? unsched.map(({j,u})=>row(j, escapeHtml(u.by), visitText(u.nextVisit))).join('') : '<div class="empty" style="padding:6px 0;">None.</div>');
+  document.getElementById('subScheduleBody').innerHTML = h;
+}
+async function toggleMemberSub(name){
+  if(!canManageTeam()){ showToast('Only a manager can change this'); return; }
+  const on = !isSub(name);
+  if(on && isManager(name) && !confirm(`${name} is a manager. Make them a subcontractor? Subs only see their own jobs' update screen.`)) return;
+  setMemberInfo(name, { sub: on, ...(on ? { manager:false } : {}) });
+  renderTeam();
+  await saveJobs(on ? `${name} is now a subcontractor` : `${name} is no longer a subcontractor`);
 }
 
 /* ============ REPORTS ============ */
