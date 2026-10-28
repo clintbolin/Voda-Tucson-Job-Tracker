@@ -730,7 +730,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 .report-co-name{ font-size:15px; font-weight:700; color:var(--navy); font-family:-apple-system,sans-serif; }
 .report-doc-title{ font-size:12px; color:var(--muted); font-family:-apple-system,sans-serif; letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
 .report-meta{ font-size:11px; color:var(--muted); font-family:-apple-system,sans-serif; margin-bottom:18px; }
-.report-section{ margin-bottom:20px; break-inside:avoid; }
+.report-section{ margin-bottom:28px; }
+.report-h, .report-subh{ break-after:avoid; page-break-after:avoid; }
+.report-table tr, .rpt-grid tr{ break-inside:avoid; page-break-inside:avoid; }
+.report-table thead{ display:table-header-group; }
+.orient-pick{ display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-right:auto; }
+.orient-pick button{ border:none; background:var(--card); color:var(--ink); padding:8px 12px; font-size:12.5px; font-weight:700; cursor:pointer; }
+.orient-pick button.on{ background:#0FA3B1; color:#fff; }
 .report-h{ font-size:14px; font-weight:700; color:var(--navy); border-bottom:1.5px solid var(--line); padding-bottom:5px; margin-bottom:8px; font-family:-apple-system,sans-serif; }
 .report-subh{ font-size:12px; font-weight:700; color:var(--ink); margin:12px 0 6px; font-family:-apple-system,sans-serif; }
 .job-report-doc ul{ margin:0; padding-left:20px; }
@@ -1162,6 +1168,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
   </div>
   <div id="jobReportBody" class="job-report-doc"></div>
   <div class="btn-row report-actions" style="margin-top:4px;">
+    <span class="orient-pick" data-orient="job"><button data-v="portrait" onclick="setOrient('job','portrait')">Portrait</button><button data-v="landscape" onclick="setOrient('job','landscape')">Landscape</button></span>
     <button class="btn btn-primary" onclick="printJobReport()">Print report</button>
     <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="closeModal('modalJobReport')">Close</button>
   </div>
@@ -1494,6 +1501,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
   </div>
   <div id="collReportBody" class="job-report-doc"></div>
   <div class="btn-row report-actions" style="margin-top:4px;">
+    <span class="orient-pick" data-orient="coll"><button data-v="portrait" onclick="setOrient('coll','portrait')">Portrait</button><button data-v="landscape" onclick="setOrient('coll','landscape')">Landscape</button></span>
     <button class="btn btn-primary" onclick="printCollReport()">Print report</button>
     <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="closeModal('modalCollReport')">Close</button>
   </div>
@@ -1528,6 +1536,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
   </div>
   <div id="subReportBody" class="job-report-doc" style="overflow-x:auto;"></div>
   <div class="btn-row report-actions" style="margin-top:4px;">
+    <span class="orient-pick" data-orient="sub"><button data-v="portrait" onclick="setOrient('sub','portrait')">Portrait</button><button data-v="landscape" onclick="setOrient('sub','landscape')">Landscape</button></span>
     <button class="btn btn-primary" onclick="printSubReport()">Print report</button>
     <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="closeModal('modalSubReport')">Close</button>
   </div>
@@ -1551,7 +1560,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 27, 2026 \u00b7 9:45 PM';
+const APP_VERSION = 'Oct 28, 2026 \u00b7 9:30 AM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -1748,6 +1757,7 @@ function showToast(msg, isError){
 }
 let _openModalCount = 0;
 let _modalZ = 100;
+document.addEventListener('DOMContentLoaded', ()=>syncOrientPickers());
 function openModal(id){
   document.getElementById(id).style.zIndex = ++_modalZ; // newest modal always on top
   document.getElementById(id).classList.add('active');
@@ -2219,13 +2229,17 @@ async function loadData(silent){
     });
     personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
     if(!data.personnel || !data.personnel.length){ await savePersonnel(); }
+    const autoChanged = [];
     jobs.forEach(j=>{
-      if(j.scopes.mitigation) syncCollFromJob(j, j.scopes.mitigation, 'Mitigation');
-      if(j.scopes.reconstruction) syncCollFromJob(j, j.scopes.reconstruction, 'Reconstruction');
+      let ch = false;
+      if(j.scopes.mitigation){ syncCollFromJob(j, j.scopes.mitigation, 'Mitigation'); if(collAutoUpdate(j, j.scopes.mitigation, 'Mitigation')) ch = true; }
+      if(j.scopes.reconstruction){ syncCollFromJob(j, j.scopes.reconstruction, 'Reconstruction'); if(collAutoUpdate(j, j.scopes.reconstruction, 'Reconstruction')) ch = true; }
+      if(ch){ j.updatedAt = new Date().toISOString(); autoChanged.push(j.id); }
     });
     setSyncing(false);
     if(!pinGateShown){ restorePinUser(); maybeShowPinGate(); }
     rememberLocalCopy();
+    if(autoChanged.length){ autoChanged.forEach(id=>localSnap.delete(id)); collAutoSave(); } // save the automatic step updates
     applyUserMode();
     renderAll();
     checkNewSubUpdates();
@@ -2921,9 +2935,7 @@ function printJobProfile(){
   if(el) el.textContent = `Voda Job Tracker — Job Profile: ${job? job.customerName : ''} — printed ${fmtDate(todayStr())}`;
   printActiveModal();
 }
-function printJobReport(){
-  printActiveModal();
-}
+function printJobReport(){ printWithOrient('job'); }
 function openJobReport(){
   const job = getJob(currentJobId);
   if(!job) return;
@@ -4625,7 +4637,14 @@ function collTotals(job, sc, type){
   const custPaid = pays.filter(p=>p.payer==='Customer').reduce((s,p)=>s+(Number(p.amount)||0),0);
   const writeOff = Number(c.writeOff && c.writeOff.amount)||0;
   let insOwes, custOwes;
-  if(path==='insurance'){ insOwes = invoice - ded - nonCovered - insPaid; custOwes = ded + nonCovered - custPaid; }
+  if(path==='insurance'){
+    insOwes = invoice - ded - nonCovered - insPaid; custOwes = ded + nonCovered - custPaid;
+    // Money from either side counts toward the whole bill (e.g. the homeowner
+    // gets the insurance check and pays us): an overpayment on one side
+    // comes off what the other side owes.
+    if(custOwes < 0){ insOwes += custOwes; custOwes = 0; }
+    if(insOwes < 0){ custOwes += insOwes; insOwes = 0; }
+  }
   else { insOwes = 0; custOwes = invoice - custPaid - insPaid; }
   const r = v => Math.round(v*100)/100;
   insOwes = r(insOwes); custOwes = r(custOwes);
@@ -4694,6 +4713,9 @@ function renderCollAccount(){
   if(!job) return;
   if(job.scopes.mitigation) syncCollFromJob(job, job.scopes.mitigation, 'Mitigation');
   if(job.scopes.reconstruction) syncCollFromJob(job, job.scopes.reconstruction, 'Reconstruction');
+  let autoCh = false;
+  ['Mitigation','Reconstruction'].forEach(t=>{ const s = getScope(job, t); if(s && collAutoUpdate(job, s, t)) autoCh = true; });
+  if(autoCh){ job.updatedAt = new Date().toISOString(); collAutoSave(); }
   document.getElementById('collTitle').textContent = job.customerName;
   const parts = [];
   if(job.scopes.mitigation) parts.push('Mitigation');
@@ -4804,15 +4826,18 @@ function nextPaymentLine(sc){
 /* ---------- reconstruction payment schedule ----------
    Deposit / down payment, any progress payments, and the final payment.
    Payments logged on Reconstruction can be tied to a step. */
-function scheduleStatus(sc){
+function scheduleStatus(sc, raw){
   const ms = (sc.collections && sc.collections.schedule) || [];
+  const billed = scopeTotals(sc,'Reconstruction').totalBilled;
+  const fullyPaid = !raw && billed>0 && scopePaidTotal(sc) >= billed - 0.005;
   return ms.map(m=>{
     const paid = (sc.payments||[]).filter(p=>p.milestoneId===m.id).reduce((s,p)=>s+(Number(p.amount)||0),0);
     const amt = Number(m.amount)||0;
     const left = Math.max(0, Math.round((amt-paid)*100)/100);
-    const isPaid = amt>0 && left<=0.005;
+    let isPaid = amt>0 && left<=0.005, covered = false;
+    if(fullyPaid && !isPaid){ isPaid = true; covered = true; }
     const late = !isPaid && m.due && m.due < todayStr();
-    return { ...m, amt, paid, left, isPaid, late };
+    return { ...m, amt, paid, left: isPaid ? 0 : left, isPaid, covered, late };
   });
 }
 function nextScheduledPayment(sc){ return scheduleStatus(sc).find(m=>!m.isPaid && m.amt>0) || null; }
@@ -4832,7 +4857,7 @@ function scheduleHtml(job, sc){
   h += rows.map(m=>`<div class="sched-row ${m.isPaid?'paid':m.late?'late':''}">
       <div class="sched-top">
         <input class="sched-label" value="${escapeHtml(m.label)}" onchange="updateMilestone('${m.id}','label',this.value)">
-        <span class="chip-sm ${m.isPaid?'chip-landed':m.late?'chip-lost':''}" ${(!m.isPaid&&!m.late)?'style="background:var(--gray-bg);color:var(--muted);"':''}>${m.isPaid?'Paid':(m.paid>0&&!m.amt)?fmtMoney(m.paid)+' paid · enter amount':m.paid>0?fmtMoney(m.paid)+' paid · '+fmtMoney(m.left)+' left':m.late?'Overdue':'Not paid'}</span>
+        <span class="chip-sm ${m.isPaid?'chip-landed':m.late?'chip-lost':''}" ${(!m.isPaid&&!m.late)?'style="background:var(--gray-bg);color:var(--muted);"':''}>${m.isPaid?(m.covered?'Paid in full':'Paid'):(m.paid>0&&!m.amt)?fmtMoney(m.paid)+' paid · enter amount':m.paid>0?fmtMoney(m.paid)+' paid · '+fmtMoney(m.left)+' left':m.late?'Overdue':'Not paid'}</span>
         <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeMilestone('${m.id}')"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </div>
       <div class="sched-fields">
@@ -5142,14 +5167,86 @@ function collAfterPayment(job, sc, type, p){
   p.collLogged = true;
   syncPhaseFromMilestone(job, sc, type, p);
   if(c.step==='notBilled' && type==='Reconstruction') activateFromPayment(job, sc, type);
-  const ct = collTotals(job, sc, type);
-  if(c.step!=='notBilled' && c.step!=='paid' && c.step!=='closed' && ct.outstanding<=0.005){
-    const from = collStepLabel(sc, c.step);
-    c.step = 'paid'; c.nextAction = null; c.escalate = false;
-    collLog(sc, { kind:'step', text:`Step: ${from} → Paid (balances at $0)` });
-    setTimeout(()=>showToast('Balances are at $0 — account moved to Paid'), 2900);
-  }
+  if(collAutoUpdate(job, sc, type) && sc.collections.step==='paid') setTimeout(()=>showToast('Paid in full — account moved to Paid'), 2900);
 }
+/* Payments move the collections steps along by themselves:
+   - paid in full (Mitigation or Reconstruction) → step goes to Paid
+   - Reconstruction: the first payment becomes the Deposit / down payment and
+     a Final payment step is set up for the rest; later payments fill the
+     next open step until the final one. Paid in full in one go shows both
+     the deposit and the final payment as paid, and checks off those phases. */
+function scopePaidTotal(sc){ return (sc.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0); }
+function collAutoUpdate(job, sc, type){
+  if(!sc.collections) ensureCollections(job, sc, type);
+  const c = sc.collections; let changed = false;
+  if(type==='Reconstruction' && reconScheduleAuto(job, sc)) changed = true;
+  const ct = collTotals(job, sc, type);
+  if(ct.invoice>0 && scopePaidTotal(sc)>0 && ct.outstanding<=0.005 && !['paid','closed'].includes(c.step)){
+    const from = collStepLabel(sc, c.step);
+    if(c.step==='notBilled' && !c.billingSentDate) c.billingSentDate = earliestBilledDate(sc) || ((sc.payments||[]).map(p=>p.date).filter(Boolean).sort()[0]) || todayStr();
+    c.step = 'paid'; c.nextAction = null; c.escalate = false;
+    collLog(sc, { kind:'step', by:'System', text:`Step: ${from} \u2192 Paid (paid in full \u2014 balance $0)` });
+    changed = true;
+  }
+  return changed;
+}
+function reconScheduleAuto(job, sc){
+  const c = sc.collections; let changed = false;
+  const pays = (sc.payments||[]).filter(p=>!p.deductible && Number(p.amount)>0).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.at||'').localeCompare(b.at||''));
+  if(!pays.length) return false;
+  const billed = scopeTotals(sc,'Reconstruction').totalBilled;
+  const full = billed>0 && scopePaidTotal(sc) >= billed - 0.005;
+  if(!c.schedule) c.schedule = [];
+  const notes = [];
+  if(!c.schedule.length){
+    const first = pays[0];
+    const dep = { id: uid('MS'), label:'Deposit / down payment', amount: Number(first.amount)||0, due: first.date||'' };
+    const fin = { id: uid('MS'), label:'Final payment', amount: Math.max(0, Math.round((billed - (Number(first.amount)||0))*100)/100), due:'' };
+    c.schedule = [dep, fin];
+    notes.push(`Payment schedule set up from payments: Deposit / down payment ${fmtMoney(dep.amount)}${fin.amount ? ', Final payment '+fmtMoney(fin.amount) : ''}`);
+    changed = true;
+  }
+  if(full && !c.schedule.some(m=>/final/i.test(m.label))){
+    c.schedule.push({ id: uid('MS'), label:'Final payment', amount:0, due:'' });
+    notes.push('Paid in full \u2014 Final payment step added'); changed = true;
+  }
+  // tie any loose payments to the next open step (oldest payment first)
+  const ids = new Set(c.schedule.map(m=>m.id));
+  pays.filter(p=>!(p.milestoneId && ids.has(p.milestoneId))).forEach(p=>{
+    const open = scheduleStatus(sc, true).find(m=>!m.isPaid) || scheduleStatus(sc, true).slice(-1)[0];
+    if(!open) return;
+    p.milestoneId = open.id;
+    const m = c.schedule.find(x=>x.id===open.id);
+    if(!m.due && p.date) m.due = p.date;
+    if(!(Number(m.amount)>0) && !/final/i.test(m.label)) m.amount = Number(p.amount)||0;
+    notes.push(`Payment ${fmtMoney(p.amount)} (${fmtDate(p.date)}) applied to ${m.label}`);
+    syncPhaseFromMilestone(job, sc, 'Reconstruction', p);
+    changed = true;
+  });
+  // the final payment's amount is whatever is left of the bill
+  const fin = c.schedule.find(m=>/final/i.test(m.label));
+  if(fin && billed>0){
+    const others = c.schedule.filter(m=>m!==fin).reduce((s,m)=>s+(Number(m.amount)||0),0);
+    const want = Math.max(0, Math.round((billed - others)*100)/100);
+    if(!(Number(fin.amount)>0) && want>0 && !full){ fin.amount = want; changed = true; }
+  }
+  if(full){
+    const lastDate = pays.map(p=>p.date).filter(Boolean).sort().slice(-1)[0] || todayStr();
+    const phases = getEffectivePhases(job, 'Reconstruction').map(p=>p.key);
+    const done = [];
+    [['deposit', pays[0].date || lastDate], ['finalPayment', lastDate]].forEach(([k,d])=>{
+      if(phases.includes(k) && !sc.phases[k]){ sc.phases[k] = d; if(sc.phaseNA) sc.phaseNA[k] = false; done.push(k==='deposit'?'Deposit':'Final Payment'); }
+    });
+    if(phases.includes('progressPayment') && !sc.phases.progressPayment && !(sc.phaseNA||{}).progressPayment && !c.schedule.some(m=>/progress/i.test(m.label))){
+      if(!sc.phaseNA) sc.phaseNA = {}; sc.phaseNA.progressPayment = true; done.push('Progress Payment (N/A)');
+    }
+    if(done.length){ logActivity(job, `Reconstruction paid in full \u2014 checked off: ${done.join(', ')}`); job.activity[job.activity.length-1].by = 'System'; changed = true; }
+  }
+  if(notes.length) collLog(sc, { kind:'note', by:'System', text: notes.join('. ') });
+  return changed;
+}
+let collAutoSaveT = null;
+function collAutoSave(){ clearTimeout(collAutoSaveT); collAutoSaveT = setTimeout(()=>{ if(!subMode() && BACKEND_READY) saveJobs(); }, 2000); }
 /* ---------- keep the job and its collections accounts in step ----------
    Payments entered on the job screen before collections existed (or from any
    screen) show up in the collections history on the date they were paid, a
@@ -5496,7 +5593,7 @@ function reportCollectionsHtml(job, type, sc){
   const sched = scheduleStatus(sc);
   if(sched.length){
     h += `<div class="report-subh">Payment Schedule</div><table class="report-table"><thead><tr><th>Payment</th><th>Due</th><th class="num">Amount</th><th class="num">Paid</th><th>Status</th></tr></thead><tbody>`;
-    h += sched.map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.due?fmtDate(m.due):'—'}</td><td class="num">${fmtMoney(m.amt)}</td><td class="num">${fmtMoney(m.paid)}</td><td>${m.isPaid?'Paid':m.late?'Overdue':m.paid?'Partly paid':'Not paid'}</td></tr>`).join('');
+    h += sched.map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.due?fmtDate(m.due):'—'}</td><td class="num">${fmtMoney(m.amt)}</td><td class="num">${fmtMoney(m.paid)}</td><td>${m.isPaid?(m.covered?'Paid in full':'Paid'):m.late?'Overdue':m.paid?'Partly paid':'Not paid'}</td></tr>`).join('');
     h += `</tbody></table>`;
   }
   const pays = (sc.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
@@ -5550,14 +5647,25 @@ function collLogType(e){ return ({contact:'Contact', step:'Step', payment:'Payme
 
 /* ---------- report modal (shared) ---------- */
 let collReportMode = 'daily', collReportJobId = null, collReportPerson = '';
-function setPrintOrientation(landscape){
+/* Portrait / Landscape picker on the report screens (remembered on this device). */
+const ORIENT_DEFAULT = { coll:'landscape', sub:'landscape', job:'portrait' };
+function getOrient(key){ try{ return localStorage.getItem('vodaOrient_'+key) || ORIENT_DEFAULT[key] || 'portrait'; }catch(e){ return ORIENT_DEFAULT[key] || 'portrait'; } }
+function setOrient(key, v){ try{ localStorage.setItem('vodaOrient_'+key, v); }catch(e){} syncOrientPickers(); }
+function syncOrientPickers(){ document.querySelectorAll('.orient-pick').forEach(el=>{ const v = getOrient(el.dataset.orient); el.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===v)); }); }
+function setPrintOrientation(o){
   let st = document.getElementById('printPageStyle');
   if(!st){ st = document.createElement('style'); st.id = 'printPageStyle'; document.head.appendChild(st); }
-  // only the collections reports set landscape; otherwise leave the choice to the print window
-  st.textContent = landscape ? '@page { size: landscape; margin: 0.4in; }' : '';
+  const v = o===true ? 'landscape' : o===false ? '' : o;
+  st.textContent = v ? `@page { size: letter ${v}; margin: 0.4in; }` : '';
+}
+function printWithOrient(key){
+  setPrintOrientation(getOrient(key));
+  const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  printActiveModal();
 }
 function printCollReport(){
-  setPrintOrientation(true); // both the daily checklist and the client collections report are laid out landscape
+  setPrintOrientation(getOrient('coll'));
   const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   printActiveModal();
@@ -5679,7 +5787,7 @@ function jobCollReportHtml(job){
     const sched = scheduleStatus(sc);
     if(sched.length){
       h += `<div class="report-subh">Payment Schedule</div><table class="report-table"><thead><tr><th>Payment</th><th>Due</th><th class="num">Amount</th><th class="num">Paid</th><th>Status</th></tr></thead><tbody>`;
-      h += sched.map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.due?fmtDate(m.due):'—'}</td><td class="num">${fmtMoney(m.amt)}</td><td class="num">${fmtMoney(m.paid)}</td><td>${m.isPaid?'Paid':m.late?'Overdue':m.paid?'Partly paid':'Not paid'}</td></tr>`).join('') + `</tbody></table>`;
+      h += sched.map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.due?fmtDate(m.due):'—'}</td><td class="num">${fmtMoney(m.amt)}</td><td class="num">${fmtMoney(m.paid)}</td><td>${m.isPaid?(m.covered?'Paid in full':'Paid'):m.late?'Overdue':m.paid?'Partly paid':'Not paid'}</td></tr>`).join('') + `</tbody></table>`;
     }
     const pays = (sc.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     h += `<div class="report-subh">Payments Received</div>`;
@@ -6426,7 +6534,7 @@ function renderSubDailyReport(){
   document.getElementById('subReportBody').innerHTML = subDailyReportHtml(subReportDate);
 }
 function printSubReport(){
-  setPrintOrientation(true);
+  setPrintOrientation(getOrient('sub'));
   const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   printActiveModal();
