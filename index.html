@@ -544,7 +544,17 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
 .sp-check{ display:flex; align-items:center; gap:8px; font-size:13.5px; margin:4px 0 8px; } .sp-check input{ width:18px; height:18px; }
 .tog-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
 .tog{ border:1.5px solid var(--line); background:var(--card); color:var(--ink); border-radius:99px; padding:7px 12px; font-size:12.5px; font-weight:600; cursor:pointer; }
-.tog.on{ background:var(--navy); color:#fff; border-color:var(--navy); } .tog.warn.on{ background:var(--red); border-color:var(--red); }
+.tog.on{ background:#0FA3B1; color:#fff; border-color:#0FA3B1; box-shadow:0 0 0 2px rgba(15,163,177,.35); }
+.tog.on::before{ content:'\2713  '; font-weight:900; } .tog.warn.on{ background:var(--red); border-color:var(--red); }
+input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{ cursor:pointer; opacity:1; width:20px; height:20px; padding:3px; border-radius:6px; filter:invert(55%) sepia(80%) saturate(1400%) hue-rotate(150deg) brightness(92%); }
+input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,163,177,.15); }
+[data-theme="dark"] input[type="date"],[data-theme="dark"] input[type="time"]{ color-scheme:dark; }
+.sp-callbox{ background:rgba(15,163,177,.12); border:1.5px solid #0FA3B1; border-radius:12px; padding:10px 12px; font-size:13px; margin:6px 0 4px; }
+.sp-callbox a{ color:#0FA3B1; font-weight:800; text-decoration:none; }
+.nj-line{ margin-top:6px; font-size:12.5px; } .nj-line .unk{ color:var(--red); font-weight:700; }
+.nj-pop{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10040; display:flex; align-items:center; justify-content:center; padding:16px; }
+.nj-pop .nj-card{ background:var(--card); color:var(--ink); border-radius:16px; padding:16px; width:100%; max-width:420px; }
+.nj-pop select,.nj-pop input{ width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font-size:14px; margin-top:8px; box-sizing:border-box; }
 .tog.add{ border-style:dashed; color:var(--cyan-dark); }
 .tog-wrap{ display:inline-flex; align-items:center; gap:2px; } .tog-edit{ border:none; background:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 4px; }
 .sub-who{ display:flex; gap:4px; flex-wrap:wrap; }
@@ -1374,6 +1384,7 @@ nav.bottom .navbtn.scanbtn{color:var(--navy);}
     </div>
   </div>
   <div class="hint" id="teamPinNote" style="margin-top:0;margin-bottom:8px;"></div>
+  <div id="officePhoneRow" style="font-size:12.5px;margin-bottom:8px;"></div>
   <div style="font-size:10.5px;color:var(--muted);margin-bottom:6px;">App version: <span id="appVersionLbl"></span></div>
   <div class="section-title" style="margin-top:6px;">Current team (<span id="teamCount">0</span>)</div>
   <div id="teamList"></div>
@@ -1540,7 +1551,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 27, 2026 \u00b7 1:30 PM';
+const APP_VERSION = 'Oct 27, 2026 \u00b7 9:45 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -4302,6 +4313,8 @@ function openTeam(){
 }
 function renderTeam(){
   const list = document.getElementById('teamList');
+  const opr = document.getElementById('officePhoneRow');
+  if(opr) opr.innerHTML = `Office phone shown to subs: <b>${escapeHtml(officePhone() || 'not set')}</b> ${canManageTeam() ? `<button class="tc" onclick="setOfficePhone()">${officePhone()?'Change':'Set'}</button>` : ''}`;
   const countEl = document.getElementById('teamCount');
   if(!list) return;
   countEl.textContent = personnel.length;
@@ -4513,6 +4526,20 @@ async function toggleMemberManager(name){
 // A typed date only counts once the year is complete (typing "2026" briefly
 // passes through years 2, 20 and 202, which used to save and close the box).
 function dateReady(v){ if(!v) return true; const y = Number(String(v).slice(0,4)); return y>=1990 && y<=2100; }
+/* Date boxes: while the year is still being typed (0002, 0020, 0202...) the
+   browser reports a "date" after every digit. Hold those back so nothing
+   re-draws the screen and kicks the cursor out; let it through once the year
+   is a real 4-digit year, or when the person leaves the box. */
+(function guardDateTyping(){
+  const hold = e => { const t = e.target; if(!t || t.type!=='date') return;
+    if(t.value && !dateReady(t.value)){ e.stopImmediatePropagation(); e.stopPropagation(); t.dataset.held = '1'; }
+    else t.dataset.held = ''; };
+  document.addEventListener('input', hold, true);
+  document.addEventListener('change', hold, true);
+  document.addEventListener('focusout', e=>{ const t = e.target; if(!t || t.type!=='date' || !t.dataset.held) return;
+    if(!t.value || dateReady(t.value)){ t.dataset.held = ''; t.dispatchEvent(new Event('change', { bubbles:true })); }
+    else showToast('Finish the 4-digit year (for example 2026)', true); }, true);
+})();
 function addBusinessDays(dateStr, n){
   const d = new Date((dateStr||todayStr())+'T00:00:00');
   let added = 0;
@@ -5914,6 +5941,7 @@ function subUpdateCardHtml(u, forSub, jobIdFor){
     ${u.todo ? `<div class="sp-l"><b>Still to do:</b> ${escapeHtml(u.todo).replace(/\n/g,'<br>')}</div>` : ''}
     <div class="sp-l">${u.estCompletion ? `<b>Est. completion:</b> ${fmtDate(u.estCompletion)}${u.prevEst && u.prevEst!==u.estCompletion ? ` <span class="muted">(was ${fmtDate(u.prevEst)}${u.slipReason?' — '+escapeHtml(u.slipReason):''})</span>`:''}` : ''}
       ${u.nextVisit ? ` &middot; <b>Next visit:</b> ${escapeHtml(visitText(u.nextVisit))}` : ''}</div>
+    ${u.status==='complete' ? nextJobLineHtml(u, forSub, jobIdFor) : ''}
     ${u.photos ? `<div class="sp-l muted">✓ Photos uploaded to TruRestore</div>` : ''}
     ${u.needsOffice ? `<div class="sp-flag ${u.handled?'done':''}"><b>${u.handled ? '✓ Office handled' : '⚠ Needs the office'}:</b> ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}${u.handled ? ` <span class="muted">(${escapeHtml(u.handled.by)}, ${fmtStamp(u.handled.at)})</span>` : ''}</div>` : ''}
   </div>`;
@@ -5924,13 +5952,14 @@ function subNewUpdate(jobId){
   subJobId = jobId; subEditId = null;
   const job = getJob(jobId);
   const prev = subLog(job)[0];
-  subDraft = { date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===subUser() ? prev.crew : '', status:'progress', areas:[], completed:[], notes:'', todo: '', estCompletion: latestEst(job)||'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, needsOffice:false, flags:[], flagNote:'', photos:false, slipReason:'' };
+  subDraft = { nextJob:{ jobId:'', name:'', unsure:false }, date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===subUser() ? prev.crew : '', status:'progress', areas:[], completed:[], notes:'', todo: '', estCompletion: latestEst(job)||'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, needsOffice:false, flags:[], flagNote:'', photos:false, slipReason:'' };
   subView = 'form'; renderSubForm();
 }
 function subEditUpdate(id){
   const job = getJob(subJobId); const u = (job.subLog||[]).find(x=>x.id===id); if(!u || !canEditSubUpdate(u)) return;
   subEditId = id; subDraft = JSON.parse(JSON.stringify(u));
   if(!subDraft.nextVisit) subDraft.nextVisit = { date:'', window:'', notScheduled:false, reason:'' };
+  if(!subDraft.nextJob) subDraft.nextJob = { jobId:'', name:'', unsure:false };
   subView = 'form'; renderSubForm();
 }
 function subCancel(){ subView = 'job'; subDraft = null; subEditId = null; renderSubPortal(); }
@@ -5994,6 +6023,7 @@ function renderSubForm(){
       ${prevEst ? `<div class="sp-hint">Last estimate: <b>${fmtDate(prevEst)}</b></div>` : ''}`}
       ${slip && (d.status||'progress')==='progress' ? `<div class="sp-slip"><label>The date moved later &mdash; why?</label>
         <select onchange="subField('slipReason', this.value)"><option value="">Pick a reason&hellip;</option>${SUB_SLIP.map(r=>`<option ${d.slipReason===r?'selected':''}>${r}</option>`).join('')}</select></div>` : ''}
+      ${d.status==='complete' ? nextJobFormHtml(job, d) : ''}
       ${d.status==='complete' ? '' : `<div class="sp-q">${d.status==='walk' ? 'Final walk-through <span>if a day is set with the customer (optional)</span>' : 'Next visit <span>agreed with the customer</span>'}</div>`}
       <div style="${d.status==='complete'?'display:none':''}">
       <label class="sp-check" style="${d.status==='walk'?'display:none':''}"><input type="checkbox" ${d.nextVisit.notScheduled?'checked':''} onchange="subDraft.nextVisit.notScheduled=this.checked; renderSubForm();"> Not scheduled yet</label>
@@ -6068,6 +6098,7 @@ function showSubConfirm(){
     ${(d.status||'progress')==='progress' ? row('Est. completion', fmtDate(d.estCompletion) + (d.slipReason ? ' ('+escapeHtml(d.slipReason)+')' : '')) : ''}
     ${row((d.status==='walk'?'Final walk':'Next visit'), escapeHtml(visitText(d.nextVisit)))}
     ${row('Needs office', d.needsOffice ? `<b style="color:var(--red);">${d.flags.map(escapeHtml).join(', ')}</b>${d.flagNote?'<br>'+escapeHtml(d.flagNote):''}` : 'No')}
+    ${d.status==='complete' ? row('Next job', escapeHtml(nextJobText(d.nextJob))) : ''}
     ${row('Photos', d.photos ? 'Uploaded to TruRestore' : 'Not checked')}
     <div class="btn-row" style="margin-top:14px;">
       <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="hideSubConfirm()">Go back &amp; edit</button>
@@ -6096,6 +6127,8 @@ async function sendSubUpdate(){
   const beforeLog = JSON.stringify(job.subLog), beforeAct = JSON.stringify(job.activity||[]);
   const clean = { ...d, prevEst: (prevEst && prevEst!==d.estCompletion) ? prevEst : '', slipReason: (prevEst && d.estCompletion > prevEst) ? d.slipReason : '', notes: d.notes.trim(), todo: (d.todo||'').trim() };
   if(!d.needsOffice){ clean.flags = []; clean.flagNote = ''; }
+  if(st!=='complete' || !clean.nextJob || (!clean.nextJob.jobId && !clean.nextJob.name && !clean.nextJob.unsure)) delete clean.nextJob;
+  else clean.nextJob = { ...clean.nextJob, name: (clean.nextJob.name||'').trim() };
   const nowIso = new Date().toISOString();
   if(subEditId){
     const i = job.subLog.findIndex(x=>x.id===subEditId);
@@ -6129,6 +6162,84 @@ async function sendSubUpdate(){
   subLastSubmitted = { jobId: subJobId, at: nowIso, edited: !!subEditId, test: subTestMode };
   subView = 'job'; subDraft = null; subEditId = null; renderSubPortal();
 }
+/* ---------- "Where are you headed next?" (when a sub's work is complete) ---------- */
+function nextJobText(nj){
+  if(!nj || (!nj.jobId && !nj.name && !nj.unsure)) return 'Not entered';
+  if(nj.jobId){ const j = getJob(nj.jobId); return j ? j.customerName : (nj.name || 'Job removed'); }
+  if(nj.name) return nj.name;
+  return 'Not sure yet \u2014 needs the office';
+}
+function officePhone(){ return (teamSettings && teamSettings.officePhone) || ''; }
+function officeCallHtml(){
+  const ph = officePhone();
+  return ph ? `<a href="tel:${escapeHtml(ph.replace(/[^0-9+]/g,''))}">&#128222; Call the office: ${escapeHtml(ph)}</a>` : '<b>Please call the office.</b>';
+}
+function nextJobOptions(currentId, selectedId, forName){
+  const open = visibleJobs().filter(j=>!j.completed && j.id!==currentId).sort((a,b)=>a.customerName.localeCompare(b.customerName));
+  const mine = forName ? open.filter(j=>subOnJob(j, forName)) : [];
+  const rest = open.filter(j=>!mine.includes(j));
+  const opt = j => `<option value="${j.id}" ${selectedId===j.id?'selected':''}>${escapeHtml(j.customerName)}${j.address?' \u2014 '+escapeHtml(j.address):''}</option>`;
+  return (mine.length ? `<optgroup label="Your jobs">${mine.map(opt).join('')}</optgroup>` : '') + (rest.length ? `<optgroup label="${mine.length?'Other open jobs':'Open jobs'}">${rest.map(opt).join('')}</optgroup>` : '');
+}
+function nextJobFormHtml(job, d){
+  const nj = d.nextJob || (d.nextJob = { jobId:'', name:'', unsure:false });
+  const sel = nj.unsure ? '__unsure' : (nj.jobId || (nj.name || nj.other ? '__other' : ''));
+  return `<div class="sp-q">Where are you headed next? <span>optional</span></div>
+    <select class="sp-input" onchange="subPickNextJob(this.value)">
+      <option value="">Pick your next job&hellip;</option>
+      ${nextJobOptions(job.id, nj.jobId, subUser())}
+      <option value="__other" ${sel==='__other'?'selected':''}>Not on the list (type it)</option>
+      <option value="__unsure" ${sel==='__unsure'?'selected':''}>Not sure yet</option>
+    </select>
+    ${sel==='__other' ? `<input class="sp-input" placeholder="Job name or address" value="${escapeHtml(nj.name||'')}" oninput="subDraft.nextJob.name=this.value">` : ''}
+    ${sel==='__unsure' ? `<div class="sp-callbox">Not sure where you're going next? ${officeCallHtml()} to find out.<div style="font-size:12px;margin-top:4px;">You can still submit now &mdash; the office can fill it in later.</div></div>` : ''}`;
+}
+function subPickNextJob(v){
+  const nj = subDraft.nextJob = { jobId:'', name:'', unsure:false };
+  if(v==='__unsure') nj.unsure = true;
+  else if(v==='__other') nj.other = true;
+  else if(v){ nj.jobId = v; const j = getJob(v); nj.name = j ? j.customerName : ''; }
+  renderSubForm();
+}
+function nextJobLineHtml(u, forSub, jobIdFor){
+  const nj = u.nextJob, known = nj && (nj.jobId || nj.name);
+  const canSet = !forSub && jobIdFor && canManageTeam();
+  return `<div class="sp-l nj-line"><b>Next job:</b> ${known ? escapeHtml(nextJobText(nj)) : `<span class="unk">${nj && nj.unsure ? 'Not sure yet \u2014 needs the office' : 'Not entered'}</span>`}${nj && nj.setBy ? ` <span class="muted">(set by ${escapeHtml(nj.setBy)})</span>` : ''}
+    ${canSet ? `<button class="sp-edit" onclick="openNextJobEditor('${jobIdFor}','${u.id}')">${known ? 'Change' : 'Set next job'}</button>` : ''}
+    ${forSub && nj && nj.unsure && !known ? `<div class="sp-callbox" style="margin-top:6px;">${officeCallHtml()} to find out your next job.</div>` : ''}</div>`;
+}
+function openNextJobEditor(jobId, updId){
+  const job = getJob(jobId); const u = job && (job.subLog||[]).find(x=>x.id===updId); if(!u) return;
+  const nj = u.nextJob || {};
+  const pop = document.createElement('div'); pop.className = 'nj-pop'; pop.id = 'njPop';
+  pop.innerHTML = `<div class="nj-card"><div style="font-weight:800;font-size:16px;">Next job for ${escapeHtml(u.by)}</div>
+    <div class="muted" style="font-size:12.5px;">After finishing ${escapeHtml(job.customerName)} (${fmtDate(u.date)})</div>
+    <select id="njSel" onchange="document.getElementById('njOther').style.display=this.value==='__other'?'':'none'">
+      <option value="">&mdash; Not known yet &mdash;</option>${nextJobOptions(job.id, nj.jobId, u.by)}
+      <option value="__other" ${!nj.jobId && nj.name ? 'selected' : ''}>Not on the list (type it)</option></select>
+    <input id="njOther" placeholder="Job name or address" value="${escapeHtml(!nj.jobId ? (nj.name||'') : '')}" style="${!nj.jobId && nj.name ? '' : 'display:none;'}">
+    <div class="btn-row" style="margin-top:14px;"><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="document.getElementById('njPop').remove()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveNextJob('${jobId}','${updId}')">Save</button></div></div>`;
+  document.body.appendChild(pop);
+}
+function saveNextJob(jobId, updId){
+  const job = getJob(jobId); const u = job && (job.subLog||[]).find(x=>x.id===updId); if(!u) return;
+  const v = document.getElementById('njSel').value, other = document.getElementById('njOther').value.trim();
+  if(!v) u.nextJob = { jobId:'', name:'', unsure:true, setBy: pinUser, setAt: new Date().toISOString() };
+  else if(v==='__other'){ if(!other){ showToast('Type the job name, or pick one from the list', true); return; } u.nextJob = { jobId:'', name: other, unsure:false, setBy: pinUser, setAt: new Date().toISOString() }; }
+  else { const j = getJob(v); u.nextJob = { jobId: v, name: j ? j.customerName : '', unsure:false, setBy: pinUser, setAt: new Date().toISOString() }; }
+  logActivity(job, `Next job for ${u.by} set to: ${nextJobText(u.nextJob)}`);
+  job.updatedAt = new Date().toISOString();
+  document.getElementById('njPop').remove();
+  saveJobs('Next job saved'); renderJobDetail(); renderAll();
+}
+function setOfficePhone(){
+  if(!canManageTeam()){ showToast('Only a manager can change this'); return; }
+  const v = prompt('Office phone number subs should call (shown on their screen):', officePhone());
+  if(v===null) return;
+  teamSettings.officePhone = v.trim(); renderTeam(); saveJobs('Office phone saved');
+}
+
 /* ---------- Home: today's sub updates + who hasn't sent one ---------- */
 function subTodayInfo(){
   const today = todayStr(), sent = [], waiting = [];
@@ -6293,6 +6404,7 @@ function subHelpHtml(){
       <li><b>Next visit.</b> The day and time you agreed with the customer. If it's not set yet, check <b>Not scheduled yet</b> and pick why.</li>
       <li><b>Needs the office?</b> Tap <b>Yes</b> if the office needs to act: <b>extra work found</b> (hidden damage, anything not in the original scope &mdash; please don't start it without approval), materials needed, a customer decision, an access problem, or anything else. Add details in the box.</li>
       <li><b>Photos.</b> Upload your photos to TruRestore as usual, then check <b>Photos uploaded to TruRestore</b>.</li>
+      <li><b>Finished your part?</b> Tap <b>My work is complete</b>, then pick the job you're headed to next from the list. Not sure where you're going? Pick <b>Not sure yet</b> and call the office &mdash; you can still submit.</li>
       <li>Tap <b>Review &amp; submit</b>. Check the summary that pops up, then tap <b>Yes, submit</b>. You'll see a green <b>Submitted</b> box with the date and time &mdash; that means the office has it. If something is missing, a red note above the button tells you what.</li>
     </ol>
     <p><b>Made a mistake?</b> Tap <b>Edit</b> on your update. You can change it until the end of the next day; after that, call the office.</p>
@@ -6362,7 +6474,7 @@ function subDailyReportHtml(day){
       <td>${u.status && u.status!=='progress' ? `<b style="color:#1F7A50;">${subStatusLabel(u.status).toUpperCase()}</b><br>` : ''}${escapeHtml(u.notes||'')}${u.photos?'<div class="sm">\u2713 Photos in TruRestore</div>':''}</td>
       <td>${escapeHtml(u.todo||'—')}</td>
       <td style="white-space:nowrap;">${u.estCompletion?fmtDate(u.estCompletion):'—'}${u.prevEst&&u.prevEst!==u.estCompletion?`<div class="sm red">was ${fmtDate(u.prevEst)}${u.slipReason?' — '+escapeHtml(u.slipReason):''}</div>`:''}</td>
-      <td>${escapeHtml(visitText(u.nextVisit))}</td>
+      <td>${escapeHtml(visitText(u.nextVisit))}${u.status==='complete' ? `<div class="sm"><b>Next job:</b> ${escapeHtml(nextJobText(u.nextJob))}</div>` : ''}</td>
       <td>${u.needsOffice ? `<b class="red">${(u.flags||[]).map(escapeHtml).join(', ')}</b>${u.flagNote?`<div class="sm">${escapeHtml(u.flagNote)}</div>`:''}${u.handled?'<div class="sm">handled</div>':''}` : '—'}</td>
     </tr>`).join('') + `</tbody></table>` : `<div class="rpt-empty">No subcontractor updates for ${dayShort(day)}.</div>`;
 
