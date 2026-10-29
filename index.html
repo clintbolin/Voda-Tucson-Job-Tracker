@@ -1560,7 +1560,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 28, 2026 \u00b7 9:30 AM';
+const APP_VERSION = 'Oct 29, 2026 \u00b7 1:00 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -4773,7 +4773,8 @@ function renderCollPanel(job, sc, type){
     const next = steps[idx+1];
     h += `${next ? `<div class="btn-row" style="margin-top:8px;"><button class="btn btn-cyan" onclick="${collBtn(type,`moveCollStep('${next[0]}')`)}">Move to: ${next[1]} &rarr;</button></div>` : ''}
     <div style="text-align:right;margin-top:4px;"><select class="mini-select" onchange="if(this.value){setCollType('${type}');moveCollStep(this.value);} this.value='';">
-      <option value="">Change step&hellip;</option>${steps.filter(s=>s[0]!==c.step && s[0]!=='notBilled').map(s=>`<option value="${s[0]}">${s[1]}</option>`).join('')}</select></div>`;
+      <option value="">Change step&hellip;</option>${steps.map((s,i)=>[s,i]).filter(([s])=>s[0]!==c.step).map(([s,i])=>`<option value="${s[0]}">${i<idx?'\u2190 Back to: ':''}${s[1]}</option>`).join('')}</select></div>`;
+    if(ct.invoice<=0.005) h += `<div class="sub-alert" style="margin-top:8px;">Nothing is billed on this scope right now (billed line items are $0). Still working on it? <button class="sub-handled" onclick="${collBtn(type,`moveCollStep('notBilled')`)}">Set back to Not Yet Billed</button></div>`;
 
     if(collNeedsNextAction(sc)){
       const st = nextActionState(sc);
@@ -4964,6 +4965,7 @@ function confirmBillingSent(){
   if(!date){ showToast('Enter the date billing was sent'); return; }
   if(ct.invoice<=0){ showToast('Add the billed amount in this scope’s line items first', true); return; }
   const first = c.step==='notBilled';
+  c.heldNotBilled = false;
   if(first){
     const txt = document.getElementById('bsNaText').value.trim(), due = document.getElementById('bsNaDue').value;
     if(!txt || !due){ showToast('Set a next action and date'); return; }
@@ -4986,6 +4988,7 @@ function autoBillingFromPhase(job, sc, type, date){
   const c = sc.collections;
   if(c.step!=='notBilled') return;
   const ct = collTotals(job, sc, type);
+  c.heldNotBilled = false;
   if(ct.invoice<=0){ setTimeout(()=>showToast('Add billed amounts to the line items to start collections on this job'), 2900); return; }
   c.step = 'invoiceSent'; c.billingSentDate = date;
   c.nextAction = { text: collPath(sc)==='insurance' ? 'Confirm adjuster received the invoice packet' : 'Confirm customer received the invoice', due: addBusinessDays(date, 2), assignee: job.assignedTo || pinUser || '' };
@@ -5001,6 +5004,16 @@ function moveCollStep(key){
     return;
   }
   const from = collStepLabel(sc, c.step);
+  if(key==='notBilled'){
+    if(!confirm(`Set ${type} back to "Not Yet Billed"?\n\nCollections goes inactive: no reminders, not counted in aging, and the billing-sent date (${c.billingSentDate ? fmtDate(c.billingSentDate) : 'none'}) is cleared. Payments and history stay. Mark Billing Sent again when you send the invoice.`)) return;
+    collLog(sc, { kind:'step', text:`Step: ${from} \u2192 Not Yet Billed (set back${c.billingSentDate ? '; billing-sent date '+fmtDate(c.billingSentDate)+' cleared' : ''})` });
+    c.step = 'notBilled'; c.billingSentDate = ''; c.nextAction = null; c.escalate = false; c.noResponseCount = 0;
+    c.heldNotBilled = true; // don't let payments already received switch it back on by themselves
+    job.updatedAt = new Date().toISOString();
+    saveJobs(`${type} set back to Not Yet Billed`);
+    refreshCollViews();
+    return;
+  }
   c.step = key;
   if(key==='paid' || key==='closed'){ c.nextAction = null; c.escalate = false; }
   else if(!c.nextAction){ c.nextAction = { text:'Set the next step for this account', due: todayStr(), assignee: pinUser||'' }; }
@@ -5181,7 +5194,7 @@ function collAutoUpdate(job, sc, type){
   const c = sc.collections; let changed = false;
   if(type==='Reconstruction' && reconScheduleAuto(job, sc)) changed = true;
   const ct = collTotals(job, sc, type);
-  if(ct.invoice>0 && scopePaidTotal(sc)>0 && ct.outstanding<=0.005 && !['paid','closed'].includes(c.step)){
+  if(ct.invoice>0 && scopePaidTotal(sc)>0 && ct.outstanding<=0.005 && !['paid','closed'].includes(c.step) && !(c.step==='notBilled' && c.heldNotBilled)){
     const from = collStepLabel(sc, c.step);
     if(c.step==='notBilled' && !c.billingSentDate) c.billingSentDate = earliestBilledDate(sc) || ((sc.payments||[]).map(p=>p.date).filter(Boolean).sort()[0]) || todayStr();
     c.step = 'paid'; c.nextAction = null; c.escalate = false;
@@ -5259,7 +5272,7 @@ function payLogText(sc, p){
 function activateFromPayment(job, sc, type){
   const c = sc.collections;
   const paid = (sc.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0);
-  if(c.step!=='notBilled' || paid<=0) return false;
+  if(c.step!=='notBilled' || paid<=0 || c.heldNotBilled) return false;
   const first = (sc.payments||[]).map(p=>p.date).filter(Boolean).sort()[0] || todayStr();
   c.billingSentDate = [earliestBilledDate(sc), first].filter(Boolean).sort()[0];
   c.step = 'invoiceSent';
