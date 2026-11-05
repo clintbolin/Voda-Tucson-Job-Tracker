@@ -1560,7 +1560,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Oct 29, 2026 \u00b7 1:00 PM';
+const APP_VERSION = 'Nov 5, 2026 \u00b7 12:30 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -2396,7 +2396,7 @@ function printCurrentPage(){
   if(prevTheme==='dark'){
     document.documentElement.setAttribute('data-theme','light');
     const back = ()=>{ document.documentElement.setAttribute('data-theme','dark'); window.removeEventListener('afterprint', back); };
-    window.addEventListener('afterprint', back);
+    onPrintFinished(back);
   }
   window.print();
 }
@@ -2904,6 +2904,19 @@ async function saveAndCloseJobDetail(){
 // into a separate print area that sits outside the app, and everything else
 // on the page is hidden while printing. (Edge was printing the screens
 // stacked behind a report when we relied on hiding them instead.)
+/* iPhone/iPad Safari fires "afterprint" right away, while its print preview
+   is still being drawn, so cleaning up then swaps the report out for the
+   screen behind it. Wait until printing is really over: an afterprint that
+   comes a while later (desktop), or the first tap/key after the print
+   window closes (iPhone). */
+function onPrintFinished(fn){
+  const started = Date.now(); let ran = false;
+  const run = ()=>{ if(ran) return; ran = true; window.removeEventListener('afterprint', onAfter); ['pointerdown','touchstart','keydown'].forEach(ev=>document.removeEventListener(ev, onTap, true)); fn(); };
+  const onAfter = ()=>{ if(Date.now() - started > 2500) run(); };
+  const onTap = ()=>{ if(Date.now() - started > 800) run(); };
+  window.addEventListener('afterprint', onAfter);
+  ['pointerdown','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, onTap, true));
+}
 function printActiveModal(){
   const open = [...document.querySelectorAll('.overlay.active')];
   const top = open.sort((a,b)=>(Number(b.style.zIndex)||0)-(Number(a.style.zIndex)||0))[0];
@@ -2926,7 +2939,7 @@ function printActiveModal(){
   if(prevTheme==='dark') document.documentElement.setAttribute('data-theme','light');
   document.body.classList.add('printing-area');
   const done = ()=>{ document.body.classList.remove('printing-area'); area.innerHTML=''; if(prevTheme==='dark') document.documentElement.setAttribute('data-theme','dark'); window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
+  onPrintFinished(done);
   window.print();
 }
 function printJobProfile(){
@@ -5674,13 +5687,13 @@ function setPrintOrientation(o){
 function printWithOrient(key){
   setPrintOrientation(getOrient(key));
   const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
+  onPrintFinished(done);
   printActiveModal();
 }
 function printCollReport(){
   setPrintOrientation(getOrient('coll'));
   const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
+  onPrintFinished(done);
   printActiveModal();
 }
 function openCollDailyReport(){
@@ -6549,7 +6562,7 @@ function renderSubDailyReport(){
 function printSubReport(){
   setPrintOrientation(getOrient('sub'));
   const done = ()=>{ setPrintOrientation(false); window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
+  onPrintFinished(done);
   printActiveModal();
 }
 function subDailyReportHtml(day){
