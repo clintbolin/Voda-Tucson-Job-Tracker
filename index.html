@@ -564,6 +564,19 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 [data-theme="dark"] .sp-head{ background:#0E2238; }
 .sp-preview{ background:var(--amber); color:#fff; border-radius:12px; padding:10px 12px; font-size:12.5px; margin-bottom:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .sp-preview.sp-test{ background:#B45309; }
+.mc-box{ border:1.5px solid #0FA3B1; }
+.mc-title{ font-weight:800; font-size:15px; margin-bottom:6px; }
+.mc-scope{ font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:6px 0 2px; }
+.mc-row{ display:flex; justify-content:space-between; gap:10px; padding:5px 0; font-size:13.5px; }
+.mc-left{ border-top:1px solid var(--line); margin-top:4px; padding-top:8px; font-size:14.5px; }
+.mc-pays{ border-left:3px solid var(--line); margin:4px 0 4px 2px; padding:2px 0 2px 10px; }
+.mc-pay{ display:flex; justify-content:space-between; font-size:13px; padding:2px 0; }
+.mc-paid{ color:#1F9254; font-weight:800; }
+.mc-block + .mc-block{ border-top:1px dashed var(--line); margin-top:8px; padding-top:4px; }
+.mc-sum{ border:1.5px solid #0FA3B1; }
+.mc-sum-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+.mc-sum-grid div{ display:flex; flex-direction:column; font-size:12px; color:var(--muted); }
+.mc-sum-grid b{ font-size:15px; color:var(--ink); }
 .mit-visit{ display:inline-block; background:rgba(15,163,177,.15); color:#0B8794; font-size:11px; font-weight:800; border-radius:8px; padding:1px 7px; }
 [data-theme="dark"] .mit-visit{ color:#3CC4D1; }
 .mit-eq{ display:grid; grid-template-columns:1fr auto auto 52px; gap:6px 8px; align-items:center; font-size:13.5px; }
@@ -1267,7 +1280,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
     <div class="field"><label>Amount</label><input id="cpAmount" type="number" step="0.01" placeholder="0.00"></div>
     <div class="field"><label>Date</label><input id="cpDate" type="date"></div>
   </div>
-  <div class="field"><label>Check # / note</label><input id="cpNote" placeholder="e.g. Check #0042"></div>
+  <div class="jd-field-row">
+    <div class="field"><label>Check #</label><input id="cpCheck" placeholder="e.g. 0042"></div>
+    <div class="field"><label>Note (office only)</label><input id="cpNote" placeholder="optional"></div>
+  </div>
+  <div class="hint" id="cpVisibleHint" style="display:none;margin-top:0;"></div>
   <div class="btn-row"><button class="btn btn-primary" onclick="confirmContractorPayment()">Log payment</button></div>
 </div></div>
 
@@ -1578,7 +1595,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Nov 5, 2026 \u00b7 8:00 PM';
+const APP_VERSION = 'Nov 7, 2026 \u00b7 11:45 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -3548,12 +3565,12 @@ function scopeSectionHtml(job, type){
         ? `<div class="empty" style="padding:6px 0;">No payments yet.</div>`
         : c.payments.map(p=>`
           <div class="pay-row">
-            <span>${fmtDate(p.date)} — ${p.note||'Payment'}</span>
+            <span>${fmtDate(p.date)} — ${p.checkNo ? 'Check #'+escapeHtml(p.checkNo)+(p.note?' · ':'') : ''}${p.note ? escapeHtml(p.note) : (p.checkNo ? '' : 'Payment')}</span>
             <span style="display:flex;align-items:center;gap:8px;"><b>${fmtMoney(p.amount)}</b>
             <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeContractorPayment('${type}','${c.id}','${p.id}')"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
           </div>`).join('');
       return `<div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+        <div style="display:flex;justify-content:${showPayFor(c.name)?'space-between':'flex-end'};align-items:center;margin-bottom:4px;">${showPayFor(c.name) ? `<span class="hint" style="margin:0;">&#128065; ${escapeHtml(c.name)} can see this contract amount and payments</span>` : ''}
           <svg class="del" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" onclick="removeContractor('${type}','${c.id}')" title="Remove this contractor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </div>
         <div class="jd-field-row">
@@ -4182,6 +4199,9 @@ function openContractorPayment(type, contractorId){
   document.getElementById('cpAmount').value='';
   document.getElementById('cpDate').value=todayStr();
   document.getElementById('cpNote').value='';
+  document.getElementById('cpCheck').value='';
+  const vh = document.getElementById('cpVisibleHint');
+  if(c && showPayFor(c.name)){ vh.style.display = ''; vh.innerHTML = `&#128065; ${escapeHtml(c.name)} can see this payment (date, amount and check #) in the app. The note stays office-only.`; } else vh.style.display = 'none';
   openModal('modalContractorPay');
 }
 function confirmContractorPayment(){
@@ -4191,7 +4211,7 @@ function confirmContractorPayment(){
   const sc = getScope(job, currentScopeType);
   const c = migrateContractors(sc).find(x=>x.id===currentContractorId);
   if(!c){ showToast('That contractor no longer exists'); closeModal('modalContractorPay'); return; }
-  c.payments.push({ id: uid('CP'), amount: amt, date: document.getElementById('cpDate').value||todayStr(), note: document.getElementById('cpNote').value.trim() });
+  c.payments.push({ id: uid('CP'), amount: amt, date: document.getElementById('cpDate').value||todayStr(), checkNo: document.getElementById('cpCheck').value.trim().replace(/^#/,''), note: document.getElementById('cpNote').value.trim() });
   job.updatedAt = new Date().toISOString();
   saveJobs();
   closeModal('modalContractorPay');
@@ -4487,7 +4507,7 @@ function renderTeam(){
   const note = document.getElementById('teamPinNote');
   const noPin = sorted.filter(n=>!memberHasPin(n));
   if(note) note.innerHTML = (canEdit
-    ? (anyManagers() ? 'Managers can set PINs and manager access. <b>Sub</b> = subcontractor (reconstruction updates). <b>Tech</b> = mitigation crew (mitigation updates). Subs and Techs never see dollar amounts.' : '<b>First-time setup:</b> add yourself, set your PIN, and turn on <b>Manager</b> for yourself. After that, only managers can change PINs.')
+    ? (anyManagers() ? 'Managers can set PINs and manager access. <b>Sub</b> = subcontractor (reconstruction updates). <b>Tech</b> = mitigation crew (mitigation updates). <b>Pay</b> = that sub can see their own contract amount and payments (nothing else). Otherwise subs and techs never see dollar amounts.' : '<b>First-time setup:</b> add yourself, set your PIN, and turn on <b>Manager</b> for yourself. After that, only managers can change PINs.')
     : 'Only managers can change PINs or manager access.')
     + (anyPinsSet() && noPin.length ? `<div style="margin-top:6px;color:var(--red);"><b>No PIN yet (can't sign in):</b> ${noPin.map(escapeHtml).join(', ')}</div>` : '');
   list.innerHTML = sorted.map(name=>{
@@ -4499,7 +4519,7 @@ function renderTeam(){
       <div class="team-ctl">
       ${canEdit ? `<button class="tc ${mi.pin?'on':''}" onclick="${mi.pin?`if(confirm('Change PIN for ${esc}? (Cancel to remove it instead)')) setMemberPin('${esc}'); else clearMemberPin('${esc}');`:`setMemberPin('${esc}')`}">${mi.pin?'PIN ✓':'Set PIN'}</button>
       <button class="tc ${mi.manager?'on':''}" onclick="toggleMemberManager('${esc}')">Manager</button>
-      <button class="tc ${mi.sub?'on':''}" onclick="toggleMemberSub('${esc}')">Sub</button><button class="tc ${mi.tech?'on':''}" onclick="toggleMemberTech('${esc}')">Tech</button>${(mi.sub || mi.tech) ? `<button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}')">View as</button><button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}', true)">Test as</button>` : ''}` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}${mi.sub?'<span class="chip-sm">Sub</span>':''}${mi.tech?'<span class="chip-sm">Tech</span>':''}`}
+      <button class="tc ${mi.sub?'on':''}" onclick="toggleMemberSub('${esc}')">Sub</button><button class="tc ${mi.tech?'on':''}" onclick="toggleMemberTech('${esc}')">Tech</button>${mi.sub ? `<button class="tc ${mi.showPay?'on':''}" title="Let this sub see their own contract amount and payments" onclick="toggleMemberPay('${esc}')">Pay</button>` : ''}${(mi.sub || mi.tech) ? `<button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}')">View as</button><button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}', true)">Test as</button>` : ''}` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}${mi.sub?'<span class="chip-sm">Sub</span>':''}${mi.tech?'<span class="chip-sm">Tech</span>':''}${mi.sub && mi.showPay?'<span class="chip-sm">Pay</span>':''}`}
       <button class="del-btn" onclick="removePersonnel('${esc}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
       </div>
     </div>`;
@@ -6188,6 +6208,7 @@ function renderSubPortal(){
   if(subView==='help'){ box.innerHTML = head + ((subKind==='mit' || (tech && !sub)) ? mitHelpHtml() : subHelpHtml()); window.scrollTo(0,0); return; }
   const vj = getJob(subJobId);
   if(subView==='job' && vj && subKind==='mit' && tech && mitOpen(vj)){ box.innerHTML = head + mitJobHtml(vj); window.scrollTo(0,0); return; }
+  if(subView==='pay' && showPayFor(subUser())){ box.innerHTML = head + myPaymentsPageHtml(); window.scrollTo(0,0); return; }
   if(subView==='job' && vj && subKind!=='mit' && subOnJob(vj, subUser())){ box.innerHTML = head + subJobHtml(vj); window.scrollTo(0,0); return; }
   subView = 'list';
   const mitList = tech ? jobsForTech() : [];
@@ -6204,7 +6225,7 @@ function renderSubPortal(){
     </div>`; }).join('') : '<div class="empty">No open mitigation jobs right now.</div>');
   if(tech && !sub){ box.innerHTML = head + `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div>` + mitHtml; return; }
   const list = jobsForSub(subUser());
-  box.innerHTML = head + `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div>` + mitHtml + `<div class="sp-title">${tech ? 'Reconstruction jobs' : 'Your jobs'} (${list.length})</div>` + (list.length ? list.map(j=>{
+  box.innerHTML = head + `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div>` + myPaymentsSummaryHtml() + mitHtml + `<div class="sp-title">${tech ? 'Reconstruction jobs' : 'Your jobs'} (${list.length})</div>` + (list.length ? list.map(j=>{
     const u = latestSubUpdate(j), nv = nextVisitOf(j), est = latestEst(j);
     const mine = (j.subLog||[]).some(x=>normName(x.by)===normName(subUser()) && x.date===todayStr());
     const visitToday = nv && nv.date===todayStr();
@@ -6216,6 +6237,65 @@ function renderSubPortal(){
       <div class="sp-line">Next visit: <b>${nv ? visitText(nv) : (u && u.nextVisit && u.nextVisit.notScheduled ? 'not scheduled' : '—')}</b>${est ? ` &middot; Est. completion <b>${fmtDate(est)}</b>` : ''}</div>
       <div class="sp-line muted">${u ? `Last update ${fmtDate(u.date)} by ${escapeHtml(u.by)}` : 'No updates yet'}</div>
     </div>`; }).join('') : `<div class="empty">You're not listed on any open jobs yet. The office adds you to a job as a contractor.</div>`);
+}
+/* ---------- "My contract": a sub's own agreed amount + payments ----------
+   Only when "Pay" is on for that sub in Manage Team. Shows only their own
+   contract on each job, never what the customer pays or other subs' amounts. */
+function payCheckNo(p){ if(p.checkNo) return String(p.checkNo); const m = String(p.note||'').match(/(?:check|chk|ck)\s*(?:#|no\.?|number)?\s*([0-9]{2,})/i); return m ? m[1] : ''; }
+function showPayFor(name){ const k = personnel.find(n=>normName(n)===normName(name)); return !!(k && memberInfo(k).sub && memberInfo(k).showPay); }
+function myContracts(job, name){
+  const out = [];
+  [['reconstruction','Reconstruction'],['mitigation','Mitigation']].forEach(([k,label])=>{
+    const sc = job.scopes && job.scopes[k]; if(!sc) return;
+    (sc.contractors||[]).forEach(c=>{ if(normName(c.name)===normName(name)){
+      const paid = (c.payments||[]).reduce((t,p)=>t+(Number(p.amount)||0),0), agreed = Number(c.bidAmount)||0;
+      out.push({ c, label, agreed, paid, left: Math.round((agreed - paid)*100)/100 }); } });
+  });
+  return out;
+}
+function contractBlockHtml(x, showScope){
+  const pays = (x.c.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  return `<div class="mc-block">
+    ${showScope ? `<div class="mc-scope">${x.label}${x.c.trade?' &middot; '+escapeHtml(x.c.trade):''}</div>` : ''}
+    <div class="mc-row"><span>Agreed amount</span><b>${x.agreed ? fmtMoney(x.agreed) : '<span class="muted">not entered yet &mdash; ask the office</span>'}</b></div>
+    ${pays.length ? `<div class="mc-pays">${pays.map(p=>`<div class="mc-pay"><span>${fmtDate(p.date)}${payCheckNo(p)?' &middot; Check #'+escapeHtml(payCheckNo(p)):''}</span><span>${fmtMoney(p.amount)}</span></div>`).join('')}</div>` : '<div class="mc-pays muted" style="font-size:12.5px;">No payments yet.</div>'}
+    <div class="mc-row"><span>Paid to date</span><b>${fmtMoney(x.paid)}</b></div>
+    <div class="mc-row mc-left"><span>Balance remaining on contract</span><b>${x.agreed ? (x.left<=0.005 ? '<span class="mc-paid">Paid in full</span>' : fmtMoney(x.left)) : '&mdash;'}</b></div>
+  </div>`;
+}
+function myContractHtml(job){
+  if(!showPayFor(subUser())) return '';
+  const list = myContracts(job, subUser()); if(!list.length) return '';
+  return `<div class="sp-job mc-box"><div class="mc-title">My contract</div>${list.map(x=>contractBlockHtml(x, list.length>1)).join('')}
+    <div class="sp-hint" style="margin-top:6px;">Questions about a payment? ${officeCallHtml()}.</div></div>`;
+}
+function myPaymentsList(){
+  return visibleJobs().filter(j=>subOnJob(j, subUser())).map(j=>({ j, list: myContracts(j, subUser()) })).filter(x=>x.list.length);
+}
+function myPaymentsSummaryHtml(){
+  if(!showPayFor(subUser())) return '';
+  const rows = myPaymentsList(); if(!rows.length) return '';
+  let agreed = 0, paid = 0; rows.forEach(r=>r.list.forEach(x=>{ agreed += x.agreed; paid += x.paid; }));
+  const left = Math.max(0, Math.round((agreed - paid)*100)/100);
+  return `<div class="sp-card mc-sum" onclick="subView='pay'; renderSubPortal();">
+    <div class="sp-card-top"><b>My payments</b><span class="sp-badge">${rows.length} job${rows.length>1?'s':''} &rarr;</span></div>
+    <div class="mc-sum-grid"><div><span>Agreed</span><b>${fmtMoney(agreed)}</b></div><div><span>Paid</span><b>${fmtMoney(paid)}</b></div><div><span>Remaining</span><b>${fmtMoney(left)}</b></div></div>
+  </div>`;
+}
+function myPaymentsPageHtml(){
+  const rows = myPaymentsList().sort((a,b)=>(b.list.reduce((t,x)=>t+Math.max(0,x.left),0)) - (a.list.reduce((t,x)=>t+Math.max(0,x.left),0)) || a.j.customerName.localeCompare(b.j.customerName));
+  return `<button class="sp-back" onclick="subView='list'; renderSubPortal();">&larr; Back to my jobs</button>
+    <div class="sp-title">My payments</div>
+    <div class="sp-hint" style="margin:-4px 0 10px;">Your agreed amount and payments on each job. "Balance remaining on contract" is what's left on the agreement &mdash; it isn't necessarily due yet. Questions? ${officeCallHtml()}.</div>
+    ${rows.length ? rows.map(({j,list})=>`<div class="sp-job mc-box"><div class="mc-title">${escapeHtml(j.customerName)}${j.completed?' <span class="muted" style="font-weight:600;font-size:12px;">(job complete)</span>':''}</div>${list.map(x=>contractBlockHtml(x, list.length>1)).join('')}</div>`).join('') : '<div class="empty">No contracts to show yet.</div>'}`;
+}
+async function toggleMemberPay(name){
+  if(!canManageTeam()){ showToast('Only a manager can change this'); return; }
+  const on = !memberInfo(name).showPay;
+  if(on && !confirm(`Let ${name} see their own contract amount and the payments made to them, on each of their jobs?\n\nThey will NOT see what the customer pays, other contractors' amounts, or any other job money.`)) return;
+  setMemberInfo(name, { showPay: on });
+  renderTeam();
+  await saveJobs(on ? `${name} can now see their contract & payments` : `${name}'s pay view is off`);
 }
 function subOpenJob(id, kind){ subView = 'job'; subJobId = id; subKind = kind || 'sub'; renderSubPortal(); }
 function subBack(){ subView = 'list'; subJobId = null; subLastSubmitted = null; renderSubPortal(); }
@@ -6233,6 +6313,7 @@ function subJobHtml(job){
       <div class="sp-line">Next visit: <b>${nv ? visitText(nv) : '—'}</b></div>
       <div class="sp-line">Estimated completion: <b>${est ? fmtDate(est) : '—'}</b></div>
     </div>
+    ${myContractHtml(job)}
     <button class="btn btn-primary" style="width:100%;margin:10px 0 16px;" onclick="subNewUpdate('${job.id}')">+ Today's update</button>
     <div class="sp-title">Daily updates (${log.length})</div>
     ${log.length ? log.map(u=>subUpdateCardHtml(u, true)).join('') : '<div class="empty">No updates yet.</div>'}`;
@@ -7127,6 +7208,7 @@ function subHelpHtml(){
       <li>Tap <b>Review &amp; submit</b>. Check the summary that pops up, then tap <b>Yes, submit</b>. You'll see a green <b>Submitted</b> box with the date and time &mdash; that means the office has it. If something is missing, a red note above the button tells you what.</li>
     </ol>
     <p><b>Made a mistake?</b> Tap <b>Edit</b> on your update. You can change it until the end of the next day; after that, call the office.</p>
+    ${showPayFor(subUser()) ? '<p><b>Your contract &amp; payments.</b> Open a job to see <b>My contract</b>: the amount agreed for your work, each payment made to you (date, amount, check #), and the balance remaining on the contract. Tap <b>My payments</b> on your job list to see all your jobs at once.</p>' : ''}
     <p><b>Customer contact.</b> Tap the phone number to call the customer, or the address for directions.</p>
     <p><b>Done for the day?</b> Tap <b>Switch user</b> so the next person can sign in with their own PIN.</p>
   </div>`;
