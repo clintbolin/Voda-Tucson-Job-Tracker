@@ -564,6 +564,24 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 [data-theme="dark"] .sp-head{ background:#0E2238; }
 .sp-preview{ background:var(--amber); color:#fff; border-radius:12px; padding:10px 12px; font-size:12.5px; margin-bottom:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .sp-preview.sp-test{ background:#B45309; }
+.mit-visit{ display:inline-block; background:rgba(15,163,177,.15); color:#0B8794; font-size:11px; font-weight:800; border-radius:8px; padding:1px 7px; }
+[data-theme="dark"] .mit-visit{ color:#3CC4D1; }
+.mit-eq{ display:grid; grid-template-columns:1fr auto auto 52px; gap:6px 8px; align-items:center; font-size:13.5px; }
+.mit-eq .h{ font-size:10.5px; font-weight:800; color:var(--muted); text-align:center; letter-spacing:.4px; }
+.mit-eq .on{ text-align:center; font-weight:800; font-size:15px; border:1.5px solid #0FA3B1; border-radius:10px; padding:6px 0; }
+.mit-eq .nm{ font-weight:600; min-width:0; }
+.mit-other{ width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:13px; box-sizing:border-box; }
+.mit-step{ display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.mit-step button{ border:none; background:var(--gray-bg); color:var(--ink); width:30px; height:32px; font-size:17px; font-weight:800; cursor:pointer; }
+.mit-step b{ min-width:26px; text-align:center; font-size:14px; }
+.mit-std{ display:flex; justify-content:space-between; align-items:center; gap:8px; background:rgba(15,163,177,.12); border:1.5px solid #0FA3B1; border-radius:12px; padding:8px 12px; font-size:13px; margin-bottom:8px; }
+.mit-std button{ border:none; background:none; color:#0FA3B1; font-weight:800; font-size:13px; cursor:pointer; }
+.mit-rd{ display:grid; grid-template-columns:1.2fr 1fr 1fr 28px; gap:6px; align-items:center; font-size:13px; }
+.mit-rd .h{ font-size:11px; font-weight:800; color:var(--muted); }
+.mit-rd input{ width:100%; padding:8px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font-size:14px; box-sizing:border-box; }
+.mit-rd .dry input{ border-color:#1F9254; box-shadow:0 0 0 2px rgba(31,146,84,.25); }
+.mit-goal{ border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:10px; padding:8px; font-size:13px; text-align:left; cursor:pointer; }
+.mit-x{ border:none; background:none; color:var(--muted); font-size:20px; cursor:pointer; }
 .test-tag{ display:inline-block; background:#B45309; color:#fff; font-size:10px; font-weight:800; letter-spacing:.5px; border-radius:6px; padding:1px 6px; margin-left:4px; }
 .sp-preview button{ margin-left:auto; background:#fff; color:#8A5A00; border:none; border-radius:8px; padding:6px 10px; font-weight:800; cursor:pointer; }
 .tog.go.on{ background:#1F9254; border-color:#1F9254; }
@@ -1560,7 +1578,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Nov 5, 2026 \u00b7 12:30 PM';
+const APP_VERSION = 'Nov 5, 2026 \u00b7 8:00 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -1993,16 +2011,75 @@ function setSyncing(on, failed){
   if(on){ dot.classList.add('saving'); lbl.textContent='Saving…'; }
   else { dot.classList.remove('saving'); lbl.textContent='Synced'; }
 }
+/* Field notes (sub / crew daily updates) live on their own "FieldNotes" tab
+   once the updated Google script is installed. The app attaches them to each
+   job as job.subLog when loading, and saves new or changed notes one by one
+   (never inside the job), so jobs stay small and nobody's older copy can wipe
+   a note out. With the old script the app works exactly as before. */
+let NOTES_BACKEND = false;
+let serverNoteIds = new Set();
+let noteLocalSnap = new Map();
+let legacyNotesPending = false;
+/* Sign-in sent with every request (Google script v3 checks it). Office
+   people get everything; subs / techs get only their jobs, no money. */
+let AUTH = null;             // { user, pin } for this device
+try{ AUTH = JSON.parse(localStorage.getItem('voda-jobs-auth')||'null'); }catch(e){ AUTH = null; }
+function saveAuth(){ try{ if(AUTH) localStorage.setItem('voda-jobs-auth', JSON.stringify(AUTH)); else localStorage.removeItem('voda-jobs-auth'); }catch(e){} }
+let SERVER_ROLE = null;      // 'office' | 'field' | null (older Google script)
+let SERVER_LOCKED = false;   // PINs are required by the Google script
+let ROSTER_ONLY = false;     // signed out: we only have the names list
+let OPEN_JOBS = null;        // field people: names of open jobs for "where next?"
+function backend3(){ return SERVER_ROLE!==null || ROSTER_ONLY; }
+function fieldData(){ return SERVER_ROLE==='field'; }
+class AuthError extends Error{ constructor(roster){ super('auth'); this.roster = roster || null; } }
 async function apiGetAll(){
-  const res = await fetch(`${CONFIG.API_URL}?action=getAll`);
+  const q = AUTH ? `&user=${encodeURIComponent(AUTH.user||'')}&pin=${encodeURIComponent(AUTH.pin||'')}` : '';
+  const res = await fetch(`${CONFIG.API_URL}?action=getAll${q}`);
   if(!res.ok) throw new Error('network');
-  return res.json();
+  const data = await res.json();
+  if(data && data.error==='auth') throw new AuthError(data.roster);
+  if(data && data.backend>=3){ SERVER_ROLE = data.role || 'office'; SERVER_LOCKED = !!data.locked; ROSTER_ONLY = false; OPEN_JOBS = data.openJobs || null; }
+  if(data && Array.isArray(data.notes)){
+    NOTES_BACKEND = true;
+    const byJob = new Map(), ids = new Set();
+    data.notes.forEach(x=>{ const n = x && x.note; if(!n || !n.id) return; ids.add(n.id); const k = String(x.jobId); if(!byJob.has(k)) byJob.set(k, []); byJob.get(k).push(n); });
+    serverNoteIds = ids;
+    let legacy = false;
+    (data.jobs||[]).forEach(j=>{
+      if(!j || !j.id || j.id===SETTINGS_ID) return;
+      const gone = new Set(j.removedIds||[]);
+      const fromTab = (byJob.get(String(j.id))||[]).filter(n=>!gone.has(n.id));
+      [['subLog', n=>n.scope!=='Mitigation'], ['mitLog', n=>n.scope==='Mitigation']].forEach(([key, mine])=>{
+        const old = (j[key]||[]).filter(n=>n && n.id && !ids.has(n.id) && !gone.has(n.id)); // still inside the job (not moved yet)
+        if(old.length) legacy = true;
+        if(key==='mitLog') old.forEach(n=>n.scope = 'Mitigation');
+        const all = [...fromTab.filter(mine), ...old].sort((a,b)=>(a.at||'').localeCompare(b.at||''));
+        if(all.length) j[key] = all; else delete j[key];
+      });
+    });
+    legacyNotesPending = legacy;
+  }
+  return data;
+}
+function stripNotes(j){ if(!j || (!j.subLog && !j.mitLog)) return j; const c = { ...j }; delete c.subLog; delete c.mitLog; return c; }
+function jobNotes(j){ return [...(j.subLog||[]), ...(j.mitLog||[])]; }
+async function saveChangedNotes(list){
+  const upsert = [], remove = [];
+  (list||[]).forEach(j=>{
+    if(!j || j.id===SETTINGS_ID) return;
+    jobNotes(j).forEach(n=>{ if(n && n.id && (!serverNoteIds.has(n.id) || JSON.stringify(n)!==noteLocalSnap.get(n.id))) upsert.push({ jobId: j.id, customerName: j.customerName||'', note: n }); });
+    if(!fieldData()) (j.removedIds||[]).forEach(id=>{ if(serverNoteIds.has(id)) remove.push(id); });
+  });
+  if(!upsert.length && !remove.length) return;
+  await apiPost('saveNotes', { upsert, remove });
+  upsert.forEach(u=>{ serverNoteIds.add(u.note.id); noteLocalSnap.set(u.note.id, JSON.stringify(u.note)); });
+  remove.forEach(id=>serverNoteIds.delete(id));
 }
 async function apiPost(action, data){
   const res = await fetch(CONFIG.API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, data })
+    body: JSON.stringify({ action, data, auth: AUTH || undefined })
   });
   if(!res.ok) throw new Error('network');
   const out = await res.json();
@@ -2228,9 +2305,9 @@ async function loadData(silent){
       });
     });
     personnel = (data.personnel && data.personnel.length) ? data.personnel : [...KNOWN_TECHS];
-    if(!data.personnel || !data.personnel.length){ await savePersonnel(); }
+    if((!data.personnel || !data.personnel.length) && !fieldData()){ await savePersonnel(); }
     const autoChanged = [];
-    jobs.forEach(j=>{
+    if(!fieldData()) jobs.forEach(j=>{
       let ch = false;
       if(j.scopes.mitigation){ syncCollFromJob(j, j.scopes.mitigation, 'Mitigation'); if(collAutoUpdate(j, j.scopes.mitigation, 'Mitigation')) ch = true; }
       if(j.scopes.reconstruction){ syncCollFromJob(j, j.scopes.reconstruction, 'Reconstruction'); if(collAutoUpdate(j, j.scopes.reconstruction, 'Reconstruction')) ch = true; }
@@ -2240,15 +2317,30 @@ async function loadData(silent){
     if(!pinGateShown){ restorePinUser(); maybeShowPinGate(); }
     rememberLocalCopy();
     if(autoChanged.length){ autoChanged.forEach(id=>localSnap.delete(id)); collAutoSave(); } // save the automatic step updates
+    if(NOTES_BACKEND && legacyNotesPending && !subPreviewOnly() && !fieldData()){ legacyNotesPending = false; setTimeout(()=>saveJobs(), 1500); } // one-time move of notes to the FieldNotes tab
     applyUserMode();
     renderAll();
     checkNewSubUpdates();
     renderEquipmentSyncBanner();
   }catch(e){
+    if(e instanceof AuthError){ setSyncing(false); showSignedOut(e.roster); return; }
     console.error('load failed', e);
     setSyncing(false, true);
     if(jobs.length===0) renderSetupScreen(true);
   }
+}
+// The Google script wants a name + PIN: show the sign-in screen with only the names list.
+function showSignedOut(rost){
+  ROSTER_ONLY = true; SERVER_ROLE = null; SERVER_LOCKED = !!(rost && rost.locked);
+  AUTH = null; saveAuth();
+  jobs = [];
+  if(rost){ personnel = rost.personnel || personnel; teamSettings = { members: rost.members || {} }; }
+  pinUser = null; rememberPinUser(); updateUserPill();
+  subPreviewAs = null; subTestMode = false;
+  document.querySelector('.app').style.display = '';
+  document.getElementById('subPortal').style.display = 'none';
+  try{ renderAll(); }catch(err){}
+  pinGateShown = false; showPinGate();
 }
 setInterval(()=>{
   const anyModalOpen = document.querySelector('.overlay.active');
@@ -2280,7 +2372,10 @@ function renderSetupScreen(failed){
    collections history, payments) from both copies are always kept. */
 let rawServerSnap = new Map(), localSnap = new Map(), settingsSnap = '';
 function rememberServerCopy(list){ rawServerSnap = new Map((list||[]).filter(j=>j && j.id && j.id!==SETTINGS_ID).map(j=>[j.id, JSON.stringify(j)])); }
-function rememberLocalCopy(){ localSnap = new Map(jobs.map(j=>[j.id, JSON.stringify(j)])); settingsSnap = JSON.stringify(teamSettings); }
+function rememberLocalCopy(){
+  localSnap = new Map(jobs.map(j=>[j.id, JSON.stringify(j)])); settingsSnap = JSON.stringify(teamSettings);
+  noteLocalSnap = new Map(); jobs.forEach(j=>jobNotes(j).forEach(n=>{ if(n && n.id) noteLocalSnap.set(n.id, JSON.stringify(n)); }));
+}
 function unionById(a, b){
   const out = (a||[]).slice(), ids = new Set(out.map(x=>x && x.id).filter(Boolean));
   (b||[]).forEach(x=>{ if(x && x.id && !ids.has(x.id)){ out.push(x); ids.add(x.id); } });
@@ -2290,6 +2385,7 @@ function applyRemoved(j){
   if(!j || !(j.removedIds||[]).length) return j;
   const gone = new Set(j.removedIds);
   if(j.subLog) j.subLog = j.subLog.filter(x=>!gone.has(x.id));
+  if(j.mitLog) j.mitLog = j.mitLog.filter(x=>!gone.has(x.id));
   if(j.activity) j.activity = j.activity.filter(x=>!gone.has(x.id));
   return j;
 }
@@ -2297,13 +2393,14 @@ function mergeJob(mine, theirs){
   const m = JSON.parse(JSON.stringify(mine));
   m.removedIds = [...new Set([...(m.removedIds||[]), ...(theirs.removedIds||[])])];
   m.subLog = unionById(m.subLog, theirs.subLog);
+  if(m.mitLog || theirs.mitLog) m.mitLog = unionById(m.mitLog, theirs.mitLog);
   m.activity = unionById(m.activity, theirs.activity);
   applyRemoved(m);
   m.subAreas = [...new Set([...(m.subAreas||[]), ...(theirs.subAreas||[])])];
   m.subTasks = [...new Set([...(m.subTasks||[]), ...(theirs.subTasks||[])])];
   if(!m.finalWalk && theirs.finalWalk) m.finalWalk = theirs.finalWalk;
   // keep their "office handled" marks on sub updates
-  (m.subLog||[]).forEach(u=>{ const t = (theirs.subLog||[]).find(x=>x.id===u.id); if(t && t.handled && !u.handled) u.handled = t.handled; });
+  ['subLog','mitLog'].forEach(k=>(m[k]||[]).forEach(u=>{ const t = (theirs[k]||[]).find(x=>x.id===u.id); if(t && t.handled && !u.handled) u.handled = t.handled; }));
   ['mitigation','reconstruction'].forEach(k=>{
     const a = m.scopes && m.scopes[k], b = theirs.scopes && theirs.scopes[k];
     if(!a || !b) return;
@@ -2333,7 +2430,33 @@ function mergeForSave(serverList){
   return { list: out, settings, pulledIn };
 }
 let lastSaveError = '';
+const FIELD_KEYS = ['subAreas','subTasks','mitAreas','mitDemo','dryStandard'];
+async function saveFieldChanges(successMsg){
+  setSyncing(true);
+  try{
+    await saveChangedNotes(jobs);
+    const items = [];
+    jobs.forEach(j=>{
+      const before = localSnap.get(j.id); if(before===JSON.stringify(j)) return;
+      const b = before ? JSON.parse(before) : {}; const patch = {};
+      FIELD_KEYS.forEach(k=>{ if(JSON.stringify(j[k])!==JSON.stringify(b[k])) patch[k] = j[k]; });
+      const had = new Set((b.activity||[]).map(a=>a.id));
+      const acts = (j.activity||[]).filter(a=>a && a.id && !had.has(a.id));
+      if(Object.keys(patch).length || acts.length) items.push({ jobId: j.id, patch, activity: acts });
+    });
+    if(items.length) await apiPost('saveField', { jobs: items });
+    rememberLocalCopy();
+    setSyncing(false);
+    if(successMsg) showToast(successMsg);
+    return true;
+  }catch(e){
+    console.error('field save failed', e); setSyncing(false, true); lastSaveError = (e && e.message) || String(e);
+    showToast('\u26A0 Not saved \u2014 check your connection and try again', true);
+    return false;
+  }
+}
 async function saveJobs(successMsg){
+  if(fieldData()) return saveFieldChanges(successMsg);
   setSyncing(true);
   try{
     let payload = jobs, pulledIn = false;
@@ -2343,7 +2466,15 @@ async function saveJobs(successMsg){
       payload = merged.list; pulledIn = merged.pulledIn;
     }catch(e){ console.warn('could not refresh before saving; saving this copy', e); }
     const toSend = [...payload, settingsRecord()];
-    await apiPost('saveJobs', toSend);
+    if(NOTES_BACKEND){
+      await saveChangedNotes(payload);           // notes first, one row each
+      const slim = toSend.map(stripNotes);
+      const big = slim.find(j=>j && j.id!==SETTINGS_ID && JSON.stringify(j).length > 40000);
+      await apiPost('saveJobs', slim);
+      if(big && canManageTeam()) setTimeout(()=>showToast(`Heads up: "${big.customerName}" is getting very large \u2014 tell Claude`, true), 3000);
+    } else {
+      await apiPost('saveJobs', toSend);
+    }
     rememberServerCopy(toSend);
     if(pulledIn){
       // other people's changes came in: use the merged list from now on
@@ -2358,11 +2489,12 @@ async function saveJobs(successMsg){
   }
   catch(e){
     console.error('save jobs failed', e); setSyncing(false, true); lastSaveError = (e && e.message) || String(e);
-    showToast('\u26A0 Not saved \u2014 check your connection and try again', true);
+    showToast(/too large/i.test(lastSaveError) ? '\u26A0 Not saved \u2014 ' + lastSaveError.replace(/^backend:\s*(Error:\s*)?/,'') : '\u26A0 Not saved \u2014 check your connection and try again', true);
     return false;
   }
 }
 async function savePersonnel(){
+  if(fieldData()) return;
   setSyncing(true);
   try{ await apiPost('savePersonnel', personnel); setSyncing(false); }
   catch(e){ console.error('save personnel failed', e); setSyncing(false, true); }
@@ -3101,6 +3233,7 @@ function generateJobReportHtml(job){
     html += `</ul></div>`;
   }
 
+  html += reportMitLogHtml(job);
   html += reportSubLogHtml(job);
   html += reportDeductibleHtml(job);
 
@@ -3243,6 +3376,7 @@ function renderJobDetail(){
   if(job.scopes.mitigation && job.scopes.reconstruction){
     html += totalFinancialSummaryHtml(job);
   }
+  html += mitSectionHtml(job);
   html += subSectionHtml(job);
   html += deductibleSectionHtml(job);
   html += completeSectionHtml(job);
@@ -4339,7 +4473,8 @@ function openTeam(){
 function renderTeam(){
   const list = document.getElementById('teamList');
   const opr = document.getElementById('officePhoneRow');
-  if(opr) opr.innerHTML = `Office phone shown to subs: <b>${escapeHtml(officePhone() || 'not set')}</b> ${canManageTeam() ? `<button class="tc" onclick="setOfficePhone()">${officePhone()?'Change':'Set'}</button>` : ''}`;
+  if(opr) opr.innerHTML = `Office phone shown to subs: <b>${escapeHtml(officePhone() || 'not set')}</b> ${canManageTeam() ? `<button class="tc" onclick="setOfficePhone()">${officePhone()?'Change':'Set'}</button>` : ''}
+    &nbsp;&middot;&nbsp; Default dry standard: <b>${defaultDryStd()}%</b> ${canManageTeam() ? `<button class="tc" onclick="setDefaultDryStd()">Change</button>` : ''}`;
   const countEl = document.getElementById('teamCount');
   if(!list) return;
   countEl.textContent = personnel.length;
@@ -4350,9 +4485,11 @@ function renderTeam(){
   const sorted = [...personnel].sort((a,b)=>a.localeCompare(b));
   const canEdit = canManageTeam();
   const note = document.getElementById('teamPinNote');
-  if(note) note.innerHTML = canEdit
-    ? (anyManagers() ? 'Managers can set PINs and manager access.' : '<b>First-time setup:</b> add yourself, set your PIN, and turn on <b>Manager</b> for yourself. After that, only managers can change PINs.')
-    : 'Only managers can change PINs or manager access.';
+  const noPin = sorted.filter(n=>!memberHasPin(n));
+  if(note) note.innerHTML = (canEdit
+    ? (anyManagers() ? 'Managers can set PINs and manager access. <b>Sub</b> = subcontractor (reconstruction updates). <b>Tech</b> = mitigation crew (mitigation updates). Subs and Techs never see dollar amounts.' : '<b>First-time setup:</b> add yourself, set your PIN, and turn on <b>Manager</b> for yourself. After that, only managers can change PINs.')
+    : 'Only managers can change PINs or manager access.')
+    + (anyPinsSet() && noPin.length ? `<div style="margin-top:6px;color:var(--red);"><b>No PIN yet (can't sign in):</b> ${noPin.map(escapeHtml).join(', ')}</div>` : '');
   list.innerHTML = sorted.map(name=>{
     const activeCount = visibleJobs().filter(j=>j.assignedTo===name).length;
     const esc = name.replace(/'/g,"\\'");
@@ -4362,7 +4499,7 @@ function renderTeam(){
       <div class="team-ctl">
       ${canEdit ? `<button class="tc ${mi.pin?'on':''}" onclick="${mi.pin?`if(confirm('Change PIN for ${esc}? (Cancel to remove it instead)')) setMemberPin('${esc}'); else clearMemberPin('${esc}');`:`setMemberPin('${esc}')`}">${mi.pin?'PIN ✓':'Set PIN'}</button>
       <button class="tc ${mi.manager?'on':''}" onclick="toggleMemberManager('${esc}')">Manager</button>
-      <button class="tc ${mi.sub?'on':''}" onclick="toggleMemberSub('${esc}')">Sub</button>${mi.sub ? `<button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}')">View as</button><button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}', true)">Test as</button>` : ''}` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}${mi.sub?'<span class="chip-sm">Sub</span>':''}`}
+      <button class="tc ${mi.sub?'on':''}" onclick="toggleMemberSub('${esc}')">Sub</button><button class="tc ${mi.tech?'on':''}" onclick="toggleMemberTech('${esc}')">Tech</button>${(mi.sub || mi.tech) ? `<button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}')">View as</button><button class="tc" onclick="closeModal('modalTeam');startSubPreview('${esc}', true)">Test as</button>` : ''}` : `${mi.manager?'<span class="chip-sm">Manager</span>':''}${mi.sub?'<span class="chip-sm">Sub</span>':''}${mi.tech?'<span class="chip-sm">Tech</span>':''}`}
       <button class="del-btn" onclick="removePersonnel('${esc}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
       </div>
     </div>`;
@@ -4418,7 +4555,7 @@ function memberInfo(name){ return (name && teamSettings.members[name]) || {}; }
 function setMemberInfo(name, patch){ teamSettings.members[name] = Object.assign({}, memberInfo(name), patch); }
 function isManager(name){ return !!memberInfo(name).manager; }
 function anyManagers(){ return personnel.some(n=>isManager(n)); }
-function anyPinsSet(){ return personnel.some(n=>memberInfo(n).pin); }
+function anyPinsSet(){ return SERVER_LOCKED || personnel.some(n=>memberHasPin(n)); }
 function canManageTeam(){ return !anyManagers() || isManager(pinUser); }
 function userColor(name){
   if(!name) return 'var(--muted)';
@@ -4443,6 +4580,7 @@ function fmtStamp(at){
 function restorePinUser(){
   let saved = null;
   try{ saved = localStorage.getItem('voda-jobs-user'); }catch(e){ /* storage unavailable */ }
+  if(backend3() && SERVER_LOCKED && (!AUTH || AUTH.user!==saved)) saved = null; // must sign in with a PIN
   if(saved && personnel.includes(saved)) pinUser = saved;
   updateUserPill();
 }
@@ -4479,20 +4617,33 @@ function renderPinGate(){
     <div class="pin-pad">${keys.map(k=> k==='' ? '<span></span>' : `<button onclick="pinKey('${k}')">${k}</button>`).join('')}</div>
     <button class="pin-back" onclick="pinGateName=null;pinEntry='';renderPinGate();">&larr; Not you?</button>`;
 }
+function memberHasPin(name){ const m = memberInfo(name); return !!(m.pin || m.hasPin); }
 function pickPinName(name){
-  if(!memberInfo(name).pin){ finishPinLogin(name); return; }
+  if(!memberHasPin(name)){
+    if(SERVER_LOCKED){ showToast(`${name} doesn’t have a PIN yet — a manager can set one in Manage Team`, true); return; }
+    finishPinLogin(name); return;
+  }
   pinGateName = name; pinEntry = ''; renderPinGate();
+}
+async function serverPinLogin(name, pin){
+  const prev = AUTH; AUTH = { user: name, pin };
+  try{ await apiGetAll(); }
+  catch(e){ AUTH = prev; if(e instanceof AuthError){ pinEntry=''; renderPinGate(); showToast('Wrong PIN — try again', true); return; } pinEntry=''; renderPinGate(); showToast('Can’t reach the server — check your connection', true); return; }
+  saveAuth(); finishPinLogin(name, true);
 }
 function pinKey(k){
   if(k==='⌫'){ pinEntry = pinEntry.slice(0,-1); renderPinGate(); return; }
   if(pinEntry.length>=4) return;
   pinEntry += k; renderPinGate();
   if(pinEntry.length===4){
+    if(backend3()){ serverPinLogin(pinGateName, pinEntry); return; }
     if(pinEntry===String(memberInfo(pinGateName).pin)) finishPinLogin(pinGateName);
     else { pinEntry=''; renderPinGate(); showToast('Wrong PIN — try again', true); }
   }
 }
-function finishPinLogin(name){
+function finishPinLogin(name, verified){
+  if(backend3() && !verified){ AUTH = { user: name, pin: '' }; saveAuth(); }
+  const reload = backend3();
   pinUser = name; rememberPinUser();
   document.getElementById('pinGate').style.display = 'none';
   updateUserPill();
@@ -4500,11 +4651,14 @@ function finishPinLogin(name){
   applyUserMode();
   renderAll();
   showToast(`Signed in as ${name}`);
-  if(!memberInfo(name).pin && anyPinsSet()) setTimeout(()=>showToast('You don’t have a PIN yet — ask a manager to set one'), 2900);
+  if(!memberHasPin(name) && anyPinsSet()) setTimeout(()=>showToast('You don’t have a PIN yet — ask a manager to set one'), 2900);
+  if(reload) loadData(); // what you can see depends on who you are
 }
 function switchUser(){
   if(!confirm(`Signed in as ${pinUser||'nobody'}.\n\nSwitch to a different person?`)) return;
-  pinUser = null; rememberPinUser(); updateUserPill(); subView = 'list'; subDraft = null; applyUserMode(); showPinGate();
+  AUTH = null; saveAuth();
+  if(backend3()){ jobs = []; } // don't leave the last person's jobs on this phone
+  pinUser = null; rememberPinUser(); updateUserPill(); subView = 'list'; subDraft = null; applyUserMode(); try{ renderAll(); }catch(e){} showPinGate();
 }
 function updateUserPill(){
   const el = document.getElementById('pinUserPill');
@@ -4535,6 +4689,14 @@ async function clearMemberPin(name){
   setMemberInfo(name, { pin: '' });
   renderTeam();
   await saveJobs(`PIN removed for ${name}`);
+}
+async function toggleMemberTech(name){
+  if(!canManageTeam()){ showToast('Only a manager can change this'); return; }
+  const on = !memberInfo(name).tech;
+  if(on && isManager(name) && !confirm(`${name} is a manager. Techs only see the mitigation update screen (no office app, no dollar amounts). Make ${name} a Tech anyway?`)) return;
+  setMemberInfo(name, { tech: on });
+  renderTeam();
+  await saveJobs(`${name} ${on ? 'is now a mitigation Tech' : 'is no longer a Tech'}`);
 }
 async function toggleMemberManager(name){
   if(!canManageTeam()){ showToast('Only a manager can change this'); return; }
@@ -5937,25 +6099,25 @@ let subPreviewSnapshot = null;
 let subPreviewAs = null; // a manager looking at the sub screen as a given sub
 let subTestMode = false;  // true = "Test as a sub": updates really save, tagged TEST
 function subUser(){ return subPreviewAs || pinUser; }
-function subMode(){ return !!subPreviewAs || !!(pinUser && isSub(pinUser)); }
+function subMode(){ return !!subPreviewAs || !!(pinUser && isFieldPerson(pinUser)); }
 function subPreviewOnly(){ return !!subPreviewAs && !subTestMode; }
 function startSubPreview(name, test){
   if(!canManageTeam()){ showToast('Only a manager can preview the sub screen'); return; }
   document.querySelectorAll('.overlay.active').forEach(o=>closeModal(o.id));
   subTestMode = !!test;
-  subPreviewSnapshot = test ? null : jobs.map(j=>[j.id, (j.subAreas||[]).slice(), (j.subTasks||[]).slice()]);
+  subPreviewSnapshot = test ? null : jobs.map(j=>[j.id, (j.subAreas||[]).slice(), (j.subTasks||[]).slice(), (j.mitAreas||[]).slice(), (j.mitDemo||[]).slice(), j.dryStandard||'']);
   subPreviewAs = name; subView = 'list'; subJobId = null; subDraft = null; subLastSubmitted = null;
   applyUserMode(); window.scrollTo(0,0);
 }
 function exitSubPreview(){
-  if(subPreviewSnapshot){ subPreviewSnapshot.forEach(([id,a,t])=>{ const j=getJob(id); if(j){ j.subAreas=a; j.subTasks=t; } }); subPreviewSnapshot=null; }
+  if(subPreviewSnapshot){ subPreviewSnapshot.forEach(([id,a,t,ma,md,ds])=>{ const j=getJob(id); if(j){ j.subAreas=a; j.subTasks=t; j.mitAreas=ma; j.mitDemo=md; j.dryStandard=ds; } }); subPreviewSnapshot=null; }
   subPreviewAs = null; subTestMode = false; subView = 'list'; subDraft = null; subLastSubmitted = null; applyUserMode(); renderAll();
 }
 function openSubPreviewPicker(test){
-  const subs = personnel.filter(isSub);
-  if(!subs.length){ showToast('Mark someone as a Sub in Manage Team first'); return; }
+  const subs = personnel.filter(isFieldPerson);
+  if(!subs.length){ showToast('Mark someone as a Sub or Tech in Manage Team first'); return; }
   if(subs.length===1) return startSubPreview(subs[0], test);
-  const pick = prompt((test ? 'TEST as which sub? (your updates will really save, tagged TEST)' : 'Preview the app as which sub? (nothing is saved)') + '\n\n' + subs.map((n,i)=>`${i+1}. ${n}`).join('\n') + '\n\nType the number:');
+  const pick = prompt((test ? 'TEST as which person? (your updates will really save, tagged TEST)' : 'Preview the app as which person? (nothing is saved)') + '\n\n' + subs.map((n,i)=>`${i+1}. ${n}${isTech(n)?' (Tech)':' (Sub)'}`).join('\n') + '\n\nType the number:');
   const n = subs[Number(pick)-1]; if(n) startSubPreview(n, test);
 }
 function subModeBanner(){
@@ -5964,10 +6126,10 @@ function subModeBanner(){
     ? `<div class="sp-preview sp-test"><span><b>TEST MODE</b> as <b>${escapeHtml(subPreviewAs)}</b> &mdash; updates really save (tagged TEST) so you can check them in the office app. Delete them from the job when you're done.</span> <button onclick="exitSubPreview()">Exit test</button></div>`
     : `<div class="sp-preview">Preview: you're seeing exactly what <b>${escapeHtml(subPreviewAs)}</b> sees. Nothing you enter is saved. <button onclick="exitSubPreview()">Exit preview</button></div>`;
 }
-function testUpdateCount(){ let n = 0; visibleJobs().forEach(j=>(j.subLog||[]).forEach(u=>{ if(u.test) n++; })); return n; }
+function testUpdateCount(){ let n = 0; visibleJobs().forEach(j=>jobNotes(j).forEach(u=>{ if(u.test) n++; })); return n; }
 function deleteSubUpdate(jobId, id, silent){
   const job = getJob(jobId); if(!job) return;
-  const u = (job.subLog||[]).find(x=>x.id===id); if(!u) return;
+  const u = jobNotes(job).find(x=>x.id===id); if(!u) return;
   if(!silent && !confirm(`Delete this ${u.test?'TEST ':''}update from ${u.by} (${fmtDate(u.date)})?`)) return;
   const ids = [id, ...(job.activity||[]).filter(a=>a.testFor===id).map(a=>a.id)];
   job.removedIds = [...new Set([...(job.removedIds||[]), ...ids])];
@@ -5979,7 +6141,7 @@ function clearAllTestUpdates(){
   const n = testUpdateCount();
   if(!n){ showToast('No test updates to delete'); return; }
   if(!confirm(`Delete all ${n} TEST update${n>1?'s':''}? Real sub updates are not touched.`)) return;
-  visibleJobs().forEach(j=>(j.subLog||[]).filter(u=>u.test).forEach(u=>deleteSubUpdate(j.id, u.id, true)));
+  visibleJobs().forEach(j=>jobNotes(j).filter(u=>u.test).forEach(u=>deleteSubUpdate(j.id, u.id, true)));
   saveJobs(`${n} test update${n>1?'s':''} deleted`).then(()=>{ renderAll(); if(document.getElementById('modalSubSchedule').classList.contains('active')) renderSubSchedule(); });
 }
 function normName(s){ return String(s||'').trim().toLowerCase(); }
@@ -6014,7 +6176,7 @@ function applyUserMode(){
 }
 
 /* ---------- sub screen ---------- */
-let subView = 'list', subJobId = null, subEditId = null, subDraft = null;
+let subView = 'list', subJobId = null, subEditId = null, subDraft = null, subKind = 'sub';
 function renderSubPortal(){
   if(!subMode()) return;
   if(subView==='form') return; // never redraw while they're typing
@@ -6022,11 +6184,27 @@ function renderSubPortal(){
   const preview = subModeBanner();
   const head = preview + `<div class="sp-head"><div><div class="sp-hi">Hi, ${escapeHtml(subUser())}</div><div class="sp-sub">Voda Cleaning &amp; Restoration &middot; Daily job updates</div></div>
     <div style="display:flex;gap:6px;"><button class="sp-switch" onclick="subView='help'; renderSubPortal();">How to</button><button class="sp-switch" onclick="${subPreviewAs ? 'exitSubPreview()' : 'switchUser()'}">${subPreviewAs ? (subTestMode ? 'Exit test' : 'Exit preview') : 'Switch user'}</button></div></div>`;
-  if(subView==='help'){ box.innerHTML = head + subHelpHtml(); window.scrollTo(0,0); return; }
-  if(subView==='job' && getJob(subJobId) && subOnJob(getJob(subJobId), subUser())){ box.innerHTML = head + subJobHtml(getJob(subJobId)); window.scrollTo(0,0); return; }
+  const tech = isTech(subUser()), sub = isSub(subUser());
+  if(subView==='help'){ box.innerHTML = head + ((subKind==='mit' || (tech && !sub)) ? mitHelpHtml() : subHelpHtml()); window.scrollTo(0,0); return; }
+  const vj = getJob(subJobId);
+  if(subView==='job' && vj && subKind==='mit' && tech && mitOpen(vj)){ box.innerHTML = head + mitJobHtml(vj); window.scrollTo(0,0); return; }
+  if(subView==='job' && vj && subKind!=='mit' && subOnJob(vj, subUser())){ box.innerHTML = head + subJobHtml(vj); window.scrollTo(0,0); return; }
   subView = 'list';
+  const mitList = tech ? jobsForTech() : [];
+  const mitHtml = !tech ? '' : `<div class="sp-title">Mitigation jobs (${mitList.length})</div>` + (mitList.length ? mitList.map(j=>{
+    const u = mitLog(j)[0];
+    const sentToday = (j.mitLog||[]).filter(x=>normName(x.by)===normName(subUser()) && x.date===todayStr()).map(x=>x.at).sort().pop();
+    const nv = u && u.nextVisit && !u.nextVisit.notScheduled ? u.nextVisit : null;
+    return `<div class="sp-card" onclick="subOpenJob('${j.id}','mit')">
+      <div class="sp-card-top"><b>${escapeHtml(j.customerName)}</b>${sentToday ? `<span class="sp-badge go">✓ Submitted ${new Date(sentToday).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})}</span>` : (nv && nv.date===todayStr() ? '<span class="sp-badge">Visit today</span>' : '')}</div>
+      <div class="sp-line">${escapeHtml(j.address||'No address on file')}</div>
+      <div class="sp-line">Drying day <b>${u ? dryingDay(j) : '—'}</b> &middot; Equipment: <b>${escapeHtml(equipText(equipTimeline(j).now, (mitLog(j).find(x=>x.otherEquip)||{}).otherEquip))}</b></div>
+      <div class="sp-line">Next visit: <b>${nv ? visitText(nv) : '—'}</b></div>
+      <div class="sp-line muted">${u ? `Last update ${fmtDate(u.date)} by ${escapeHtml(u.by)}` : 'No updates yet'}</div>
+    </div>`; }).join('') : '<div class="empty">No open mitigation jobs right now.</div>');
+  if(tech && !sub){ box.innerHTML = head + `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div>` + mitHtml; return; }
   const list = jobsForSub(subUser());
-  box.innerHTML = head + `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div><div class="sp-title">Your jobs (${list.length})</div>` + (list.length ? list.map(j=>{
+  box.innerHTML = head + `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div>` + mitHtml + `<div class="sp-title">${tech ? 'Reconstruction jobs' : 'Your jobs'} (${list.length})</div>` + (list.length ? list.map(j=>{
     const u = latestSubUpdate(j), nv = nextVisitOf(j), est = latestEst(j);
     const mine = (j.subLog||[]).some(x=>normName(x.by)===normName(subUser()) && x.date===todayStr());
     const visitToday = nv && nv.date===todayStr();
@@ -6039,7 +6217,7 @@ function renderSubPortal(){
       <div class="sp-line muted">${u ? `Last update ${fmtDate(u.date)} by ${escapeHtml(u.by)}` : 'No updates yet'}</div>
     </div>`; }).join('') : `<div class="empty">You're not listed on any open jobs yet. The office adds you to a job as a contractor.</div>`);
 }
-function subOpenJob(id){ subView = 'job'; subJobId = id; renderSubPortal(); }
+function subOpenJob(id, kind){ subView = 'job'; subJobId = id; subKind = kind || 'sub'; renderSubPortal(); }
 function subBack(){ subView = 'list'; subJobId = null; subLastSubmitted = null; renderSubPortal(); }
 function subJobHtml(job){
   const others = jobSubs(job).filter(n=>normName(n)!==normName(subUser()));
@@ -6083,7 +6261,7 @@ function subUpdateCardHtml(u, forSub, jobIdFor){
 
 /* ---------- the daily update form ---------- */
 function subNewUpdate(jobId){
-  subJobId = jobId; subEditId = null;
+  subJobId = jobId; subEditId = null; subKind = 'sub';
   const job = getJob(jobId);
   const prev = subLog(job)[0];
   subDraft = { nextJob:{ jobId:'', name:'', unsure:false }, date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===subUser() ? prev.crew : '', status:'progress', areas:[], completed:[], notes:'', todo: '', estCompletion: latestEst(job)||'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, needsOffice:false, flags:[], flagNote:'', photos:false, slipReason:'' };
@@ -6299,7 +6477,7 @@ async function sendSubUpdate(){
 /* ---------- "Where are you headed next?" (when a sub's work is complete) ---------- */
 function nextJobText(nj){
   if(!nj || (!nj.jobId && !nj.name && !nj.unsure)) return 'Not entered';
-  if(nj.jobId){ const j = getJob(nj.jobId); return j ? j.customerName : (nj.name || 'Job removed'); }
+  if(nj.jobId){ const j = getJob(nj.jobId) || (OPEN_JOBS||[]).find(o=>o.id===nj.jobId); return j ? j.customerName : (nj.name || 'Job removed'); }
   if(nj.name) return nj.name;
   return 'Not sure yet \u2014 needs the office';
 }
@@ -6309,8 +6487,9 @@ function officeCallHtml(){
   return ph ? `<a href="tel:${escapeHtml(ph.replace(/[^0-9+]/g,''))}">&#128222; Call the office: ${escapeHtml(ph)}</a>` : '<b>Please call the office.</b>';
 }
 function nextJobOptions(currentId, selectedId, forName){
-  const open = visibleJobs().filter(j=>!j.completed && j.id!==currentId).sort((a,b)=>a.customerName.localeCompare(b.customerName));
-  const mine = forName ? open.filter(j=>subOnJob(j, forName)) : [];
+  const src = (fieldData() && OPEN_JOBS) ? OPEN_JOBS.map(o=>getJob(o.id) || o) : visibleJobs().filter(j=>!j.completed);
+  const open = src.filter(j=>j.id!==currentId).sort((a,b)=>(a.customerName||'').localeCompare(b.customerName||''));
+  const mine = forName ? open.filter(j=>j.scopes && subOnJob(j, forName)) : [];
   const rest = open.filter(j=>!mine.includes(j));
   const opt = j => `<option value="${j.id}" ${selectedId===j.id?'selected':''}>${escapeHtml(j.customerName)}${j.address?' \u2014 '+escapeHtml(j.address):''}</option>`;
   return (mine.length ? `<optgroup label="Your jobs">${mine.map(opt).join('')}</optgroup>` : '') + (rest.length ? `<optgroup label="${mine.length?'Other open jobs':'Open jobs'}">${rest.map(opt).join('')}</optgroup>` : '');
@@ -6332,7 +6511,7 @@ function subPickNextJob(v){
   const nj = subDraft.nextJob = { jobId:'', name:'', unsure:false };
   if(v==='__unsure') nj.unsure = true;
   else if(v==='__other') nj.other = true;
-  else if(v){ nj.jobId = v; const j = getJob(v); nj.name = j ? j.customerName : ''; }
+  else if(v){ nj.jobId = v; const j = getJob(v) || (OPEN_JOBS||[]).find(o=>o.id===v); nj.name = j ? j.customerName : ''; }
   renderSubForm();
 }
 function nextJobLineHtml(u, forSub, jobIdFor){
@@ -6367,6 +6546,13 @@ function saveNextJob(jobId, updId){
   document.getElementById('njPop').remove();
   saveJobs('Next job saved'); renderJobDetail(); renderAll();
 }
+function setDefaultDryStd(){
+  if(!canManageTeam()){ showToast('Only a manager can change this'); return; }
+  const v = prompt('Company default dry standard (%) for new readings:', defaultDryStd());
+  if(v===null) return; const n = Number(String(v).replace('%','').trim());
+  if(!(n>0 && n<100)){ showToast('Enter a number like 12', true); return; }
+  teamSettings.dryStandard = n; renderTeam(); saveJobs(`Default dry standard: ${n}%`);
+}
 function setOfficePhone(){
   if(!canManageTeam()){ showToast('Only a manager can change this'); return; }
   const v = prompt('Office phone number subs should call (shown on their screen):', officePhone());
@@ -6374,11 +6560,410 @@ function setOfficePhone(){
   teamSettings.officePhone = v.trim(); renderTeam(); saveJobs('Office phone saved');
 }
 
+/* =====================================================================
+   MITIGATION CREW DAILY UPDATES
+   Techs (Manage Team → "Tech") sign in with their PIN and see the open
+   mitigation jobs. Same idea as the sub updates: a quick tap form, saved as
+   one note on the FieldNotes tab (job.mitLog in the app). No money shown.
+   ===================================================================== */
+const MIT_VISITS = ['Initial / setup','Monitoring','Demo','Equipment pull','Final readings'];
+const MIT_DEMO = ['Flood cut 2 ft','Flood cut 4 ft','Baseboards','Carpet / pad','Cabinets','Vanity','Tile','Insulation','Ceiling'];
+const MIT_DRYING = ['Still drying','Dry — ready for final readings','Dry — equipment pulled'];
+const MIT_EQUIP = [['am','Air movers'],['dh','Dehumidifiers'],['as','Air scrubbers'],['ot','Other']];
+const MIT_FLAGS = ['Customer decision needed','Extra work found','Asbestos test needed','Materials / equipment needed','Access problem','Other'];
+const MIT_NOT_SCHED = ['Drying complete','Waiting on adjuster','Waiting on customer','Waiting on asbestos results','Other'];
+const DEFAULT_DRY_STANDARD = 12;
+function isTech(name){ return personnel.some(n=>normName(n)===normName(name) && !!memberInfo(n).tech); }
+function isFieldPerson(name){ return isSub(name) || isTech(name); }
+function mitOpen(j){ const sc = j.scopes && j.scopes.mitigation; return !!sc && scopeStatus(sc)==='Landed' && !j.completed && !j.archived; }
+function jobsForTech(){ return visibleJobs().filter(mitOpen).sort((a,b)=>(a.customerName||'').localeCompare(b.customerName||'')); }
+function mitLog(job){ return (job.mitLog||[]).slice().sort((a,b)=>((b.date||'')+(b.at||'')).localeCompare((a.date||'')+(a.at||''))); }
+function defaultDryStd(){ return Number(teamSettings.dryStandard) || DEFAULT_DRY_STANDARD; }
+function jobDryStd(job){ return Number(job && job.dryStandard) || defaultDryStd(); }
+function emptyEquip(){ return { am:0, dh:0, as:0, ot:0 }; }
+// running count of equipment on site, oldest update first
+function equipTimeline(job){
+  const on = emptyEquip(), after = {};
+  mitLog(job).slice().reverse().forEach(u=>{
+    const e = u.equip || {}; const set = e.set || {}, pulled = e.pulled || {};
+    MIT_EQUIP.forEach(([k])=>{ on[k] = Math.max(0, (on[k]||0) + (Number(set[k])||0) - (Number(pulled[k])||0)); });
+    after[u.id] = { ...on };
+  });
+  return { now: { ...on }, after };
+}
+function equipBefore(job, excludeId){
+  const on = emptyEquip();
+  mitLog(job).slice().reverse().filter(u=>u.id!==excludeId).forEach(u=>{
+    const e = u.equip || {}; MIT_EQUIP.forEach(([k])=>{ on[k] = Math.max(0, (on[k]||0) + (Number((e.set||{})[k])||0) - (Number((e.pulled||{})[k])||0)); });
+  });
+  return on;
+}
+function equipText(on, otherName){
+  const parts = MIT_EQUIP.filter(([k])=>Number(on[k])>0).map(([k,l])=>{ const nm = k==='ot' ? (otherName||'other') : l.toLowerCase(); return `${on[k]} ${Number(on[k])===1 && k!=='ot' ? nm.replace(/s$/,'') : nm}`; });
+  return parts.length ? parts.join(' · ') : 'none';
+}
+function equipChangeText(u){
+  const e = u.equip || {}, bits = [];
+  MIT_EQUIP.forEach(([k,l])=>{ const nm = k==='ot' ? (u.otherEquip||'other') : l.toLowerCase(); const one = x => Number(x)===1 && k!=='ot' ? nm.replace(/s$/,'') : nm;
+    if(Number((e.set||{})[k])>0) bits.push(`set ${e.set[k]} ${one(e.set[k])}`);
+    if(Number((e.pulled||{})[k])>0) bits.push(`pulled ${e.pulled[k]} ${one(e.pulled[k])}`); });
+  return bits.join(', ');
+}
+function dryingDay(job){
+  const firstNote = mitLog(job).map(u=>u.date).filter(Boolean).sort()[0];
+  const start = firstNote || (job.scopes.mitigation && job.scopes.mitigation.landedAt) || '';
+  if(!start || !dateReady(start)) return 0;
+  const d = Math.round((new Date(todayStr()+'T12:00:00') - new Date(String(start).slice(0,10)+'T12:00:00'))/86400000) + 1;
+  return d > 0 ? d : 0;
+}
+function readingsText(u){
+  return (u.readings||[]).filter(r=>r.spot && r.reading!=='' && r.reading!==undefined).map(r=>`${escapeHtml(r.spot)} ${escapeHtml(String(r.reading))}% (goal ${escapeHtml(String(r.goal))}%)${Number(r.reading)<=Number(r.goal)?' ✓':''}`).join(' · ');
+}
+
+/* ---------- tech's job view ---------- */
+function mitJobHtml(job){
+  const log = mitLog(job), eq = equipTimeline(job).now;
+  const lastOther = (log.find(u=>u.otherEquip)||{}).otherEquip;
+  return `<button class="sp-back" onclick="subBack()">&larr; All my jobs</button>
+    ${subSubmittedBanner(job)}
+    <div class="sp-job">
+      <div class="sp-job-name">${escapeHtml(job.customerName)}</div>
+      ${job.address ? `<a class="sp-link" href="https://maps.google.com/?q=${encodeURIComponent(job.address)}" target="_blank" rel="noopener">${escapeHtml(job.address)}</a>` : '<div class="sp-line muted">No address on file</div>'}
+      ${job.phone ? `<a class="sp-link" href="tel:${escapeHtml(job.phone.replace(/[^0-9+]/g,''))}">&#128222; ${escapeHtml(job.phone)}</a>` : ''}
+      <div class="sp-line">Drying day: <b>${dryingDay(job) || '—'}</b> &middot; Dry standard: <b>${jobDryStd(job)}%</b></div>
+      <div class="sp-line">Equipment on site: <b>${equipText(eq, lastOther)}</b></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin:10px 0 16px;" onclick="mitNewUpdate('${job.id}')">+ Today's update</button>
+    <div class="sp-title">Daily updates (${log.length})</div>
+    ${log.length ? log.map(u=>mitUpdateCardHtml(job, u, true)).join('') : '<div class="empty">No updates yet.</div>'}`;
+}
+function mitUpdateCardHtml(job, u, forSub, jobIdFor){
+  const time = (u.timeIn||u.timeOut) ? `${fmtTime12(u.timeIn)||'?'}–${fmtTime12(u.timeOut)||'?'}` : '';
+  const after = equipTimeline(job).after[u.id];
+  const change = equipChangeText(u);
+  const rd = readingsText(u);
+  return `<div class="sp-upd" style="border-left-color:${userColor(u.by)};">
+    <div class="sp-upd-top">${nameChip(u.by)} <b>${new Date(u.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</b>${time?` <span class="muted">${time}${u.crew?' · crew of '+escapeHtml(String(u.crew)):''}</span>`:''}
+      ${u.visit ? `<span class="mit-visit">${escapeHtml(u.visit)}</span>` : ''}
+      ${u.at ? `<span class="muted">sent ${new Date(u.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})}${dateOnly(u.at)!==u.date?' '+fmtDate(dateOnly(u.at)):''}</span>` : ''}
+      ${u.editedAt ? '<span class="muted">(edited)</span>' : ''}
+      ${u.test ? `<span class="test-tag" title="Test entered by ${escapeHtml(u.testBy||'')}">TEST</span>` : ''}
+      ${forSub && canEditSubUpdate(u) ? `<button class="sp-edit" onclick="mitEditUpdate('${u.id}')">Edit</button>` : ''}
+      ${!forSub && jobIdFor && (u.test || canManageTeam()) ? `<button class="sp-edit" style="color:var(--red);" onclick="deleteSubUpdate('${jobIdFor}','${u.id}')">Delete</button>` : ''}</div>
+    ${(u.areas||[]).length ? `<div class="sp-tags">${u.areas.map(a=>`<span>${escapeHtml(a)}</span>`).join('')}</div>` : ''}
+    ${change || after ? `<div class="sp-l"><b>Equipment:</b> ${change ? escapeHtml(change)+' → ' : ''}on site ${escapeHtml(equipText(after||emptyEquip(), u.otherEquip))}</div>` : ''}
+    ${(u.demo||[]).length ? `<div class="sp-l"><b>Demo:</b> ${u.demo.map(escapeHtml).join(', ')}</div>` : ''}
+    ${u.drying || rd ? `<div class="sp-l"><b>Drying:</b> ${escapeHtml(u.drying||'')}${rd ? (u.drying?' · ':'') + rd : ''}</div>` : ''}
+    ${u.notes ? `<div class="sp-l"><b>Notes:</b> ${escapeHtml(u.notes).replace(/\n/g,'<br>')}</div>` : ''}
+    ${u.custNotes ? `<div class="sp-l"><b>Customer / adjuster:</b> ${escapeHtml(u.custNotes).replace(/\n/g,'<br>')}</div>` : ''}
+    ${u.nextVisit ? `<div class="sp-l"><b>Next visit:</b> ${escapeHtml(visitText(u.nextVisit))}</div>` : ''}
+    ${u.photos ? `<div class="sp-l muted">✓ Photos uploaded to TruRestore</div>` : ''}
+    ${u.needsOffice ? `<div class="sp-flag ${u.handled?'done':''}"><b>${u.handled ? '✓ Office handled' : '⚠ Needs the office'}:</b> ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}${u.handled ? ` <span class="muted">(${escapeHtml(u.handled.by)}, ${fmtStamp(u.handled.at)})</span>` : ''}</div>` : ''}
+  </div>`;
+}
+
+/* ---------- the mitigation update form ---------- */
+function mitNewUpdate(jobId){
+  subJobId = jobId; subEditId = null; subKind = 'mit';
+  const job = getJob(jobId), prev = mitLog(job)[0], std = jobDryStd(job);
+  const spots = prev ? (prev.readings||[]).filter(r=>r.spot).map(r=>({ spot:r.spot, reading:'', goal: r.goal || std })) : [];
+  subDraft = { date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===subUser() ? prev.crew : '', visit:'', areas: prev ? (prev.areas||[]).slice() : [],
+    equip:{ set: emptyEquip(), pulled: emptyEquip() }, otherEquip: prev ? (prev.otherEquip||'') : '', demo:[], drying:'Still drying', readings: spots,
+    notes:'', custNotes:'', needsOffice:false, flags:[], flagNote:'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, photos:false };
+  subView = 'form'; renderMitForm();
+}
+function mitEditUpdate(id){
+  const job = getJob(subJobId); const u = (job.mitLog||[]).find(x=>x.id===id); if(!u || !canEditSubUpdate(u)) return;
+  subEditId = id; subKind = 'mit'; subDraft = JSON.parse(JSON.stringify(u));
+  if(!subDraft.nextVisit) subDraft.nextVisit = { date:'', window:'', notScheduled:false, reason:'' };
+  if(!subDraft.equip) subDraft.equip = { set: emptyEquip(), pulled: emptyEquip() };
+  if(!subDraft.readings) subDraft.readings = [];
+  subView = 'form'; renderMitForm();
+}
+function mitToggle(list, val){ const a = subDraft[list]; const i = a.indexOf(val); if(i>=0) a.splice(i,1); else a.push(val); renderMitForm(); }
+function mitStep(kind, k, delta){ const e = subDraft.equip[kind]; e[k] = Math.max(0, (Number(e[k])||0) + delta); renderMitForm(); }
+function mitAddCustom(kind){
+  const v = prompt(kind==='areas' ? 'Area name (e.g. Upstairs closet):' : 'Demo item (e.g. Shower surround):');
+  if(!v || !v.trim()) return;
+  const job = getJob(subJobId), key = kind==='areas' ? 'mitAreas' : 'mitDemo';
+  if(!job[key]) job[key] = [];
+  if(!job[key].includes(v.trim())) job[key].push(v.trim());
+  if(!subDraft[kind].includes(v.trim())) subDraft[kind].push(v.trim());
+  renderMitForm();
+}
+function mitRenameCustom(kind, oldName){
+  const job = getJob(subJobId), key = kind==='areas' ? 'mitAreas' : 'mitDemo';
+  const v = prompt(`Rename "${oldName}" (leave blank to remove it):`, oldName);
+  if(v===null) return;
+  job[key] = (job[key]||[]).filter(x=>x!==oldName);
+  subDraft[kind] = subDraft[kind].filter(x=>x!==oldName);
+  if(v.trim()){ job[key].push(v.trim()); subDraft[kind].push(v.trim()); }
+  renderMitForm();
+}
+function mitAddSpot(){
+  const v = prompt('Where is this reading? (e.g. Kitchen wall, Hallway subfloor)');
+  if(!v || !v.trim()) return;
+  subDraft.readings.push({ spot: v.trim(), reading:'', goal: jobDryStd(getJob(subJobId)) }); renderMitForm();
+}
+function mitRemoveSpot(i){ subDraft.readings.splice(i,1); renderMitForm(); }
+function mitEditGoal(i){
+  const r = subDraft.readings[i]; const v = prompt(`Dry goal for "${r.spot}" (%):`, r.goal);
+  if(v===null) return; const n = Number(String(v).replace('%','')); if(!(n>0 && n<100)){ showToast('Enter a number like 12', true); return; }
+  r.goal = n; renderMitForm();
+}
+function mitChangeStd(jobId, fromOffice){
+  const job = getJob(jobId || subJobId); if(!job) return;
+  const old = jobDryStd(job);
+  const v = prompt(`Dry standard for ${job.customerName} (%). Company default is ${defaultDryStd()}%.\nLeave blank to go back to the default.`, job.dryStandard ? job.dryStandard : '');
+  if(v===null) return;
+  const t = String(v).replace('%','').trim();
+  if(t && !(Number(t)>0 && Number(t)<100)){ showToast('Enter a number like 12', true); return; }
+  job.dryStandard = t ? Number(t) : '';
+  const now = jobDryStd(job);
+  if(!fromOffice && subDraft && subDraft.readings) subDraft.readings.forEach(r=>{ if(Number(r.goal)===old) r.goal = now; });
+  logActivity(job, `Dry standard set to ${now}%${t ? '' : ' (company default)'}`);
+  job.updatedAt = new Date().toISOString();
+  if(fromOffice){ saveJobs(`Dry standard: ${now}%`); renderJobDetail(); }
+  else renderMitForm();
+}
+function renderMitForm(){
+  const job = getJob(subJobId); if(!job) return;
+  const d = subDraft, std = jobDryStd(job);
+  const before = equipBefore(job, subEditId);
+  const chips = (kind, base, custom) => base.map(v=>`<button type="button" class="tog ${d[kind].includes(v)?'on':''}" onclick="mitToggle('${kind}', ${JSON.stringify(v).replace(/"/g,'&quot;')})">${escapeHtml(v)}</button>`).join('')
+    + (custom||[]).map(v=>`<span class="tog-wrap"><button type="button" class="tog ${d[kind].includes(v)?'on':''}" onclick="mitToggle('${kind}', ${JSON.stringify(v).replace(/"/g,'&quot;')})">${escapeHtml(v)}</button><button type="button" class="tog-edit" title="Rename or remove" onclick="mitRenameCustom('${kind}', ${JSON.stringify(v).replace(/"/g,'&quot;')})">&#9998;</button></span>`).join('')
+    + `<button type="button" class="tog add" onclick="mitAddCustom('${kind}')">+ ${kind==='areas'?'Add area':'Other'}</button>`;
+  const stepper = (kind, k) => `<span class="mit-step"><button type="button" onclick="mitStep('${kind}','${k}',-1)">&minus;</button><b>${Number(d.equip[kind][k])||0}</b><button type="button" onclick="mitStep('${kind}','${k}',1)">+</button></span>`;
+  const winOpts = SUB_WINDOWS.map(w=>`<option ${d.nextVisit.window===w?'selected':''}>${w}</option>`).join('');
+  const customWin = d.nextVisit.window && !SUB_WINDOWS.includes(d.nextVisit.window);
+  const pulledAll = d.drying===MIT_DRYING[2];
+  document.getElementById('subPortalBody').innerHTML = `
+    ${subModeBanner()}
+    <button class="sp-back" onclick="subCancel()">&larr; Cancel</button>
+    <div class="sp-title" style="margin-top:4px;">${subEditId?'Edit update':'Mitigation update'} &mdash; ${escapeHtml(job.customerName)}</div>
+    <div class="sp-hint" style="margin:-4px 0 8px;">Tap everything that applies, then describe the day in the notes.</div>
+    <div class="sp-form">
+      <div class="jd-field-row">
+        <div class="field"><label>Date</label><input type="date" value="${d.date}" ${subEditId?'disabled':''} onchange="subField('date', this.value)"></div>
+        <div class="field"><label>Crew size</label><input type="number" min="1" value="${d.crew||''}" placeholder="1" onchange="subField('crew', this.value)"></div>
+      </div>
+      <div class="jd-field-row">
+        <div class="field"><label>Arrived</label><input type="time" value="${d.timeIn||''}" onchange="subField('timeIn', this.value)"></div>
+        <div class="field"><label>Left</label><input type="time" value="${d.timeOut||''}" onchange="subField('timeOut', this.value)"></div>
+      </div>
+      <div class="sp-q">What was today's visit? <span class="req">required</span></div>
+      <div class="tog-row">${MIT_VISITS.map(v=>`<button type="button" class="tog ${d.visit===v?'on':''}" onclick="subDraft.visit=${JSON.stringify(v).replace(/"/g,'&quot;')}; renderMitForm();">${escapeHtml(v)}</button>`).join('')}</div>
+      <div class="sp-q">Affected areas <span>tap all that apply</span></div>
+      <div class="tog-row">${chips('areas', SUB_AREAS, job.mitAreas)}</div>
+      <div class="sp-q">Equipment <span>tap &minus; / + for what you set or pulled today</span></div>
+      <div class="mit-eq">
+        <div></div><div class="h">SET</div><div class="h">PULLED</div><div class="h">ON SITE</div>
+        ${MIT_EQUIP.map(([k,l])=>{ const after = Math.max(0, (before[k]||0) + (Number(d.equip.set[k])||0) - (Number(d.equip.pulled[k])||0));
+          return `<div class="nm">${k==='ot' ? `<input class="mit-other" placeholder="Other (type)" value="${escapeHtml(d.otherEquip||'')}" oninput="subDraft.otherEquip=this.value">` : l}</div>${stepper('set',k)}${stepper('pulled',k)}<div class="on">${after}</div>`; }).join('')}
+      </div>
+      <div class="sp-q">Demo done today <span>optional</span></div>
+      <div class="tog-row">${chips('demo', MIT_DEMO, job.mitDemo)}</div>
+      <div class="sp-q">Drying status</div>
+      <div class="tog-row">${MIT_DRYING.map(v=>`<button type="button" class="tog ${d.drying===v?'on':''}" onclick="subDraft.drying=${JSON.stringify(v).replace(/"/g,'&quot;')}; renderMitForm();">${escapeHtml(v)}</button>`).join('')}</div>
+      <div class="sp-q">Moisture readings <span>optional &middot; quick check</span></div>
+      <div class="mit-std"><span>Dry standard for this job: <b>${std}%</b> <span class="muted">${job.dryStandard ? '' : '(default)'}</span></span><button type="button" onclick="mitChangeStd()">Change</button></div>
+      ${d.readings.length ? `<div class="mit-rd"><div class="h">Spot</div><div class="h">Reading %</div><div class="h">Dry goal</div><div></div>
+        ${d.readings.map((r,i)=>`<div class="nm">${escapeHtml(r.spot)}</div>
+          <div><input type="number" inputmode="decimal" step="0.1" value="${r.reading===undefined?'':escapeHtml(String(r.reading))}" placeholder="—" oninput="subDraft.readings[${i}].reading=this.value; this.parentNode.classList.toggle('dry', this.value!=='' && Number(this.value)<=Number(subDraft.readings[${i}].goal));" class="${r.reading!=='' && Number(r.reading)<=Number(r.goal)?'':''}"></div>
+          <button type="button" class="mit-goal" onclick="mitEditGoal(${i})">${escapeHtml(String(r.goal))}% &#9998;</button>
+          <button type="button" class="mit-x" title="Remove" onclick="mitRemoveSpot(${i})">&times;</button>`).join('')}</div>` : ''}
+      <button type="button" class="tog add" style="margin-top:6px;" onclick="mitAddSpot()">+ Add spot</button>
+      <div class="sp-hint">Each spot starts at the job's dry standard; tap a goal to change just that spot. Full drying logs stay in your moisture app.</div>
+      <div class="sp-q">Daily notes <span class="req">required</span></div>
+      <textarea rows="4" placeholder="What was done and anything important. e.g. &quot;Kitchen wall still wet behind fridge. Pulled 2 air movers from hallway &mdash; dry.&quot;" oninput="subField('notes', this.value)">${escapeHtml(d.notes||'')}</textarea>
+      <div class="sp-q">Customer / adjuster notes <span>optional</span></div>
+      <textarea rows="2" placeholder="Anything they said or asked for" oninput="subField('custNotes', this.value)">${escapeHtml(d.custNotes||'')}</textarea>
+      <div class="sp-q">Needs the office?</div>
+      <div class="tog-row"><button type="button" class="tog ${!d.needsOffice?'on':''}" onclick="subDraft.needsOffice=false; renderMitForm();">No</button><button type="button" class="tog warn ${d.needsOffice?'on':''}" onclick="subDraft.needsOffice=true; renderMitForm();">Yes</button></div>
+      ${d.needsOffice ? `<div class="tog-row">${MIT_FLAGS.map(f=>`<button type="button" class="tog ${d.flags.includes(f)?'on':''}" onclick="mitToggle('flags', ${JSON.stringify(f).replace(/"/g,'&quot;')})">${escapeHtml(f)}</button>`).join('')}</div>
+        <textarea rows="2" placeholder="Details for the office" oninput="subField('flagNote', this.value)">${escapeHtml(d.flagNote||'')}</textarea>` : ''}
+      <div class="sp-q">Next visit ${pulledAll ? '<span>optional &mdash; equipment is pulled</span>' : ''}</div>
+      <label class="sp-check"><input type="checkbox" ${d.nextVisit.notScheduled?'checked':''} onchange="subDraft.nextVisit.notScheduled=this.checked; renderMitForm();"> Not scheduled yet</label>
+      ${d.nextVisit.notScheduled ? `<select class="sp-input" onchange="subDraft.nextVisit.reason=this.value; renderMitForm();"><option value="">Why not?&hellip;</option>${MIT_NOT_SCHED.map(r=>`<option ${d.nextVisit.reason===r?'selected':''}>${r}</option>`).join('')}</select>
+        ${d.nextVisit.reason==='Other' ? `<input class="sp-input" placeholder="Explain" value="${escapeHtml(d.nextVisit.reasonNote||'')}" oninput="subDraft.nextVisit.reasonNote=this.value">` : ''}`
+      : `<div class="jd-field-row">
+          <div class="field"><label>Date</label><input type="date" value="${d.nextVisit.date||''}" onchange="subDraft.nextVisit.date=this.value"></div>
+          <div class="field"><label>Time</label><select onchange="if(this.value==='Custom'){ const t=prompt('Time (e.g. 10:30 AM–12 PM):'); subDraft.nextVisit.window=t||''; renderMitForm(); } else subDraft.nextVisit.window=this.value;">
+            <option value="">Pick&hellip;</option>${winOpts}${customWin?`<option selected>${escapeHtml(d.nextVisit.window)}</option>`:''}<option value="Custom">Custom&hellip;</option></select></div>
+        </div>`}
+      <label class="sp-check" style="margin-top:12px;"><input type="checkbox" ${d.photos?'checked':''} onchange="subField('photos', this.checked)"> Photos uploaded to TruRestore</label>
+      <div id="subFormErr" class="sp-err" style="display:none;"></div>
+      <button class="btn btn-primary" id="subSubmitBtn" style="width:100%;margin-top:16px;" onclick="submitMitUpdate()">${subEditId?'Review &amp; save changes':'Review &amp; submit'}</button>
+    </div>`;
+}
+function validateMitDraft(){
+  const d = subDraft; if(!d || !getJob(subJobId)) return false;
+  const e = document.getElementById('subFormErr'); if(e) e.style.display = 'none';
+  if(!d.visit) return subFormError('Pick what today’s visit was (setup, monitoring, demo…).');
+  if(!d.notes || !d.notes.trim()) return subFormError('Add your daily notes (what you did today).');
+  for(const r of d.readings){ if(r.reading!=='' && r.reading!==undefined && isNaN(Number(r.reading))) return subFormError(`The reading for "${r.spot}" should be a number.`); }
+  const pulledAll = d.drying===MIT_DRYING[2];
+  if(d.nextVisit.notScheduled){ if(!d.nextVisit.reason) return subFormError('Pick why the next visit isn’t scheduled.'); d.nextVisit.date=''; d.nextVisit.window=''; }
+  else if(!d.nextVisit.date){ if(!pulledAll) return subFormError('Enter the next visit date, or check "Not scheduled yet."'); d.nextVisit = { notScheduled:true, reason:'Drying complete', date:'', window:'' }; }
+  else if(!dateReady(d.nextVisit.date)) return subFormError('Finish the next visit date (4-digit year).');
+  else if(!d.nextVisit.window) return subFormError('Pick the time for the next visit.');
+  if(d.needsOffice && !d.flags.length) return subFormError('You tapped "Yes" for Needs the office — pick what it’s about.');
+  return true;
+}
+function submitMitUpdate(){ if(validateMitDraft()){ hideToast(); showMitConfirm(); } }
+function showMitConfirm(){
+  const d = subDraft, job = getJob(subJobId);
+  const row = (k,v) => v ? `<div class="sc-row"><div class="sc-k">${k}</div><div class="sc-v">${v}</div></div>` : '';
+  const time = (d.timeIn||d.timeOut) ? `${fmtTime12(d.timeIn)||'?'} – ${fmtTime12(d.timeOut)||'?'}${d.crew?' · crew of '+escapeHtml(String(d.crew)):''}` : (d.crew ? 'crew of '+escapeHtml(String(d.crew)) : '');
+  const before = equipBefore(job, subEditId), after = {};
+  MIT_EQUIP.forEach(([k])=>{ after[k] = Math.max(0, (before[k]||0) + (Number(d.equip.set[k])||0) - (Number(d.equip.pulled[k])||0)); });
+  const ch = equipChangeText(d);
+  const box = document.getElementById('subConfirm');
+  box.innerHTML = `<div class="sc-card">
+    <div class="sc-title">Is everything correct?</div>
+    <div class="sc-sub">${escapeHtml(job.customerName)} &middot; ${new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</div>
+    ${row('Visit', `<b>${escapeHtml(d.visit)}</b>`)}
+    ${row('On site', time)}
+    ${row('Areas', (d.areas||[]).map(escapeHtml).join(', '))}
+    ${row('Equipment', `${ch ? escapeHtml(ch)+'<br>' : ''}On site: <b>${escapeHtml(equipText(after, d.otherEquip))}</b>`)}
+    ${row('Demo', (d.demo||[]).map(escapeHtml).join(', '))}
+    ${row('Drying', escapeHtml(d.drying||'') + (readingsText(d) ? '<br>'+readingsText(d) : ''))}
+    ${row('Notes', escapeHtml(d.notes||'').replace(/\n/g,'<br>'))}
+    ${row('Customer', escapeHtml(d.custNotes||'').replace(/\n/g,'<br>'))}
+    ${row('Next visit', escapeHtml(visitText(d.nextVisit)))}
+    ${row('Needs office', d.needsOffice ? `<b style="color:var(--red);">${d.flags.map(escapeHtml).join(', ')}</b>${d.flagNote?'<br>'+escapeHtml(d.flagNote):''}` : 'No')}
+    ${row('Photos', d.photos ? 'Uploaded to TruRestore' : 'Not checked')}
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="hideSubConfirm()">Go back &amp; edit</button>
+      <button class="btn btn-green" id="subConfirmBtn" onclick="sendMitUpdate()">Yes, submit</button>
+    </div>
+  </div>`;
+  box.style.display = 'flex';
+}
+async function sendMitUpdate(){
+  const d = subDraft, job = getJob(subJobId); if(!d || !job) return;
+  const btn = document.getElementById('subConfirmBtn');
+  if(subPreviewOnly()){ hideSubConfirm(); subLastSubmitted = { jobId: subJobId, at: new Date().toISOString(), preview: true }; subView = 'job'; subDraft = null; subEditId = null; renderSubPortal(); return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  if(!job.mitLog) job.mitLog = [];
+  const beforeLog = JSON.stringify(job.mitLog), beforeAct = JSON.stringify(job.activity||[]);
+  const clean = JSON.parse(JSON.stringify(d));
+  clean.notes = d.notes.trim(); clean.custNotes = (d.custNotes||'').trim(); clean.scope = 'Mitigation';
+  clean.readings = (clean.readings||[]).filter(r=>r.spot).map(r=>({ spot:r.spot, reading: r.reading==='' || r.reading===undefined ? '' : Number(r.reading), goal: Number(r.goal)||jobDryStd(job) }));
+  if(!d.needsOffice){ clean.flags = []; clean.flagNote = ''; }
+  const nowIso = new Date().toISOString();
+  let newId;
+  if(subEditId){
+    const i = job.mitLog.findIndex(x=>x.id===subEditId);
+    if(i>=0) job.mitLog[i] = { ...job.mitLog[i], ...clean, editedAt: nowIso };
+    newId = subEditId;
+    logActivity(job, `${subTestMode?'[TEST] ':''}Mitigation update edited by ${subUser()} (${fmtDate(clean.date)})`);
+    if(subTestMode) job.activity[job.activity.length-1].testFor = subEditId;
+  } else {
+    const u = { ...clean, id: uid('MU'), ...stamp(), by: subUser(), at: nowIso };
+    if(subTestMode){ u.test = true; u.testBy = pinUser; }
+    job.mitLog.push(u); newId = u.id;
+    logActivity(job, `${subTestMode?'[TEST] ':''}Mitigation update from ${subUser()} (${clean.visit}): ${clean.notes.slice(0,120)}${clean.notes.length>120?'…':''}${d.needsOffice?' — NEEDS OFFICE: '+d.flags.join(', '):''}`);
+    if(subTestMode) job.activity[job.activity.length-1].testFor = u.id;
+  }
+  job.activity[job.activity.length-1].by = subUser();
+  job.updatedAt = nowIso;
+  const ok = await saveAndVerifyNote(subJobId, 'mitLog', newId, subEditId ? nowIso : '');
+  if(!ok){ job.mitLog = JSON.parse(beforeLog); job.activity = JSON.parse(beforeAct);
+    btn.disabled = false; btn.textContent = 'Try again'; const t = btn.closest('.sc-card').querySelector('.sc-sub'); if(t) t.innerHTML = '<b style="color:var(--red);">It didn’t save — check your signal and tap Try again. What you entered is still here.</b>' + (subTestMode ? `<div style="font-size:12px;margin-top:6px;color:var(--muted);">Test details: ${escapeHtml(lastSaveError || 'the save went through but the update was not in the sheet when re-checked')}</div>` : ''); return; }
+  hideSubConfirm(); hideToast();
+  subLastSubmitted = { jobId: subJobId, at: nowIso, edited: !!subEditId, test: subTestMode };
+  subView = 'job'; subDraft = null; subEditId = null; renderSubPortal();
+}
+// save, then re-read the sheet to be sure the note is there (one retry)
+async function saveAndVerifyNote(jobId, key, id, editedAt){
+  let ok = await saveJobs();
+  if(!ok) return false;
+  const has = data => { const sj = (data.jobs||[]).find(x=>x.id===jobId); return !!(sj && (sj[key]||[]).some(x=>x.id===id && (!editedAt || x.editedAt===editedAt))); };
+  try{
+    if(has(await apiGetAll())) return true;
+    ok = await saveJobs(); if(!ok) return false;
+    return has(await apiGetAll());
+  }catch(e){ return true; /* can't double-check on a weak signal; the save itself went through */ }
+}
+function mitHelpHtml(){
+  return `<button class="sp-back" onclick="subView='list'; renderSubPortal();">&larr; Back to my jobs</button>
+  <div class="sp-job sp-help">
+    <div class="sp-job-name">How to send your mitigation update</div>
+    <p>Send one update for each job, every visit, before you leave the site. It takes about 2 minutes.</p>
+    <ol>
+      <li><b>Open the job</b> and tap <b>+ Today's update</b>.</li>
+      <li><b>Time on site &amp; crew</b>, then tap what the visit was (setup, monitoring, demo, equipment pull, final readings).</li>
+      <li><b>Areas:</b> tap every affected area. Use <b>+ Add area</b> for anything not listed.</li>
+      <li><b>Equipment:</b> tap <b>+</b> under SET for what you put in today and under PULLED for what you took out. ON SITE adds itself up from every visit.</li>
+      <li><b>Demo</b> done today, and the <b>drying status</b>.</li>
+      <li><b>Moisture readings</b> (optional): tap <b>+ Add spot</b>, enter the reading. The dry goal starts at the job's dry standard (${defaultDryStd()}% unless changed). Spots carry over to the next visit.</li>
+      <li><b>Daily notes</b> (required) and anything the customer or adjuster said.</li>
+      <li><b>Needs the office?</b> Tap <b>Yes</b> for a customer decision, extra work, an asbestos test, materials, or access problems.</li>
+      <li><b>Next visit</b> day and time, check <b>Photos uploaded to TruRestore</b>, then <b>Review &amp; submit</b>. Wait for the green <b>Submitted</b>.</li>
+    </ol>
+    <p><b>Made a mistake?</b> Tap <b>Edit</b> on your update (until the end of the next day).</p>
+  </div>`;
+}
+
+/* ---------- office: mitigation crew updates on the job ---------- */
+function mitSectionHtml(job){
+  const sc = job.scopes && job.scopes.mitigation; if(!sc) return '';
+  const log = mitLog(job);
+  if(!log.length && !personnel.some(isTech)) return '';
+  const eq = equipTimeline(job).now, lastOther = (log.find(u=>u.otherEquip)||{}).otherEquip;
+  const flags = log.filter(u=>u.needsOffice && !u.handled);
+  const last = log[0];
+  return `<div class="jd-section">
+    <div class="jd-section-head"><div class="h">Mitigation crew updates</div>${flags.length ? `<span class="hs-tag red">${flags.length} need${flags.length>1?'':'s'} the office</span>` : ''}</div>
+    <div class="totals-mini" style="flex-wrap:wrap;gap:8px 0;">
+      <div style="flex:1 1 100%;">Equipment on site<br><b>${escapeHtml(equipText(eq, lastOther))}</b></div>
+      <div style="flex:1 1 50%;">Drying day<br><b>${log.length ? dryingDay(job) : '—'}</b></div>
+      <div style="flex:1 1 50%;">Dry standard<br><b>${jobDryStd(job)}%</b> <a style="cursor:pointer;color:var(--cyan-dark);font-weight:700;" title="Change" onclick="mitChangeStd('${job.id}', true)">&#9998;</a></div>
+    </div>
+    ${last ? `<div class="coll-meta">Latest: ${escapeHtml(last.drying||'')}${last.nextVisit ? ' · Next visit ' + escapeHtml(visitText(last.nextVisit)) : ''}</div>` : ''}
+    ${flags.map(u=>`<div class="sub-alert"><b>${escapeHtml(u.by)} needs the office</b> (${fmtDate(u.date)}): ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}
+      <button class="sub-handled" onclick="markSubFlagHandled('${job.id}','${u.id}')">Mark handled</button></div>`).join('')}
+    <div class="sp-title" style="margin-top:12px;">Daily log (${log.length})</div>
+    ${log.length ? log.slice(0, 5).map(u=>mitUpdateCardHtml(job, u, false, job.id)).join('') + (log.length>5 ? `<div class="hint">Showing the latest 5. The full log prints on the Job Report.</div>` : '') : '<div class="empty" style="padding:6px 0;">No mitigation crew updates yet.</div>'}
+  </div>`;
+}
+function reportMitLogHtml(job){
+  const log = mitLog(job).slice().reverse();
+  if(!log.length) return '';
+  const tl = equipTimeline(job).after;
+  let h = `<div class="report-section"><div class="report-h">Mitigation Crew Daily Log</div><table class="report-table"><thead><tr><th style="width:80px;">Date</th><th style="width:80px;">Tech</th><th>Work &amp; notes</th><th style="width:130px;">Equipment on site</th><th style="width:110px;">Next visit</th></tr></thead><tbody>`;
+  h += log.map(u=>`<tr><td>${fmtDate(u.date)}${(u.timeIn||u.timeOut)?`<div style="font-size:10px;color:#647184;">${fmtTime12(u.timeIn)}–${fmtTime12(u.timeOut)}</div>`:''}</td><td>${escapeHtml(u.by)}${u.test?' <b>(TEST)</b>':''}${u.crew?`<div style="font-size:10px;color:#647184;">crew ${escapeHtml(String(u.crew))}</div>`:''}</td>
+    <td><b>${escapeHtml(u.visit||'')}</b>${(u.areas||[]).length?`<br><b>Areas:</b> ${u.areas.map(escapeHtml).join(', ')}`:''}${(u.demo||[]).length?`<br><b>Demo:</b> ${u.demo.map(escapeHtml).join(', ')}`:''}${u.drying?`<br><b>Drying:</b> ${escapeHtml(u.drying)}`:''}${readingsText(u)?` · ${readingsText(u)}`:''}<br>${escapeHtml(u.notes||'')}${u.custNotes?`<br><b>Customer:</b> ${escapeHtml(u.custNotes)}`:''}${u.needsOffice?`<br><b>Office:</b> ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}${u.handled?' (handled)':''}`:''}${u.photos?'<br><span style="font-size:10px;color:#647184;">✓ Photos in TruRestore</span>':''}</td>
+    <td>${equipChangeText(u)?`<div style="font-size:10px;color:#647184;">${escapeHtml(equipChangeText(u))}</div>`:''}${escapeHtml(equipText(tl[u.id]||emptyEquip(), u.otherEquip))}</td>
+    <td>${escapeHtml(visitText(u.nextVisit))}</td></tr>`).join('');
+  return h + `</tbody></table></div>`;
+}
+function mitDailyReportHtml(day){
+  const rows = [];
+  visibleJobs().forEach(j=>(j.mitLog||[]).forEach(u=>{ if(u.date===day) rows.push({ j, u }); }));
+  if(!rows.length) return '';
+  rows.sort((a,b)=>a.j.customerName.localeCompare(b.j.customerName) || (a.u.by||'').localeCompare(b.u.by||''));
+  return `<div class="rpt-sec">Mitigation crew updates <span>(${rows.length})</span></div><table class="rpt-grid"><thead><tr><th>Job / address</th><th>Tech</th><th>On site</th><th>Visit</th><th>Areas</th><th>Equipment</th><th>Drying</th><th>Notes</th><th>Next visit</th><th>Office</th></tr></thead><tbody>` +
+    rows.map(({j,u})=>{ const tl = equipTimeline(j).after[u.id]||emptyEquip(); return `<tr class="${u.needsOffice && !u.handled ? 'row-red' : ''}">
+      <td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}</td>
+      <td>${escapeHtml(u.by)}${u.test?' <b>(TEST)</b>':''}</td>
+      <td style="white-space:nowrap;">${(u.timeIn||u.timeOut) ? `${fmtTime12(u.timeIn)}–${fmtTime12(u.timeOut)}` : '—'}${u.crew?`<div class="sm">crew of ${escapeHtml(String(u.crew))}</div>`:''}</td>
+      <td>${escapeHtml(u.visit||'')}</td>
+      <td>${(u.areas||[]).map(escapeHtml).join(', ')||'—'}</td>
+      <td>${equipChangeText(u)?`<div class="sm">${escapeHtml(equipChangeText(u))}</div>`:''}${escapeHtml(equipText(tl, u.otherEquip))}</td>
+      <td>${escapeHtml(u.drying||'')}${readingsText(u)?`<div class="sm">${readingsText(u)}</div>`:''}</td>
+      <td>${escapeHtml(u.notes||'')}${u.custNotes?`<div class="sm">Customer: ${escapeHtml(u.custNotes)}</div>`:''}${u.photos?'<div class="sm">✓ Photos in TruRestore</div>':''}</td>
+      <td>${escapeHtml(visitText(u.nextVisit))}</td>
+      <td>${u.needsOffice ? `<b class="red">${(u.flags||[]).map(escapeHtml).join(', ')}</b>${u.flagNote?`<div class="sm">${escapeHtml(u.flagNote)}</div>`:''}${u.handled?'<div class="sm">handled</div>':''}` : '—'}</td>
+    </tr>`; }).join('') + `</tbody></table>`;
+}
+
 /* ---------- Home: today's sub updates + who hasn't sent one ---------- */
 function subTodayInfo(){
   const today = todayStr(), sent = [], waiting = [];
   visibleJobs().forEach(j=>{
-    (j.subLog||[]).forEach(u=>{ if(u.date===today) sent.push({ j, u }); });
+    jobNotes(j).forEach(u=>{ if(u.date===today) sent.push({ j, u }); });
     // each sub whose last plan put them on this job today
     const seen = new Set();
     subLog(j).forEach(u=>{
@@ -6392,15 +6977,15 @@ function subTodayInfo(){
 }
 function renderHomeSubToday(){
   const el = document.getElementById('homeSubToday'); if(!el) return;
-  const anySubs = personnel.some(isSub);
+  const anySubs = personnel.some(isFieldPerson);
   const { sent, waiting } = subTodayInfo();
   if(!anySubs && !sent.length){ el.innerHTML = ''; return; }
   const tm = iso => new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ});
   el.innerHTML = `<div class="hs-box">
-    <div class="hs-head"><span>Sub updates today</span><span class="hs-count">${sent.length} sent${waiting.length?` &middot; <b style="color:var(--red);">${waiting.length} waiting</b>`:''}</span></div>
+    <div class="hs-head"><span>Field updates today</span><span class="hs-count">${sent.length} sent${waiting.length?` &middot; <b style="color:var(--red);">${waiting.length} waiting</b>`:''}</span></div>
     ${sent.map(({j,u})=>`<div class="hs-row" onclick="openJobDetail('${j.id}')">
         <span class="hs-ok">✓</span><span class="hs-time">${u.at?tm(u.at):''}</span>${nameChip(u.by)}
-        <span class="hs-job">${escapeHtml(j.customerName)}</span>${u.test ? '<span class="test-tag">TEST</span>' : ''}
+        <span class="hs-job">${escapeHtml(j.customerName)}</span>${u.scope==='Mitigation' ? '<span class="hs-tag">Mitigation</span>' : ''}${u.test ? '<span class="test-tag">TEST</span>' : ''}
         ${u.status && u.status!=='progress' ? `<span class="hs-tag go">${subStatusLabel(u.status)}</span>` : ''}
         ${u.needsOffice && !u.handled ? '<span class="hs-tag red">Needs office</span>' : ''}
       </div>`).join('')}
@@ -6408,7 +6993,7 @@ function renderHomeSubToday(){
         <span class="hs-wait">!</span><span class="hs-time">${escapeHtml(nv.window||'today')}</span>${nameChip(by)}
         <span class="hs-job">${escapeHtml(j.customerName)}</span><span class="hs-tag red">No update yet</span>
       </div>`).join('')}
-    ${!sent.length && !waiting.length ? '<div class="hs-empty">No sub updates yet today.</div>' : ''}
+    ${!sent.length && !waiting.length ? '<div class="hs-empty">No field updates yet today.</div>' : ''}
     <div class="hs-foot" onclick="openSubSchedule()">Sub schedule &amp; daily report &rarr;</div>
   </div>`;
 }
@@ -6416,11 +7001,11 @@ function renderHomeSubToday(){
 let seenSubUpdateIds = null;
 function checkNewSubUpdates(){
   const ids = new Set(); const fresh = [];
-  visibleJobs().forEach(j=>(j.subLog||[]).forEach(u=>{ ids.add(u.id); if(seenSubUpdateIds && !seenSubUpdateIds.has(u.id) && u.by!==pinUser) fresh.push({ j, u }); }));
+  visibleJobs().forEach(j=>jobNotes(j).forEach(u=>{ ids.add(u.id); if(seenSubUpdateIds && !seenSubUpdateIds.has(u.id) && u.by!==pinUser) fresh.push({ j, u }); }));
   seenSubUpdateIds = ids;
   if(!fresh.length || subMode()) return;
   const f = fresh[fresh.length-1];
-  showToast(fresh.length===1 ? `New sub update: ${f.u.by} — ${f.j.customerName}${f.u.needsOffice?' (needs office)':''}` : `${fresh.length} new sub updates — see Home`);
+  showToast(fresh.length===1 ? `New ${f.u.scope==='Mitigation'?'mitigation':'sub'} update: ${f.u.by} — ${f.j.customerName}${f.u.needsOffice?' (needs office)':''}` : `${fresh.length} new sub updates — see Home`);
 }
 function subSubmittedBanner(job){
   if(!subLastSubmitted || subLastSubmitted.jobId!==job.id) return '';
@@ -6465,7 +7050,7 @@ function markFinalWalkDone(jobId){
   saveJobs('Final walk recorded'); renderJobDetail(); if(document.getElementById('modalSubSchedule').classList.contains('active')) renderSubSchedule();
 }
 function markSubFlagHandled(jobId, uid_){
-  const job = getJob(jobId); const u = (job.subLog||[]).find(x=>x.id===uid_); if(!u) return;
+  const job = getJob(jobId); const u = jobNotes(job).find(x=>x.id===uid_); if(!u) return;
   u.handled = stamp();
   logActivity(job, `Marked handled: ${u.by}'s request (${(u.flags||[]).join(', ')})`);
   job.updatedAt = new Date().toISOString();
@@ -6588,7 +7173,7 @@ function subDailyReportHtml(day){
   const flags = worked.filter(({u})=>u.needsOffice && !u.handled).length;
   const jobsCount = new Set(worked.map(x=>x.j.id)).size;
 
-  let h = letterheadHtml('Daily Subcontractor Report', `${dayLong(day)} &middot; Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
+  let h = letterheadHtml(visibleJobs().some(j=>(j.mitLog||[]).some(u=>u.date===day)) ? 'Daily Field Report' : 'Daily Subcontractor Report', `${dayLong(day)} &middot; Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
   h += `<table class="rpt-summary"><tr>
     <td><div class="v">${jobsCount}</div><div class="k">Jobs worked</div></td>
     <td><div class="v">${worked.length}</div><div class="k">Updates</div></td>
@@ -6612,6 +7197,7 @@ function subDailyReportHtml(day){
       <td>${u.needsOffice ? `<b class="red">${(u.flags||[]).map(escapeHtml).join(', ')}</b>${u.flagNote?`<div class="sm">${escapeHtml(u.flagNote)}</div>`:''}${u.handled?'<div class="sm">handled</div>':''}` : '—'}</td>
     </tr>`).join('') + `</tbody></table>` : `<div class="rpt-empty">No subcontractor updates for ${dayShort(day)}.</div>`;
 
+  h += mitDailyReportHtml(day);
   let lastDay = '';
   h += `<div class="rpt-sec">Schedule &mdash; next visits after ${dayShort(day)} <span>(${upcoming.length})</span></div>`;
   h += upcoming.length ? `<table class="rpt-grid"><thead><tr><th class="ck">&#10003;</th><th>Day</th><th>Time</th><th>Job / address</th><th>Sub</th><th>Planned work (still to do)</th><th>Est. complete</th></tr></thead><tbody>` +
