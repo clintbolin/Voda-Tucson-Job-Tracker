@@ -565,6 +565,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 .sp-preview{ background:var(--amber); color:#fff; border-radius:12px; padding:10px 12px; font-size:12.5px; margin-bottom:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .sp-preview.sp-test{ background:#B45309; }
 .mc-box{ border:1.5px solid #0FA3B1; }
+.hs-part + .hs-part{ border-top:1px solid var(--line); margin-top:8px; padding-top:6px; }
+.hs-subhead{ display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--muted); margin:6px 0 4px; }
+.hs-subhead .hs-count{ text-transform:none; letter-spacing:0; }
+.rpt-note{ font-size:11.5px; margin:6px 0 2px; padding:6px 8px; border:1px solid #CBD5E1; border-radius:6px; }
 .sp-search input{ width:100%; box-sizing:border-box; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font-size:15px; margin:4px 0 10px; }
 .sp-search input:focus{ outline:none; border-color:#0FA3B1; box-shadow:0 0 0 3px rgba(15,163,177,.2); }
 .sp-tabs{ display:flex; gap:6px; margin-bottom:12px; }
@@ -1567,7 +1571,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 <div class="overlay" id="modalSubSchedule"><div class="sheet" style="max-height:92vh;">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><div><div class="sheet-title">Sub schedule</div><div class="sheet-sub">Subcontractor visits, missed updates &amp; requests</div></div><button class="close-x" onclick="closeModal('modalSubSchedule')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-  <div class="btn-row" style="margin-bottom:6px;"><button class="btn btn-primary" onclick="openSubDailyReport()">Daily Sub Report (print)</button><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="openSubPreviewPicker()">View as a sub</button><button class="btn" style="background:#B45309;color:#fff;" onclick="openSubPreviewPicker(true)">Test as a sub</button></div>
+  <div class="btn-row" style="margin-bottom:6px;"><button class="btn btn-primary" onclick="openSubDailyReport()">Daily Sub Report (print)</button><button class="btn btn-primary" onclick="closeModal('modalSubSchedule'); openMitDailyReport()">Daily Mitigation Report</button><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="openSubPreviewPicker()">View as a sub</button><button class="btn" style="background:#B45309;color:#fff;" onclick="openSubPreviewPicker(true)">Test as a sub</button></div>
   <div id="testClearRow"></div>
   <div id="subScheduleBody"></div>
 </div></div>
@@ -1607,7 +1611,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Nov 9, 2026 \u00b7 7:00 PM';
+const APP_VERSION = 'Nov 9, 2026 \u00b7 8:30 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -7098,19 +7102,70 @@ function reportMitLogHtml(job){
     <td>${escapeHtml(visitText(u.nextVisit))}</td></tr>`).join('');
   return h + `</tbody></table></div>`;
 }
-function mitDailyReportHtml(day){
+function mitFullDailyReportHtml(day){
+  const dayLong = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const dayShort = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const rows = [];
+  visibleJobs().forEach(j=>(j.mitLog||[]).forEach(u=>{ if(u.date===day) rows.push({ j, u }); }));
+  const open = visibleJobs().filter(mitOpen);
+  // equipment on site right now, per job and in total
+  const tot = emptyEquip(); let otherNames = [];
+  const eqRows = open.map(j=>{ const on = equipTimeline(j).now; const other = (mitLog(j).find(x=>x.otherEquip)||{}).otherEquip; MIT_EQUIP.forEach(([k])=>tot[k]+=on[k]||0); if(on.ot && other) otherNames.push(other); return { j, on, other }; })
+    .filter(x=>MIT_EQUIP.some(([k])=>x.on[k]>0)).sort((a,b)=>a.j.customerName.localeCompare(b.j.customerName));
+  const crewHrs = rows.reduce((t,{u})=>{ if(!u.timeIn||!u.timeOut) return t; const [h1,m1]=u.timeIn.split(':').map(Number),[h2,m2]=u.timeOut.split(':').map(Number); const hrs=((h2*60+m2)-(h1*60+m1))/60; return t + (hrs>0 ? hrs*(Number(u.crew)||1) : 0); },0);
+  const flags = rows.filter(({u})=>u.needsOffice && !u.handled).length;
+  const upcoming = [], unsched = [], missed = mitTodayInfo(day).waiting;
+  open.forEach(j=>{
+    const u = mitLog(j).find(x=>x.date<=day); if(!u || !u.nextVisit) return;
+    if(u.nextVisit.notScheduled){ if(u.nextVisit.reason!=='Drying complete') unsched.push({ j, u }); return; }
+    if(u.nextVisit.date && u.nextVisit.date>day && u.nextVisit.date<=addDays(day,7)) upcoming.push({ j, u, nv:u.nextVisit });
+  });
+  upcoming.sort((a,b)=>a.nv.date.localeCompare(b.nv.date) || (a.nv.window||'').localeCompare(b.nv.window||''));
+  let h = letterheadHtml('Daily Mitigation Report', `${dayLong(day)} &middot; Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
+  h += `<table class="rpt-summary"><tr>
+    <td><div class="v">${new Set(rows.map(x=>x.j.id)).size}</div><div class="k">Jobs visited</div></td>
+    <td><div class="v">${rows.length}</div><div class="k">Updates</div></td>
+    <td><div class="v">${crewHrs ? Math.round(crewHrs*10)/10 : '—'}</div><div class="k">Crew hours on site</div></td>
+    <td><div class="v ${flags?'red':''}">${flags}</div><div class="k">Need the office</div></td>
+    <td><div class="v ${missed.length?'red':''}">${missed.length}</div><div class="k">Planned visits, no update</div></td>
+    <td><div class="v">${upcoming.length}</div><div class="k">Visits next 7 days</div></td>
+  </tr></table>`;
+  h += `<div class="rpt-note"><b>Equipment on site now (all open mitigation jobs):</b> ${escapeHtml(equipText(tot, otherNames.length===1 ? otherNames[0] : 'other'))}</div>`;
+  h += mitDailyReportHtml(day, `Visits ${dayShort(day)}`) || `<div class="rpt-sec">Visits ${dayShort(day)} <span>(0)</span></div><div class="rpt-empty">No mitigation updates for ${dayShort(day)}.</div>`;
+  if(missed.length) h += `<div class="rpt-sec">Visit planned, no update sent <span>(${missed.length})</span></div><table class="rpt-grid"><thead><tr><th>Job / address</th><th>Tech (last visit)</th><th>Planned time</th><th>Equipment on site</th></tr></thead><tbody>` +
+    missed.map(({j,by,nv})=>`<tr class="row-red"><td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}</td><td>${escapeHtml(by)}</td><td>${escapeHtml(nv.window||'—')}</td><td>${escapeHtml(equipText(equipTimeline(j).now, (mitLog(j).find(x=>x.otherEquip)||{}).otherEquip))}</td></tr>`).join('') + `</tbody></table>`;
+  let lastDay = '';
+  h += `<div class="rpt-sec">Schedule &mdash; next visits after ${dayShort(day)} <span>(${upcoming.length})</span></div>`;
+  h += upcoming.length ? `<table class="rpt-grid"><thead><tr><th class="ck">&#10003;</th><th>Day</th><th>Time</th><th>Job / address</th><th>Last tech</th><th>Drying status</th><th>Equipment on site</th><th>Drying day</th></tr></thead><tbody>` +
+    upcoming.map(({j,u,nv})=>{ const first = nv.date!==lastDay; lastDay = nv.date;
+      return `<tr><td class="ck"><span class="box"></span></td><td style="white-space:nowrap;">${first?`<b>${dayShort(nv.date)}</b>`:''}</td><td style="white-space:nowrap;">${escapeHtml(nv.window||'—')}</td>
+      <td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}${j.phone?`<div class="sm">${escapeHtml(j.phone)}</div>`:''}</td>
+      <td>${escapeHtml(u.by)}</td><td>${escapeHtml(u.drying||'—')}${readingsText(u)?`<div class="sm">${readingsText(u)}</div>`:''}</td><td>${escapeHtml(equipText(equipTimeline(j).now, (mitLog(j).find(x=>x.otherEquip)||{}).otherEquip))}</td><td>${dryingDay(j)||'—'}</td></tr>`; }).join('') + `</tbody></table>` : `<div class="rpt-empty">No mitigation visits scheduled in the next 7 days.</div>`;
+  if(unsched.length){
+    h += `<div class="rpt-sec">Not scheduled yet <span>(${unsched.length})</span></div><table class="rpt-grid"><thead><tr><th>Job</th><th>Why</th><th>Drying status</th><th>Equipment on site</th><th>Last update</th></tr></thead><tbody>` +
+      unsched.map(({j,u})=>`<tr><td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}</td><td>${escapeHtml(u.nextVisit.reason||'')}${u.nextVisit.reasonNote?' — '+escapeHtml(u.nextVisit.reasonNote):''}</td><td>${escapeHtml(u.drying||'—')}</td><td>${escapeHtml(equipText(equipTimeline(j).now, u.otherEquip))}</td><td>${fmtDate(u.date)} (${escapeHtml(u.by)})</td></tr>`).join('') + `</tbody></table>`;
+  }
+  h += `<div class="rpt-sec">Equipment on site by job <span>(${eqRows.length})</span></div>`;
+  h += eqRows.length ? `<table class="rpt-grid"><thead><tr><th>Job / address</th>${MIT_EQUIP.map(([k,l])=>`<th style="text-align:center;">${k==='ot'?'Other':l}</th>`).join('')}<th>Drying day</th><th>Dry standard</th><th>Last visit</th></tr></thead><tbody>` +
+    eqRows.map(({j,on,other})=>{ const u = mitLog(j)[0]; return `<tr><td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}</td>${MIT_EQUIP.map(([k])=>`<td style="text-align:center;">${on[k]||'—'}${k==='ot'&&on[k]&&other?`<div class="sm">${escapeHtml(other)}</div>`:''}</td>`).join('')}<td>${dryingDay(j)||'—'}</td><td>${jobDryStd(j)}%</td><td>${u?`${fmtDate(u.date)} (${escapeHtml(u.by)})`:'—'}</td></tr>`; }).join('') +
+    `<tr style="font-weight:800;"><td>Total</td>${MIT_EQUIP.map(([k])=>`<td style="text-align:center;">${tot[k]||'—'}</td>`).join('')}<td colspan="3"></td></tr></tbody></table>` : `<div class="rpt-empty">No equipment on site at open mitigation jobs.</div>`;
+  h += `<div class="report-footer">Voda Job Tracker &middot; Daily Mitigation Report &middot; ${fmtDate(day)}</div>`;
+  return h;
+}
+function mitDailyReportHtml(day, title){
   const rows = [];
   visibleJobs().forEach(j=>(j.mitLog||[]).forEach(u=>{ if(u.date===day) rows.push({ j, u }); }));
   if(!rows.length) return '';
   rows.sort((a,b)=>a.j.customerName.localeCompare(b.j.customerName) || (a.u.by||'').localeCompare(b.u.by||''));
-  return `<div class="rpt-sec">Mitigation crew updates <span>(${rows.length})</span></div><table class="rpt-grid"><thead><tr><th>Job / address</th><th>Tech</th><th>On site</th><th>Visit</th><th>Areas</th><th>Equipment</th><th>Drying</th><th>Notes</th><th>Next visit</th><th>Office</th></tr></thead><tbody>` +
+  return `<div class="rpt-sec">${title || 'Mitigation crew updates'} <span>(${rows.length})</span></div><table class="rpt-grid"><thead><tr><th>Job / address</th><th>Tech</th><th>On site</th><th>Visit</th><th>Areas</th><th>Equipment</th><th>Demo</th><th>Drying &amp; readings</th><th>Notes</th><th>Next visit</th><th>Office</th></tr></thead><tbody>` +
     rows.map(({j,u})=>{ const tl = equipTimeline(j).after[u.id]||emptyEquip(); return `<tr class="${u.needsOffice && !u.handled ? 'row-red' : ''}">
       <td><b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}</td>
-      <td>${escapeHtml(u.by)}${u.test?' <b>(TEST)</b>':''}</td>
+      <td>${escapeHtml(u.by)}${u.test?' <b>(TEST)</b>':''}${u.editedAt?'<div class="sm">(edited)</div>':''}</td>
       <td style="white-space:nowrap;">${(u.timeIn||u.timeOut) ? `${fmtTime12(u.timeIn)}–${fmtTime12(u.timeOut)}` : '—'}${u.crew?`<div class="sm">crew of ${escapeHtml(String(u.crew))}</div>`:''}</td>
       <td>${escapeHtml(u.visit||'')}</td>
       <td>${(u.areas||[]).map(escapeHtml).join(', ')||'—'}</td>
       <td>${equipChangeText(u)?`<div class="sm">${escapeHtml(equipChangeText(u))}</div>`:''}${escapeHtml(equipText(tl, u.otherEquip))}</td>
+      <td>${(u.demo||[]).map(escapeHtml).join(', ')||'—'}</td>
       <td>${escapeHtml(u.drying||'')}${readingsText(u)?`<div class="sm">${readingsText(u)}</div>`:''}</td>
       <td>${escapeHtml(u.notes||'')}${u.custNotes?`<div class="sm">Customer: ${escapeHtml(u.custNotes)}</div>`:''}${u.photos?'<div class="sm">✓ Photos in TruRestore</div>':''}</td>
       <td>${escapeHtml(visitText(u.nextVisit))}</td>
@@ -7122,7 +7177,7 @@ function mitDailyReportHtml(day){
 function subTodayInfo(){
   const today = todayStr(), sent = [], waiting = [];
   visibleJobs().forEach(j=>{
-    jobNotes(j).forEach(u=>{ if(u.date===today) sent.push({ j, u }); });
+    (j.subLog||[]).forEach(u=>{ if(u.date===today) sent.push({ j, u }); });
     // each sub whose last plan put them on this job today
     const seen = new Set();
     subLog(j).forEach(u=>{
@@ -7134,26 +7189,45 @@ function subTodayInfo(){
   sent.sort((a,b)=>(b.u.at||'').localeCompare(a.u.at||''));
   return { sent, waiting };
 }
+// mitigation crew: updates sent today + jobs whose last update planned a visit today with nothing sent yet
+function mitTodayInfo(day){
+  const today = day || todayStr(), sent = [], waiting = [];
+  visibleJobs().forEach(j=>{
+    (j.mitLog||[]).forEach(u=>{ if(u.date===today) sent.push({ j, u }); });
+    if(!mitOpen(j)) return;
+    const last = mitLog(j).find(u=>u.date<today);
+    const nv = last && last.nextVisit;
+    if(nv && !nv.notScheduled && nv.date===today && !(j.mitLog||[]).some(x=>x.date===today)) waiting.push({ j, by:last.by, nv });
+  });
+  sent.sort((a,b)=>(b.u.at||'').localeCompare(a.u.at||''));
+  return { sent, waiting };
+}
 function renderHomeSubToday(){
   const el = document.getElementById('homeSubToday'); if(!el) return;
-  const anySubs = personnel.some(isFieldPerson);
-  const { sent, waiting } = subTodayInfo();
-  if(!anySubs && !sent.length){ el.innerHTML = ''; return; }
+  const anySubs = personnel.some(isSub), anyTechs = personnel.some(isTech);
+  const S = subTodayInfo(), M = mitTodayInfo();
+  if(!anySubs && !anyTechs && !S.sent.length && !M.sent.length){ el.innerHTML = ''; return; }
   const tm = iso => new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ});
-  el.innerHTML = `<div class="hs-box">
-    <div class="hs-head"><span>Field updates today</span><span class="hs-count">${sent.length} sent${waiting.length?` &middot; <b style="color:var(--red);">${waiting.length} waiting</b>`:''}</span></div>
-    ${sent.map(({j,u})=>`<div class="hs-row" onclick="openJobDetail('${j.id}')">
+  const sentRow = ({j,u}) => `<div class="hs-row" onclick="openJobDetail('${j.id}')">
         <span class="hs-ok">✓</span><span class="hs-time">${u.at?tm(u.at):''}</span>${nameChip(u.by)}
-        <span class="hs-job">${escapeHtml(j.customerName)}</span>${u.scope==='Mitigation' ? '<span class="hs-tag">Mitigation</span>' : ''}${u.test ? '<span class="test-tag">TEST</span>' : ''}
-        ${u.status && u.status!=='progress' ? `<span class="hs-tag go">${subStatusLabel(u.status)}</span>` : ''}
+        <span class="hs-job">${escapeHtml(j.customerName)}</span>${u.test ? '<span class="test-tag">TEST</span>' : ''}
+        ${u.scope==='Mitigation' ? (u.visit ? `<span class="hs-tag">${escapeHtml(u.visit)}</span>` : '') + (u.drying===MIT_DRYING[2] ? '<span class="hs-tag go">Equipment pulled</span>' : '') : (u.status && u.status!=='progress' ? `<span class="hs-tag go">${subStatusLabel(u.status)}</span>` : '')}
         ${u.needsOffice && !u.handled ? '<span class="hs-tag red">Needs office</span>' : ''}
-      </div>`).join('')}
-    ${waiting.map(({j,by,nv})=>`<div class="hs-row" onclick="openJobDetail('${j.id}')">
+      </div>`;
+  const waitRow = ({j,by,nv}) => `<div class="hs-row" onclick="openJobDetail('${j.id}')">
         <span class="hs-wait">!</span><span class="hs-time">${escapeHtml(nv.window||'today')}</span>${nameChip(by)}
         <span class="hs-job">${escapeHtml(j.customerName)}</span><span class="hs-tag red">No update yet</span>
-      </div>`).join('')}
-    ${!sent.length && !waiting.length ? '<div class="hs-empty">No field updates yet today.</div>' : ''}
-    <div class="hs-foot" onclick="openSubSchedule()">Sub schedule &amp; daily report &rarr;</div>
+      </div>`;
+  const part = (title, info, emptyTxt, foot) => `<div class="hs-part">
+      <div class="hs-subhead"><span>${title}</span><span class="hs-count">${info.sent.length} sent${info.waiting.length?` &middot; <b style="color:var(--red);">${info.waiting.length} waiting</b>`:''}</span></div>
+      ${info.sent.map(sentRow).join('')}${info.waiting.map(waitRow).join('')}
+      ${!info.sent.length && !info.waiting.length ? `<div class="hs-empty">${emptyTxt}</div>` : ''}
+      ${foot}
+    </div>`;
+  el.innerHTML = `<div class="hs-box">
+    <div class="hs-head"><span>Field updates today</span></div>
+    ${(anyTechs || M.sent.length) ? part('Mitigation crew', M, 'No mitigation updates yet today.', `<div class="hs-foot" onclick="openMitDailyReport()">Daily Mitigation Report &rarr;</div>`) : ''}
+    ${(anySubs || S.sent.length) ? part('Subcontractors', S, 'No sub updates yet today.', `<div class="hs-foot" onclick="openSubSchedule()">Sub schedule &amp; daily report &rarr;</div>`) : ''}
   </div>`;
 }
 // pop-up in the office app when a new sub update comes in
@@ -7295,7 +7369,21 @@ function subHelpHtml(){
 
 /* ---------- Daily Sub Report (office): every job worked on a day + what's scheduled next ---------- */
 let subReportDate = '';
+let subReportKind = 'sub';
+function setSubReportHead(){
+  const t = document.querySelector('#modalSubReport .sheet-title'), st = document.querySelector('#modalSubReport .sheet-sub');
+  if(t) t.textContent = subReportKind==='mit' ? 'Daily Mitigation Report' : 'Daily Sub Report';
+  if(st) st.textContent = subReportKind==='mit' ? 'Every mitigation visit that day, equipment on site, and the next visits' : 'All jobs worked that day + the next visits';
+}
+function openMitDailyReport(){
+  subReportKind = 'mit'; setSubReportHead();
+  subReportDate = subReportDate || todayStr();
+  document.getElementById('srDate').value = subReportDate;
+  renderSubDailyReport();
+  openModal('modalSubReport');
+}
 function openSubDailyReport(){
+  subReportKind = 'sub'; setSubReportHead();
   subReportDate = subReportDate || todayStr();
   document.getElementById('srDate').value = subReportDate;
   renderSubDailyReport();
@@ -7303,7 +7391,7 @@ function openSubDailyReport(){
 }
 function renderSubDailyReport(){
   subReportDate = document.getElementById('srDate').value || todayStr();
-  document.getElementById('subReportBody').innerHTML = subDailyReportHtml(subReportDate);
+  document.getElementById('subReportBody').innerHTML = subReportKind==='mit' ? mitFullDailyReportHtml(subReportDate) : subDailyReportHtml(subReportDate);
 }
 function printSubReport(){
   setPrintOrientation(getOrient('sub'));
@@ -7334,7 +7422,7 @@ function subDailyReportHtml(day){
   const flags = worked.filter(({u})=>u.needsOffice && !u.handled).length;
   const jobsCount = new Set(worked.map(x=>x.j.id)).size;
 
-  let h = letterheadHtml(visibleJobs().some(j=>(j.mitLog||[]).some(u=>u.date===day)) ? 'Daily Field Report' : 'Daily Subcontractor Report', `${dayLong(day)} &middot; Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
+  let h = letterheadHtml('Daily Subcontractor Report', `${dayLong(day)} &middot; Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
   h += `<table class="rpt-summary"><tr>
     <td><div class="v">${jobsCount}</div><div class="k">Jobs worked</div></td>
     <td><div class="v">${worked.length}</div><div class="k">Updates</div></td>
@@ -7358,7 +7446,6 @@ function subDailyReportHtml(day){
       <td>${u.needsOffice ? `<b class="red">${(u.flags||[]).map(escapeHtml).join(', ')}</b>${u.flagNote?`<div class="sm">${escapeHtml(u.flagNote)}</div>`:''}${u.handled?'<div class="sm">handled</div>':''}` : '—'}</td>
     </tr>`).join('') + `</tbody></table>` : `<div class="rpt-empty">No subcontractor updates for ${dayShort(day)}.</div>`;
 
-  h += mitDailyReportHtml(day);
   let lastDay = '';
   h += `<div class="rpt-sec">Schedule &mdash; next visits after ${dayShort(day)} <span>(${upcoming.length})</span></div>`;
   h += upcoming.length ? `<table class="rpt-grid"><thead><tr><th class="ck">&#10003;</th><th>Day</th><th>Time</th><th>Job / address</th><th>Sub</th><th>Planned work (still to do)</th><th>Est. complete</th></tr></thead><tbody>` +
