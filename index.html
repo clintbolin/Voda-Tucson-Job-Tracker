@@ -565,6 +565,25 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 .sp-preview{ background:var(--amber); color:#fff; border-radius:12px; padding:10px 12px; font-size:12.5px; margin-bottom:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .sp-preview.sp-test{ background:#B45309; }
 .mc-box{ border:1.5px solid #0FA3B1; }
+.msg-pinned .msg-item{ background:rgba(245,158,11,.12); border:1.5px solid #D97706; border-radius:12px; padding:10px 12px; margin-bottom:8px; position:relative; }
+.msg-item .msg-meta{ font-size:12px; color:var(--muted); margin-bottom:4px; }
+.msg-item .msg-text, .msg-row .msg-text{ font-size:14px; line-height:1.4; color:var(--ink); }
+.msg-job{ font-weight:800; color:var(--ink); }
+.msg-done{ margin-top:8px; border:1.5px solid #1F9254; color:#1F9254; background:var(--card); border-radius:10px; padding:5px 14px; font-weight:800; font-size:13px; cursor:pointer; }
+.msg-pop .nj-card{ max-height:85vh; overflow:auto; }
+.msg-pop-title{ font-weight:800; font-size:17px; margin-bottom:10px; }
+.msg-pop .msg-item{ background:rgba(245,158,11,.12); border:1.5px solid #D97706; border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+.msg-st{ display:inline-block; font-size:10.5px; font-weight:800; border-radius:99px; padding:2px 8px; margin-left:4px; white-space:nowrap; }
+.msg-st.new{ background:rgba(229,72,77,.14); color:var(--red); }
+.msg-st.seen{ background:rgba(15,163,177,.15); color:#0B8794; }
+.msg-st.done{ background:rgba(31,146,84,.15); color:#1F9254; }
+.msg-office{ margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
+.msg-office-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13.5px; }
+.msg-row{ display:flex; justify-content:space-between; gap:8px; border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin-bottom:6px; font-size:12.5px; }
+.hs-add{ border:none; background:none; color:#0FA3B1; font-weight:800; font-size:12px; cursor:pointer; text-transform:none; letter-spacing:0; }
+.msg-snip{ color:var(--muted); font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lnl{ display:block; font-size:12px; font-weight:800; color:var(--muted); margin-top:10px; }
+.nj-pop textarea{ width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font-size:14px; margin-top:6px; box-sizing:border-box; font-family:inherit; }
 .hs-part + .hs-part{ border-top:1px solid var(--line); margin-top:8px; padding-top:6px; }
 .hs-subhead{ display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--muted); margin:6px 0 4px; }
 .hs-subhead .hs-count{ text-transform:none; letter-spacing:0; }
@@ -1611,7 +1630,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Nov 9, 2026 \u00b7 8:30 PM';
+const APP_VERSION = 'Nov 9, 2026 \u00b7 11:00 PM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -2075,7 +2094,9 @@ async function apiGetAll(){
   if(data && Array.isArray(data.notes)){
     NOTES_BACKEND = true;
     const byJob = new Map(), ids = new Set();
-    data.notes.forEach(x=>{ const n = x && x.note; if(!n || !n.id) return; ids.add(n.id); const k = String(x.jobId); if(!byJob.has(k)) byJob.set(k, []); byJob.get(k).push(n); });
+    const msgs = [];
+    data.notes.forEach(x=>{ const n = x && x.note; if(!n || !n.id) return; ids.add(n.id); if(n.scope==='Message'){ msgs.push({ jobId: String(x.jobId||''), note: n }); return; } const k = String(x.jobId); if(!byJob.has(k)) byJob.set(k, []); byJob.get(k).push(n); });
+    fieldMessages = msgs;
     serverNoteIds = ids;
     let legacy = false;
     (data.jobs||[]).forEach(j=>{
@@ -2354,6 +2375,7 @@ async function loadData(silent){
     applyUserMode();
     renderAll();
     checkNewSubUpdates();
+    if(pinUser) setTimeout(checkMyMessages, 400);
     renderEquipmentSyncBanner();
   }catch(e){
     if(e instanceof AuthError){ setSyncing(false); showSignedOut(e.roster); return; }
@@ -3411,6 +3433,7 @@ function renderJobDetail(){
   }
   html += mitSectionHtml(job);
   html += subSectionHtml(job);
+  if(NOTES_BACKEND && !mitSectionHtml(job) && !subSectionHtml(job)) html += `<div class="jd-section">${jobNotesForCrewHtml(job)}</div>`;
   html += deductibleSectionHtml(job);
   html += completeSectionHtml(job);
   html += `<div class="jd-section">
@@ -4689,6 +4712,7 @@ function finishPinLogin(name, verified){
   showToast(`Signed in as ${name}`);
   if(!memberHasPin(name) && anyPinsSet()) setTimeout(()=>showToast('You don’t have a PIN yet — ask a manager to set one'), 2900);
   if(reload) loadData(); // what you can see depends on who you are
+  else setTimeout(checkMyMessages, 400);
 }
 function switchUser(){
   if(!confirm(`Signed in as ${pinUser||'nobody'}.\n\nSwitch to a different person?`)) return;
@@ -6244,7 +6268,7 @@ function renderSubPortal(){
   subView = 'list';
   const help = `<div class="sp-helplink" onclick="subView='help'; renderSubPortal();">&#9432; New here? <b>How to fill out your daily update &rarr;</b></div>`;
   const ctrls = `<div class="sp-search"><input id="spSearch" type="search" placeholder="&#128269; Search your jobs (name, address, phone)" value="${escapeHtml(subSearch)}" oninput="subSearch=this.value; renderSubLists();" autocomplete="off"></div><div class="sp-tabs" id="spTabs"></div>`;
-  box.innerHTML = head + help + (sub ? myPaymentsSummaryHtml() : '') + ctrls + '<div id="spLists"></div>';
+  box.innerHTML = head + '<div id="spMyNotes">' + myOpenNotesHtml() + '</div>' + help + (sub ? myPaymentsSummaryHtml() : '') + ctrls + '<div id="spLists"></div>';
   renderSubLists();
 }
 let subListTab = 'active', subSearch = '';
@@ -6268,6 +6292,7 @@ function subSearchMatch(j){
 function setSubTab(t){ subListTab = t; renderSubLists(); }
 function renderSubLists(){
   const box = document.getElementById('spLists'); if(!box) return;
+  const mn = document.getElementById('spMyNotes'); if(mn) mn.innerHTML = myOpenNotesHtml();
   const me = subUser(), tech = isTech(me), sub = isSub(me);
   const mitAll = tech ? jobsForTech().filter(subSearchMatch).map(j=>({ j, done: mitDone(j) })) : [];
   const subAll = sub || !tech ? visibleJobs().filter(j=>subOnJob(j, me)).filter(subSearchMatch).sort((a,b)=>(a.customerName||'').localeCompare(b.customerName||'')).map(j=>({ j, done: subDone(j, me) })) : [];
@@ -6379,6 +6404,7 @@ function subJobHtml(job){
       <div class="sp-line">Estimated completion: <b>${est ? fmtDate(est) : '—'}</b></div>
     </div>
     ${myContractHtml(job)}
+    ${myOpenNotesHtml(job.id)}
     <button class="btn btn-primary" style="width:100%;margin:10px 0 16px;" onclick="subNewUpdate('${job.id}')">+ Today's update</button>
     <div class="sp-title">Daily updates (${log.length})</div>
     ${log.length ? log.map(u=>subUpdateCardHtml(u, true)).join('') : '<div class="empty">No updates yet.</div>'}`;
@@ -6714,7 +6740,7 @@ function setOfficePhone(){
    mitigation jobs. Same idea as the sub updates: a quick tap form, saved as
    one note on the FieldNotes tab (job.mitLog in the app). No money shown.
    ===================================================================== */
-const MIT_VISITS = ['Initial / setup','Monitoring','Demo','Equipment pull','Final readings'];
+const MIT_VISITS = ['Initial / setup','Inspection','Monitoring','Demo','Equipment pull','Final readings'];
 const MIT_DEMO = ['Flood cut 2 ft','Flood cut 4 ft','Baseboards','Carpet / pad','Cabinets','Vanity','Tile','Insulation','Ceiling'];
 const MIT_DRYING = ['Still drying','Dry — ready for final readings','Dry — equipment pulled'];
 const MIT_EQUIP = [['am','Air movers'],['dh','Dehumidifiers'],['as','Air scrubbers'],['ot','Other']];
@@ -6782,6 +6808,7 @@ function mitJobHtml(job){
       <div class="sp-line">Drying day: <b>${dryingDay(job) || '—'}</b> &middot; Dry standard: <b>${jobDryStd(job)}%</b></div>
       <div class="sp-line">Equipment on site: <b>${equipText(eq, lastOther)}</b></div>
     </div>
+    ${myOpenNotesHtml(job.id)}
     <button class="btn btn-primary" style="width:100%;margin:10px 0 16px;" onclick="mitNewUpdate('${job.id}')">+ Today's update</button>
     <div class="sp-title">Daily updates (${log.length})</div>
     ${log.length ? log.map(u=>mitUpdateCardHtml(job, u, true)).join('') : '<div class="empty">No updates yet.</div>'}`;
@@ -6800,7 +6827,7 @@ function mitUpdateCardHtml(job, u, forSub, jobIdFor){
       ${forSub && canEditSubUpdate(u) ? `<button class="sp-edit" onclick="mitEditUpdate('${u.id}')">Edit</button>` : ''}
       ${!forSub && jobIdFor && (u.test || canManageTeam()) ? `<button class="sp-edit" style="color:var(--red);" onclick="deleteSubUpdate('${jobIdFor}','${u.id}')">Delete</button>` : ''}</div>
     ${(u.areas||[]).length ? `<div class="sp-tags">${u.areas.map(a=>`<span>${escapeHtml(a)}</span>`).join('')}</div>` : ''}
-    ${change || after ? `<div class="sp-l"><b>Equipment:</b> ${change ? escapeHtml(change)+' → ' : ''}on site ${escapeHtml(equipText(after||emptyEquip(), u.otherEquip))}</div>` : ''}
+    ${change || (after && MIT_EQUIP.some(([k])=>after[k]>0)) ? `<div class="sp-l"><b>Equipment:</b> ${change ? escapeHtml(change)+' → ' : ''}on site ${escapeHtml(equipText(after||emptyEquip(), u.otherEquip))}</div>` : ''}
     ${(u.demo||[]).length ? `<div class="sp-l"><b>Demo:</b> ${u.demo.map(escapeHtml).join(', ')}</div>` : ''}
     ${u.drying || rd ? `<div class="sp-l"><b>Drying:</b> ${escapeHtml(u.drying||'')}${rd ? (u.drying?' · ':'') + rd : ''}</div>` : ''}
     ${u.notes ? `<div class="sp-l"><b>Notes:</b> ${escapeHtml(u.notes).replace(/\n/g,'<br>')}</div>` : ''}
@@ -6817,7 +6844,7 @@ function mitNewUpdate(jobId){
   const job = getJob(jobId), prev = mitLog(job)[0], std = jobDryStd(job);
   const spots = prev ? (prev.readings||[]).filter(r=>r.spot).map(r=>({ spot:r.spot, reading:'', goal: r.goal || std })) : [];
   subDraft = { date: todayStr(), timeIn:'', timeOut:'', crew: prev && prev.by===subUser() ? prev.crew : '', visit:'', areas: prev ? (prev.areas||[]).slice() : [],
-    equip:{ set: emptyEquip(), pulled: emptyEquip() }, otherEquip: prev ? (prev.otherEquip||'') : '', demo:[], drying:'Still drying', readings: spots,
+    equip:{ set: emptyEquip(), pulled: emptyEquip() }, otherEquip: prev ? (prev.otherEquip||'') : '', demo:[], drying: prev && prev.drying && prev.drying!==MIT_DRYING[2] ? 'Still drying' : '', readings: spots,
     notes:'', custNotes:'', needsOffice:false, flags:[], flagNote:'', nextVisit:{ date:'', window:'', notScheduled:false, reason:'' }, photos:false };
   subView = 'form'; renderMitForm();
 }
@@ -6828,6 +6855,12 @@ function mitEditUpdate(id){
   if(!subDraft.equip) subDraft.equip = { set: emptyEquip(), pulled: emptyEquip() };
   if(!subDraft.readings) subDraft.readings = [];
   subView = 'form'; renderMitForm();
+}
+function mitOtherVisit(){
+  const cur = subDraft.visit && !MIT_VISITS.includes(subDraft.visit) ? subDraft.visit : '';
+  const v = prompt('What was today\u2019s visit? (e.g. Mold remediation, Fire cleanup, Biohazard cleanup, Contents)', cur);
+  if(v===null) return;
+  subDraft.visit = v.trim(); renderMitForm();
 }
 function mitToggle(list, val){ const a = subDraft[list]; const i = a.indexOf(val); if(i>=0) a.splice(i,1); else a.push(val); renderMitForm(); }
 function mitStep(kind, k, delta){ const e = subDraft.equip[kind]; e[k] = Math.max(0, (Number(e[k])||0) + delta); renderMitForm(); }
@@ -6906,7 +6939,7 @@ function renderMitForm(){
         <div class="field"><label>Left</label><input type="time" value="${d.timeOut||''}" onchange="subField('timeOut', this.value)"></div>
       </div>
       <div class="sp-q">What was today's visit? <span class="req">required</span></div>
-      <div class="tog-row">${MIT_VISITS.map(v=>`<button type="button" class="tog ${d.visit===v?'on':''}" onclick="subDraft.visit=${JSON.stringify(v).replace(/"/g,'&quot;')}; renderMitForm();">${escapeHtml(v)}</button>`).join('')}</div>
+      <div class="tog-row">${MIT_VISITS.map(v=>`<button type="button" class="tog ${d.visit===v?'on':''}" onclick="subDraft.visit=${JSON.stringify(v).replace(/"/g,'&quot;')}; renderMitForm();">${escapeHtml(v)}</button>`).join('')}${d.visit && !MIT_VISITS.includes(d.visit) ? `<span class="tog-wrap"><button type="button" class="tog on" onclick="mitOtherVisit()">${escapeHtml(d.visit)}</button><button type="button" class="tog-edit" title="Change" onclick="mitOtherVisit()">&#9998;</button></span>` : `<button type="button" class="tog add" onclick="mitOtherVisit()">+ Other</button>`}</div>
       <div class="sp-q">Affected areas <span>tap all that apply</span></div>
       <div class="tog-row">${chips('areas', SUB_AREAS, job.mitAreas)}</div>
       <div class="sp-q">Equipment <span>tap &minus; / + for what you set or pulled today</span></div>
@@ -6917,8 +6950,8 @@ function renderMitForm(){
       </div>
       <div class="sp-q">Demo done today <span>optional</span></div>
       <div class="tog-row">${chips('demo', MIT_DEMO, job.mitDemo)}</div>
-      <div class="sp-q">Drying status</div>
-      <div class="tog-row">${MIT_DRYING.map(v=>`<button type="button" class="tog ${d.drying===v?'on':''}" onclick="subDraft.drying=${JSON.stringify(v).replace(/"/g,'&quot;')}; renderMitForm();">${escapeHtml(v)}</button>`).join('')}</div>
+      <div class="sp-q">Drying status <span>water jobs &middot; tap again to clear</span></div>
+      <div class="tog-row">${MIT_DRYING.map(v=>`<button type="button" class="tog ${d.drying===v?'on':''}" onclick="subDraft.drying = subDraft.drying===${JSON.stringify(v).replace(/"/g,'&quot;')} ? '' : ${JSON.stringify(v).replace(/"/g,'&quot;')}; renderMitForm();">${escapeHtml(v)}</button>`).join('')}</div>
       <div class="sp-q">Moisture readings <span>optional &middot; quick check</span></div>
       <div class="mit-std"><span>Dry standard for this job: <b>${std}%</b> <span class="muted">${job.dryStandard ? '' : '(default)'}</span></span><button type="button" onclick="mitChangeStd()">Change</button></div>
       ${d.readings.length ? `<div class="mit-rd"><div class="h">Spot</div><div class="h">Reading %</div><div class="h">Dry goal</div><div></div>
@@ -6960,7 +6993,7 @@ function renderMitForm(){
 function validateMitDraft(){
   const d = subDraft; if(!d || !getJob(subJobId)) return false;
   const e = document.getElementById('subFormErr'); if(e) e.style.display = 'none';
-  if(!d.visit) return subFormError('Pick what today’s visit was (setup, monitoring, demo…).');
+  if(!d.visit) return subFormError('Pick what today’s visit was (setup, inspection, monitoring…), or tap + Other and type it.');
   if(!d.notes || !d.notes.trim()) return subFormError('Add your daily notes (what you did today).');
   for(const r of d.readings){ if(r.reading!=='' && r.reading!==undefined && isNaN(Number(r.reading))) return subFormError(`The reading for "${r.spot}" should be a number.`); }
   const pulledAll = d.drying===MIT_DRYING[2];
@@ -7055,7 +7088,7 @@ function mitHelpHtml(){
     <p>Send one update for each job, every visit, before you leave the site. It takes about 2 minutes.</p>
     <ol>
       <li><b>Open the job</b> and tap <b>+ Today's update</b>.</li>
-      <li><b>Time on site &amp; crew</b>, then tap what the visit was (setup, monitoring, demo, equipment pull, final readings).</li>
+      <li><b>Time on site &amp; crew</b>, then tap what the visit was (setup, inspection, monitoring, demo, equipment pull, final readings). Something else, like mold, fire or biohazard work? Tap <b>+ Other</b> and type it.</li>
       <li><b>Areas:</b> tap every affected area. Use <b>+ Add area</b> for anything not listed.</li>
       <li><b>Equipment:</b> tap <b>+</b> under SET for what you put in today and under PULLED for what you took out. ON SITE adds itself up from every visit.</li>
       <li><b>Demo</b> done today, and the <b>drying status</b>.</li>
@@ -7087,6 +7120,7 @@ function mitSectionHtml(job){
     ${flags.map(u=>`<div class="sub-alert"><b>${escapeHtml(u.by)} needs the office</b> (${fmtDate(u.date)}): ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}
       <button class="sub-handled" onclick="markSubFlagHandled('${job.id}','${u.id}')">Mark handled</button></div>`).join('')}
     <button class="btn" style="width:100%;margin-top:10px;background:var(--gray-bg);color:var(--ink);" onclick="startSelfUpdate('${job.id}','mit')">+ Add my mitigation update</button>
+    ${jobNotesForCrewHtml(job)}
     <div class="sp-title" style="margin-top:12px;">Daily log (${log.length})</div>
     ${log.length ? log.slice(0, 5).map(u=>mitUpdateCardHtml(job, u, false, job.id)).join('') + (log.length>5 ? `<div class="hint">Showing the latest 5. The full log prints on the Job Report.</div>` : '') : '<div class="empty" style="padding:6px 0;">No mitigation crew updates yet.</div>'}
   </div>`;
@@ -7173,6 +7207,119 @@ function mitDailyReportHtml(day, title){
     </tr>`; }).join('') + `</tbody></table>`;
 }
 
+/* =====================================================================
+   NOTES FROM THE OFFICE TO A SUB / TECH (or anyone on the team)
+   Saved on the FieldNotes tab (scope "Message"). Pops up the next time
+   that person opens the app; they tap "Got it" (seen) and later "Done".
+   The office sees Sent / Seen / Done on Home and on the job.
+   ===================================================================== */
+let fieldMessages = [];          // [{ jobId, note }]
+const shownMsgIds = new Set();   // popped up already on this device this session
+function msgList(){ return fieldMessages.map(x=>x.note).filter(Boolean).sort((a,b)=>(b.at||'').localeCompare(a.at||'')); }
+function msgsTo(name){ return msgList().filter(m=>normName(m.to)===normName(name)); }
+function msgsForJob(jobId){ return msgList().filter(m=>m.jobId===jobId); }
+function msgStatusHtml(m){
+  const t = iso => fmtStamp(iso);
+  if(m.doneAt) return `<span class="msg-st done">✓ Done ${t(m.doneAt)}</span>`;
+  if(m.seenAt) return `<span class="msg-st seen">✓ Seen ${t(m.seenAt)}</span>`;
+  return `<span class="msg-st new">Not seen yet</span>`;
+}
+function openLeaveNote(jobId, to){
+  if(!NOTES_BACKEND){ showToast('Notes need the updated Google script (v3.4)', true); return; }
+  const people = personnel.filter(n=>normName(n)!==normName(pinUser||'')).sort((a,b)=>{ const fa = isFieldPerson(a)?0:1, fb = isFieldPerson(b)?0:1; return fa-fb || a.localeCompare(b); });
+  const open = visibleJobs().filter(j=>!j.completed).sort((a,b)=>a.customerName.localeCompare(b.customerName));
+  const pop = document.createElement('div'); pop.className = 'nj-pop'; pop.id = 'leaveNotePop';
+  pop.innerHTML = `<div class="nj-card">
+    <div style="font-weight:800;font-size:16px;">Leave a note</div>
+    <div class="muted" style="font-size:12.5px;">It pops up the next time they open the app. You'll see when they've seen it.</div>
+    <label class="lnl">For</label>
+    <select id="lnTo"><option value="">Pick a person&hellip;</option>${people.map(n=>`<option ${normName(n)===normName(to||'')?'selected':''}>${escapeHtml(n)}</option>`).join('')}</select>
+    <label class="lnl">Job <span class="muted">(optional)</span></label>
+    <select id="lnJob"><option value="">&mdash; Not about one job &mdash;</option>${open.map(j=>`<option value="${j.id}" ${j.id===jobId?'selected':''}>${escapeHtml(j.customerName)}${j.address?' — '+escapeHtml(j.address):''}</option>`).join('')}</select>
+    <label class="lnl">Note</label>
+    <textarea id="lnText" rows="5" placeholder="e.g. Heading to Janice Junkin in the morning: get the adjuster's name and claim #, photos of the ceiling, and moisture readings in the hall closet."></textarea>
+    <div class="btn-row" style="margin-top:14px;"><button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="document.getElementById('leaveNotePop').remove()">Cancel</button>
+    <button class="btn btn-primary" id="lnSend" onclick="sendLeaveNote()">Send note</button></div></div>`;
+  document.body.appendChild(pop);
+  setTimeout(()=>{ const t = document.getElementById(to ? 'lnText' : 'lnTo'); if(t) t.focus(); }, 50);
+}
+async function sendLeaveNote(){
+  const to = document.getElementById('lnTo').value, jobId = document.getElementById('lnJob').value, text = document.getElementById('lnText').value.trim();
+  if(!to){ showToast('Pick who the note is for', true); return; }
+  if(!text){ showToast('Type the note', true); return; }
+  const job = jobId ? getJob(jobId) : null;
+  const note = { id: uid('MSG'), scope:'Message', by: pinUser || 'Office', at: new Date().toISOString(), date: todayStr(), to, jobId: jobId||'', jobName: job ? job.customerName : '', text, seenAt:'', doneAt:'' };
+  const btn = document.getElementById('lnSend'); btn.disabled = true; btn.textContent = 'Sending…';
+  try{
+    await apiPost('saveNotes', { upsert: [{ jobId: jobId||'', customerName: job ? job.customerName : '', note }] });
+    fieldMessages.push({ jobId: jobId||'', note }); serverNoteIds.add(note.id);
+    if(job){ logActivity(job, `Note for ${to}: ${text.slice(0,120)}${text.length>120?'…':''}`); job.updatedAt = new Date().toISOString(); saveJobs(); }
+    document.getElementById('leaveNotePop').remove();
+    showToast(`Note sent to ${to}`);
+    renderHomeSubToday(); if(document.getElementById('modalJobDetail').classList.contains('active')) renderJobDetail();
+  }catch(e){ btn.disabled = false; btn.textContent = 'Send note'; showToast('⚠ Not sent — check your connection and try again', true); }
+}
+async function deleteLeaveNote(id){
+  const m = msgList().find(x=>x.id===id); if(!m) return;
+  if(!confirm(`Delete this note to ${m.to}?`)) return;
+  try{ await apiPost('saveNotes', { upsert: [], remove: [id] }); }catch(e){ showToast('⚠ Not deleted — try again', true); return; }
+  fieldMessages = fieldMessages.filter(x=>x.note.id!==id);
+  showToast('Note deleted'); renderHomeSubToday(); if(document.getElementById('modalJobDetail').classList.contains('active')) renderJobDetail();
+}
+async function ackMessage(id, kind){
+  const m = msgList().find(x=>x.id===id); if(!m) return false;
+  const now = new Date().toISOString();
+  if(kind==='done'){ if(!m.seenAt) m.seenAt = now; m.doneAt = now; } else { if(m.seenAt) return true; m.seenAt = now; }
+  if(subPreviewOnly() || subTestMode) return true; // previews don't mark the real note
+  try{ await apiPost('saveNotes', { upsert: [{ jobId: m.jobId||'', note: m }] }); return true; }
+  catch(e){ showToast('⚠ Couldn’t reach the office — it will ask again next time', true); if(kind==='done') m.doneAt=''; else m.seenAt=''; return false; }
+}
+// pop-up when the person opens the app
+function checkMyMessages(){
+  const me = subUser(); if(!me || document.getElementById('msgPop')) return;
+  const fresh = msgsTo(me).filter(m=>!m.seenAt && !shownMsgIds.has(m.id));
+  if(!fresh.length) return;
+  fresh.forEach(m=>shownMsgIds.add(m.id));
+  const pop = document.createElement('div'); pop.className = 'nj-pop msg-pop'; pop.id = 'msgPop';
+  pop.innerHTML = `<div class="nj-card">
+    <div class="msg-pop-title">&#128172; ${fresh.length===1 ? 'Note from the office' : fresh.length+' notes from the office'}</div>
+    ${fresh.map(m=>`<div class="msg-item">
+      <div class="msg-meta"><b>${escapeHtml(m.by)}</b> &middot; ${fmtStamp(m.at)}${m.jobName ? ` &middot; <span class="msg-job">${escapeHtml(m.jobName)}</span>` : ''}</div>
+      <div class="msg-text">${escapeHtml(m.text).replace(/\n/g,'<br>')}</div></div>`).join('')}
+    <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="closeMsgPop([${fresh.map(m=>`'${m.id}'`).join(',')}])">Got it</button>
+    <div class="muted" style="font-size:11.5px;text-align:center;margin-top:6px;">${isFieldPerson(me) || subMode() ? 'It stays at the top of your jobs until you tap Done.' : 'It stays on Home until you tap Done.'}</div>
+  </div>`;
+  document.body.appendChild(pop);
+}
+async function closeMsgPop(ids){
+  const p = document.getElementById('msgPop'); if(p) p.remove();
+  for(const id of ids) await ackMessage(id, 'seen');
+  if(subMode()) renderSubPortal(); else renderHomeSubToday();
+}
+async function markMessageDone(id){
+  await ackMessage(id, 'done');
+  if(subMode()){ if(subView==='list') renderSubLists(); else renderSubPortal(); } else renderHomeSubToday();
+}
+// open notes for me (field screen list / job view, and office Home)
+function myOpenNotesHtml(jobId){
+  const me = subUser(); if(!me) return '';
+  const list = msgsTo(me).filter(m=>!m.doneAt && (!jobId || m.jobId===jobId));
+  if(!list.length) return '';
+  return `<div class="msg-pinned">${list.map(m=>`<div class="msg-item">
+      <div class="msg-meta">&#128172; <b>Note from ${escapeHtml(m.by)}</b> &middot; ${fmtStamp(m.at)}${m.jobName && !jobId ? ` &middot; <span class="msg-job" ${m.jobId && getJob(m.jobId) ? `onclick="event.stopPropagation(); subOpenJob('${m.jobId}', ${isTech(me) && getJob(m.jobId) && mitVisible(getJob(m.jobId)) ? "'mit'" : "'sub'"})" style="cursor:pointer;text-decoration:underline;"` : ''}>${escapeHtml(m.jobName)}</span>` : ''}</div>
+      <div class="msg-text">${escapeHtml(m.text).replace(/\n/g,'<br>')}</div>
+      <button class="msg-done" onclick="markMessageDone('${m.id}')">Done</button>
+    </div>`).join('')}</div>`;
+}
+// office: notes on a job, with status
+function jobNotesForCrewHtml(job){
+  const list = msgsForJob(job.id);
+  return `<div class="msg-office">
+    <div class="msg-office-head"><b>Notes for the crew${list.length?` (${list.length})`:''}</b><button class="sub-handled" onclick="openLeaveNote('${job.id}')">+ Leave a note</button></div>
+    ${list.map(m=>`<div class="msg-row"><div><b>To ${escapeHtml(m.to)}</b> <span class="muted">from ${escapeHtml(m.by)}, ${fmtStamp(m.at)}</span> ${msgStatusHtml(m)}<div class="msg-text">${escapeHtml(m.text).replace(/\n/g,'<br>')}</div></div><button class="mit-x" title="Delete" onclick="deleteLeaveNote('${m.id}')">&times;</button></div>`).join('')}
+  </div>`;
+}
+
 /* ---------- Home: today's sub updates + who hasn't sent one ---------- */
 function subTodayInfo(){
   const today = todayStr(), sent = [], waiting = [];
@@ -7206,7 +7353,7 @@ function renderHomeSubToday(){
   const el = document.getElementById('homeSubToday'); if(!el) return;
   const anySubs = personnel.some(isSub), anyTechs = personnel.some(isTech);
   const S = subTodayInfo(), M = mitTodayInfo();
-  if(!anySubs && !anyTechs && !S.sent.length && !M.sent.length){ el.innerHTML = ''; return; }
+  if(!anySubs && !anyTechs && !S.sent.length && !M.sent.length && !fieldMessages.length){ el.innerHTML = ''; return; }
   const tm = iso => new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ});
   const sentRow = ({j,u}) => `<div class="hs-row" onclick="openJobDetail('${j.id}')">
         <span class="hs-ok">✓</span><span class="hs-time">${u.at?tm(u.at):''}</span>${nameChip(u.by)}
@@ -7224,10 +7371,18 @@ function renderHomeSubToday(){
       ${!info.sent.length && !info.waiting.length ? `<div class="hs-empty">${emptyTxt}</div>` : ''}
       ${foot}
     </div>`;
+  const recent = msgList().filter(m=>!m.doneAt || (m.doneAt||'').slice(0,10)>=addDays(todayStr(),-1));
+  const mine = pinUser ? msgsTo(pinUser).filter(m=>!m.doneAt) : [];
+  const notesPart = NOTES_BACKEND ? `<div class="hs-part">
+      <div class="hs-subhead"><span>Notes for the crew</span><button class="hs-add" onclick="openLeaveNote()">+ Leave a note</button></div>
+      ${recent.length ? recent.slice(0,8).map(m=>`<div class="hs-row" ${m.jobId && getJob(m.jobId) ? `onclick="openJobDetail('${m.jobId}')"` : ''}>${nameChip(m.to)}<span class="hs-job">${escapeHtml(m.jobName || 'General')}</span><span class="msg-snip">${escapeHtml(m.text.slice(0,60))}${m.text.length>60?'…':''}</span>${msgStatusHtml(m)}</div>`).join('') : '<div class="hs-empty">No open notes. Tap "+ Leave a note" to give someone instructions for their next visit.</div>'}
+    </div>` : '';
   el.innerHTML = `<div class="hs-box">
+    ${mine.length ? `<div class="msg-pinned" style="margin-bottom:8px;">${mine.map(m=>`<div class="msg-item"><div class="msg-meta">&#128172; <b>Note for you from ${escapeHtml(m.by)}</b> &middot; ${fmtStamp(m.at)}${m.jobName?` &middot; <span class="msg-job">${escapeHtml(m.jobName)}</span>`:''}</div><div class="msg-text">${escapeHtml(m.text).replace(/\n/g,'<br>')}</div><button class="msg-done" onclick="markMessageDone('${m.id}')">Done</button></div>`).join('')}</div>` : ''}
     <div class="hs-head"><span>Field updates today</span></div>
     ${(anyTechs || M.sent.length) ? part('Mitigation crew', M, 'No mitigation updates yet today.', `<div class="hs-foot" onclick="openMitDailyReport()">Daily Mitigation Report &rarr;</div>`) : ''}
     ${(anySubs || S.sent.length) ? part('Subcontractors', S, 'No sub updates yet today.', `<div class="hs-foot" onclick="openSubSchedule()">Sub schedule &amp; daily report &rarr;</div>`) : ''}
+    ${notesPart}
   </div>`;
 }
 // pop-up in the office app when a new sub update comes in
@@ -7270,6 +7425,7 @@ function subSectionHtml(job){
     ${flags.map(u=>`<div class="sub-alert"><b>${escapeHtml(u.by)} needs the office</b> (${fmtDate(u.date)}): ${(u.flags||[]).map(escapeHtml).join(', ')}${u.flagNote?' — '+escapeHtml(u.flagNote):''}
       <button class="sub-handled" onclick="markSubFlagHandled('${job.id}','${u.id}')">Mark handled</button></div>`).join('')}
     <button class="btn" style="width:100%;margin-top:10px;background:var(--gray-bg);color:var(--ink);" onclick="startSelfUpdate('${job.id}','sub')">+ Add my update</button>
+    ${mitSectionHtml(job) ? '' : jobNotesForCrewHtml(job)}
     <div class="sp-title" style="margin-top:12px;">Daily log (${log.length})</div>
     ${log.length ? log.slice(0, 5).map(u=>subUpdateCardHtml(u, false, job.id)).join('') + (log.length>5 ? `<div class="hint">Showing the latest 5. The full log prints on the Job Report.</div>` : '') : '<div class="empty" style="padding:6px 0;">No updates yet.</div>'}
   </div>`;
