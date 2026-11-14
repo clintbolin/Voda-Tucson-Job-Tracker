@@ -565,6 +565,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 .sp-preview{ background:var(--amber); color:#fff; border-radius:12px; padding:10px 12px; font-size:12.5px; margin-bottom:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .sp-preview.sp-test{ background:#B45309; }
 .mc-box{ border:1.5px solid #0FA3B1; }
+.mr-launch{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:1.5px solid #0FA3B1; background:linear-gradient(90deg, rgba(15,163,177,.14), rgba(15,163,177,.04)); color:var(--ink); border-radius:14px; padding:12px 14px; margin-bottom:12px; cursor:pointer; font-family:inherit; }
+.mr-launch > span:first-child{ font-size:26px; }
+.mr-launch b{ font-size:15.5px; }
+.mr-launch div div{ font-size:12px; color:var(--muted); margin-top:2px; }
+.mr-launch .mr-go{ margin-left:auto; font-weight:800; color:#0FA3B1; white-space:nowrap; }
+.mr-group{ font-family:-apple-system,sans-serif; font-weight:900; font-size:15px; letter-spacing:.6px; text-transform:uppercase; color:#0A1F3D; border-bottom:3px solid #0FA3B1; padding:14px 0 3px; margin-top:10px; }
+.rpt-grid .amber, .rpt-summary .v.amber{ color:#B45309; }
 .msg-pinned .msg-item{ background:rgba(245,158,11,.12); border:1.5px solid #D97706; border-radius:12px; padding:10px 12px; margin-bottom:8px; position:relative; }
 .msg-item .msg-meta{ font-size:12px; color:var(--muted); margin-bottom:4px; }
 .msg-item .msg-text, .msg-row .msg-text{ font-size:14px; line-height:1.4; color:var(--ink); }
@@ -877,6 +884,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 
     <!-- HOME -->
     <div class="view active" id="view-home">
+      <button class="mr-launch" onclick="openMorningReport()"><span>&#9728;&#65039;</span><div><b>Morning Report</b><div>Today's to-do list: field flags, mitigation to schedule, collections to chase, recon schedule</div></div><span class="mr-go">Open &rarr;</span></button>
       <div id="homeSubToday"></div>
       <div class="kpi-strip" style="margin-bottom:6px;">
         <div class="stat-card-light"><div class="n" id="kpiMitPipeline">0</div><div class="l">Mitigation pipeline</div></div>
@@ -1596,6 +1604,21 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 </div></div>
 
 <!-- Daily subcontractor report -->
+<div class="overlay" id="modalMorning"><div class="sheet wide" style="max-height:92vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div><div class="sheet-title">Morning Report</div><div class="sheet-sub">What needs to get done today, in order</div></div><button class="close-x" onclick="closeModal('modalMorning')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="report-actions" style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+    <span style="font-size:12.5px;font-weight:700;">Prepared for:</span>
+    <select id="mrPerson" style="padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);" onchange="renderMorningReport()"></select>
+    <span class="hint" style="margin:0;">Pick a person to see only their assigned jobs and collections.</span>
+  </div>
+  <div id="morningBody" class="job-report-doc" style="overflow-x:auto;"></div>
+  <div class="btn-row report-actions" style="margin-top:4px;">
+    <span class="orient-pick" data-orient="morning"><button data-v="portrait" onclick="setOrient('morning','portrait')">Portrait</button><button data-v="landscape" onclick="setOrient('morning','landscape')">Landscape</button></span>
+    <button class="btn btn-primary" onclick="printMorningReport()">Print report</button>
+    <button class="btn" style="background:var(--gray-bg);color:var(--ink);" onclick="closeModal('modalMorning')">Close</button>
+  </div>
+</div></div>
 <div class="overlay" id="modalSubReport"><div class="sheet wide" style="max-height:92vh;">
   <div class="sheet-handle"></div>
   <div class="sheet-head"><div><div class="sheet-title">Daily Sub Report</div><div class="sheet-sub">All jobs worked that day + the next visits</div></div><button class="close-x" onclick="closeModal('modalSubReport')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -1630,7 +1653,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Nov 9, 2026 \u00b7 11:00 PM';
+const APP_VERSION = 'Nov 14, 2026 \u00b7 9:00 AM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -3119,7 +3142,7 @@ function printActiveModal(){
     const srcInputs = sheet.querySelectorAll('input, select, textarea'), dstInputs = clone.querySelectorAll('input, select, textarea');
     srcInputs.forEach((el,i)=>{ const d = dstInputs[i]; if(!d) return; if(el.tagName==='SELECT'){ d.value = el.value; [...d.options].forEach(o=>o.selected = (o.value===el.value)); } else if(el.type==='checkbox'){ d.checked = el.checked; } else { d.setAttribute('value', el.value); if(el.tagName==='TEXTAREA') d.textContent = el.value; } });
     clone.querySelectorAll('.sheet-handle, .sheet-head button, .sheet-head svg, .report-actions, .jd-done-bar, .stage-btns, .slider-wrap, .add-line-btn').forEach(el=>el.remove());
-    if(top.id==='modalCollReport' || top.id==='modalJobReport' || top.id==='modalSubReport') clone.querySelectorAll('.sheet-head').forEach(el=>el.remove());
+    if(top.id==='modalCollReport' || top.id==='modalJobReport' || top.id==='modalSubReport' || top.id==='modalMorning') clone.querySelectorAll('.sheet-head').forEach(el=>el.remove());
     area.appendChild(clone);
   }
   const prevTheme = document.documentElement.getAttribute('data-theme');
@@ -5896,7 +5919,7 @@ function collLogType(e){ return ({contact:'Contact', step:'Step', payment:'Payme
 /* ---------- report modal (shared) ---------- */
 let collReportMode = 'daily', collReportJobId = null, collReportPerson = '';
 /* Portrait / Landscape picker on the report screens (remembered on this device). */
-const ORIENT_DEFAULT = { coll:'landscape', sub:'landscape', job:'portrait' };
+const ORIENT_DEFAULT = { coll:'landscape', sub:'landscape', job:'portrait', morning:'landscape' };
 function getOrient(key){ try{ return localStorage.getItem('vodaOrient_'+key) || ORIENT_DEFAULT[key] || 'portrait'; }catch(e){ return ORIENT_DEFAULT[key] || 'portrait'; } }
 function setOrient(key, v){ try{ localStorage.setItem('vodaOrient_'+key, v); }catch(e){} syncOrientPickers(); }
 function syncOrientPickers(){ document.querySelectorAll('.orient-pick').forEach(el=>{ const v = getOrient(el.dataset.orient); el.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===v)); }); }
@@ -7318,6 +7341,184 @@ function jobNotesForCrewHtml(job){
     <div class="msg-office-head"><b>Notes for the crew${list.length?` (${list.length})`:''}</b><button class="sub-handled" onclick="openLeaveNote('${job.id}')">+ Leave a note</button></div>
     ${list.map(m=>`<div class="msg-row"><div><b>To ${escapeHtml(m.to)}</b> <span class="muted">from ${escapeHtml(m.by)}, ${fmtStamp(m.at)}</span> ${msgStatusHtml(m)}<div class="msg-text">${escapeHtml(m.text).replace(/\n/g,'<br>')}</div></div><button class="mit-x" title="Delete" onclick="deleteLeaveNote('${m.id}')">&times;</button></div>`).join('')}
   </div>`;
+}
+
+/* =====================================================================
+   MORNING REPORT — one printable page set that tells everyone what needs
+   doing today: field flags first, then Mitigation (visits today, what needs
+   scheduling, ready to invoice, next step on every open job), Collections
+   in priority order, and Reconstruction (sub visits, starts, final walks,
+   late jobs, next step). Optional "Prepared for" filter by assigned person.
+   ===================================================================== */
+let morningPerson = '';
+function openMorningReport(){
+  const sel = document.getElementById('mrPerson');
+  sel.innerHTML = `<option value="">Everyone</option>` + [...personnel].filter(n=>!isFieldPerson(n)).sort((a,b)=>a.localeCompare(b)).map(n=>`<option ${n===morningPerson?'selected':''}>${escapeHtml(n)}</option>`).join('');
+  renderMorningReport();
+  openModal('modalMorning');
+}
+function renderMorningReport(){
+  morningPerson = document.getElementById('mrPerson').value || '';
+  document.getElementById('morningBody').innerHTML = morningReportHtml(morningPerson);
+}
+function printMorningReport(){
+  setPrintOrientation(getOrient('morning'));
+  onPrintFinished(()=>setPrintOrientation(false));
+  printActiveModal();
+}
+function phaseNext(job, type){
+  const sc = getScope(job, type); if(!sc) return null;
+  const p = getEffectivePhases(job, type).find(p=>!sc.phases[p.key] && !(sc.phaseNA||{})[p.key]);
+  return p ? p.label : null;
+}
+function lastMoveDate(job, type){
+  const sc = getScope(job, type); if(!sc) return '';
+  const dates = [sc.landedAt, sc.createdAt, job.dateReceived, ...Object.values(sc.phases||{})].map(d=>dateOnly(d||'')).filter(d=>dateReady(d) && d<=todayStr());
+  const notes = (type==='Mitigation' ? (job.mitLog||[]) : (job.subLog||[])).map(u=>u.date).filter(Boolean);
+  return [...dates, ...notes].sort().pop() || '';
+}
+function morningReportHtml(person){
+  const today = todayStr();
+  const dayShort = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const mine = j => !person || normName(j.assignedTo||'')===normName(person);
+  const jobsAll = visibleJobs();
+  const jobs = jobsAll.filter(mine);
+  const jl = j => `<b>${escapeHtml(j.customerName)}</b>${j.address?`<div class="sm">${escapeHtml(j.address)}</div>`:''}${j.phone?`<div class="sm">${escapeHtml(j.phone)}</div>`:''}`;
+  const ago = d => { if(!d) return '—'; const n = daysBetween(d, today); return n<=0 ? 'today' : n===1 ? '1 day' : n+' days'; };
+  const eqOf = j => equipText(equipTimeline(j).now, (mitLog(j).find(x=>x.otherEquip)||{}).otherEquip);
+  const table = (cols, rows) => `<table class="rpt-grid"><thead><tr><th class="ck">&#10003;</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  const tr = (cells, cls) => `<tr class="${cls||''}"><td class="ck"><span class="box"></span></td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
+  const sec = (title, n, body, empty) => `<div class="rpt-sec">${title} <span>(${n})</span></div>` + (n ? body : `<div class="rpt-empty">${empty}</div>`);
+
+  /* ---------- 1. needs attention first ---------- */
+  const flags = [];
+  jobs.forEach(j=>[...(j.mitLog||[]), ...(j.subLog||[])].forEach(u=>{ if(u.needsOffice && !u.handled) flags.push({ j, u }); }));
+  flags.sort((a,b)=>(a.u.date||'').localeCompare(b.u.date||''));
+  const missed = [];
+  jobs.forEach(j=>{
+    if(mitOpen(j)){ const last = mitLog(j)[0]; const nv = last && last.nextVisit; if(nv && !nv.notScheduled && nv.date && nv.date<today && !(j.mitLog||[]).some(x=>x.date>=nv.date)) missed.push({ j, who:last.by, nv, kind:'Mitigation' }); }
+    const m = !j.completed && missedUpdate(j); if(m) missed.push({ j, who:(latestSubUpdate(j)||{}).by||'', nv:m, kind:'Reconstruction' });
+  });
+  const unseen = msgList().filter(m=>!m.seenAt && m.at && dateOnly(m.at) < today && (!person || normName(m.by)===normName(person) || (m.jobId && getJob(m.jobId) && mine(getJob(m.jobId)))));
+
+  /* ---------- 2. mitigation ---------- */
+  const mitVisits = [];
+  jobs.filter(mitOpen).forEach(j=>{
+    const last = mitLog(j).find(u=>u.date<today); const nv = last && last.nextVisit;
+    if(nv && !nv.notScheduled && nv.date===today){ const sent = (j.mitLog||[]).filter(x=>x.date===today).sort((a,b)=>(b.at||'').localeCompare(a.at||''))[0]; mitVisits.push({ j, who:last.by, nv, last, sent }); }
+  });
+  mitVisits.sort((a,b)=>(a.nv.window||'').localeCompare(b.nv.window||''));
+  const toSchedule = [];
+  jobs.forEach(j=>{
+    const sc = j.scopes.mitigation; if(!sc || j.completed || j.archived) return;
+    const st = scopeStatus(sc);
+    if(st==='Pipeline') toSchedule.push({ j, why:'New lead — not landed yet', since: j.dateReceived||sc.createdAt, pr:2 });
+    else if(st==='Landed' && !mitDone(j) && !j.workComplete){
+      const last = mitLog(j)[0];
+      // no crew visit yet: only when the work hasn't started and nothing is billed (older jobs predate crew updates)
+      if(!last){ if(!sc.phases.mitigationInProgress && !(sc.phaseNA||{}).mitigationInProgress && !scopeTotals(sc,'Mitigation').totalBilled) toSchedule.push({ j, why:'Landed — work not started, no crew visit yet', since: dateOnly(sc.landedAt||j.dateReceived||''), pr:1 }); }
+      else if(last.nextVisit && last.nextVisit.notScheduled && last.nextVisit.reason!=='Drying complete') toSchedule.push({ j, why:`Next visit not scheduled: ${escapeHtml(last.nextVisit.reason||'')}${last.nextVisit.reasonNote?' — '+escapeHtml(last.nextVisit.reasonNote):''}`, since:last.date, pr:1, last });
+    }
+  });
+  toSchedule.sort((a,b)=>a.pr-b.pr || (a.since||'').localeCompare(b.since||''));
+  const toInvoice = jobs.filter(j=>{ const sc = j.scopes.mitigation; if(!sc || scopeStatus(sc)!=='Landed' || j.archived) return false;
+    if(sc.phases.billingDate || (sc.phaseNA||{}).billingDate) return false;
+    if(sc.collections && sc.collections.step && sc.collections.step!=='notBilled') return false; // already billed
+    const u = mitLog(j)[0]; return !!(sc.phases.certOfSatisfaction || (u && u.drying===MIT_DRYING[2]) || j.workComplete); });
+  const mitOpenJobs = jobs.filter(j=>{ const sc = j.scopes.mitigation; return sc && scopeStatus(sc)==='Landed' && !j.completed && !j.archived; })
+    .map(j=>({ j, next: phaseNext(j,'Mitigation'), last: lastMoveDate(j,'Mitigation') })).filter(x=>x.next)
+    .sort((a,b)=>(a.last||'').localeCompare(b.last||''));
+
+  /* ---------- 3. collections, in priority order ---------- */
+  const who = a => (a.sc.collections.nextAction && a.sc.collections.nextAction.assignee) || a.job.assignedTo || '';
+  let accts = allCollAccounts().filter(a=>collNeedsNextAction(a.sc));
+  if(person) accts = accts.filter(a=>normName(who(a))===normName(person));
+  const dueColl = accts.filter(a=>a.na.overdue || a.na.today);
+  // priority: escalations, then no next action, then most days late, then biggest balance
+  dueColl.sort((x,y)=> (y.sc.collections.escalate?1:0)-(x.sc.collections.escalate?1:0) || (y.na.days||0)-(x.na.days||0) || (y.ct.outstanding||0)-(x.ct.outstanding||0));
+  const owingTot = accts.reduce((s,a)=>s+a.ct.outstanding,0), dueTot = dueColl.reduce((s,a)=>s+a.ct.outstanding,0);
+  const soon = accts.filter(a=>!a.na.overdue && !a.na.today && a.sc.collections.nextAction && a.sc.collections.nextAction.due && a.sc.collections.nextAction.due<=addDays(today,2));
+  const toClose = allCollAccounts().filter(a=>a.sc.collections.step==='paid' && (!person || normName(who(a))===normName(person)));
+  const abate = [];
+  jobs.forEach(j=>{ const sc = j.scopes.mitigation; if(!sc) return; const ab = abatementInfo(sc); if(!ab.enabled || !ab.balance) return; const due = abatementDue(j);
+    if(due.dueDate && due.daysPastDue>=-7) abate.push({ j, ab, due }); });
+  abate.sort((a,b)=>(b.due.daysPastDue||0)-(a.due.daysPastDue||0));
+
+  /* ---------- 4. reconstruction ---------- */
+  const subVisits = [];
+  jobs.filter(j=>!j.completed && j.scopes.reconstruction).forEach(j=>{
+    const seen = new Set();
+    subLog(j).forEach(u=>{
+      const k = normName(u.by); if(seen.has(k)) return; if(u.date>=today){ return; } seen.add(k);
+      const nv = u.nextVisit;
+      if(nv && !nv.notScheduled && nv.date===today){ const sent = (j.subLog||[]).find(x=>normName(x.by)===k && x.date===today); subVisits.push({ j, who:u.by, nv, u, sent }); }
+    });
+  });
+  subVisits.sort((a,b)=>(a.nv.window||'').localeCompare(b.nv.window||''));
+  const week = [];
+  jobs.filter(j=>!j.completed && j.scopes.reconstruction).forEach(j=>{
+    const seen = new Set();
+    subLog(j).forEach(u=>{ const k = normName(u.by); if(seen.has(k)) return; seen.add(k); const nv = u.nextVisit;
+      if(nv && !nv.notScheduled && nv.date>today && nv.date<=addDays(today,7)) week.push({ j, who:u.by, nv, u }); });
+  });
+  week.sort((a,b)=>a.nv.date.localeCompare(b.nv.date) || (a.nv.window||'').localeCompare(b.nv.window||''));
+  const starts = [];
+  jobs.forEach(j=>{ const sc = j.scopes.reconstruction; if(!sc || scopeStatus(sc)!=='Landed' || j.completed || j.archived) return;
+    const subs = jobSubs(j).filter(isSub), log = subLog(j), est = dateOnly(sc.phases.estimatedStart||'');
+    if(!subs.length) starts.push({ j, why:'Landed — no sub assigned yet', est });
+    else if(!log.length && est && est<=addDays(today,14)) starts.push({ j, why: est<today ? `Start date ${dayShort(est)} passed — no sub update yet` : `Starts ${dayShort(est)}`, est, subs });
+    else if(!log.length && !est) starts.push({ j, why:'Sub assigned — no start date or update yet', est, subs });
+  });
+  starts.sort((a,b)=>(a.est||'9999').localeCompare(b.est||'9999'));
+  const walks = jobs.filter(j=>!j.completed && walkPending(j));
+  const late = jobs.filter(j=>!j.completed && j.scopes.reconstruction && latestEst(j) && latestEst(j)<today && !walkPending(j));
+  const reconUnsched = jobs.filter(j=>{ if(j.completed || !j.scopes.reconstruction) return false; const u = latestSubUpdate(j); return u && u.nextVisit && u.nextVisit.notScheduled && u.status==='progress'; });
+  const reconPipe = jobs.filter(j=>{ const sc = j.scopes.reconstruction; return sc && scopeStatus(sc)==='Pipeline' && !j.archived; }).sort((a,b)=>(a.dateReceived||'').localeCompare(b.dateReceived||''));
+  const reconOpen = jobs.filter(j=>{ const sc = j.scopes.reconstruction; return sc && scopeStatus(sc)==='Landed' && !j.completed && !j.archived; })
+    .map(j=>({ j, next: phaseNext(j,'Reconstruction'), last: lastMoveDate(j,'Reconstruction') })).filter(x=>x.next).sort((a,b)=>(a.last||'').localeCompare(b.last||''));
+
+  /* ---------- build ---------- */
+  let h = letterheadHtml('Morning Report', `${new Date(today+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})} &middot; ${person ? 'Prepared for '+escapeHtml(person)+' (their assigned jobs)' : 'Everyone'} &middot; Generated ${fmtStamp(new Date().toISOString())}${pinUser ? ' by '+escapeHtml(pinUser) : ''}`);
+  h += `<table class="rpt-summary"><tr>
+    <td><div class="v ${flags.length+missed.length?'red':''}">${flags.length + missed.length}</div><div class="k">Need attention</div></td>
+    <td><div class="v">${mitVisits.length}</div><div class="k">Mitigation visits today</div></td>
+    <td><div class="v ${toSchedule.length?'red':''}">${toSchedule.length}</div><div class="k">Mitigation to schedule</div></td>
+    <td><div class="v">${toInvoice.length}</div><div class="k">Ready to invoice</div></td>
+    <td><div class="v ${dueColl.length?'red':''}">${dueColl.length}</div><div class="k">Collections due &middot; ${fmtMoney(dueTot)}</div></td>
+    <td><div class="v">${subVisits.length}</div><div class="k">Recon visits today</div></td>
+    <td><div class="v ${walks.length?'amber':''}">${walks.length}</div><div class="k">Final walks to book</div></td>
+  </tr></table>`;
+
+  h += `<div class="mr-group">Needs attention first</div>`;
+  h += sec('Field crew needs the office', flags.length, table(['Job','From','Date','What they need'], flags.map(({j,u})=>tr([jl(j), `${escapeHtml(u.by)}<div class="sm">${u.scope==='Mitigation'?'Mitigation':'Recon'}</div>`, fmtDate(u.date), `<b class="red">${(u.flags||[]).map(escapeHtml).join(', ')}</b>${u.flagNote?`<div class="sm">${escapeHtml(u.flagNote)}</div>`:''}`], 'row-red'))), 'Nothing flagged by the crews.');
+  h += sec('Planned visits that were missed', missed.length, table(['Job','Side','Who','Was planned','Days since'], missed.map(({j,who,nv,kind})=>tr([jl(j), kind, escapeHtml(who||'—'), `${dayShort(nv.date)} ${escapeHtml(nv.window||'')}`, ago(nv.date)], 'row-red'))), 'No missed visits.');
+  if(unseen.length) h += sec('Crew notes not seen yet', unseen.length, table(['To','Job','Note','Sent'], unseen.map(m=>tr([escapeHtml(m.to), escapeHtml(m.jobName||'General'), escapeHtml(m.text.slice(0,140))+(m.text.length>140?'…':''), fmtStamp(m.at)]))), '');
+
+  h += `<div class="mr-group">Mitigation</div>`;
+  h += sec(`Visits today &mdash; ${dayShort(today)}`, mitVisits.length, table(['Time','Job','Tech (last visit)','Status','Equipment on site','Update sent?'], mitVisits.map(({j,who,nv,last,sent})=>tr([escapeHtml(nv.window||'—'), jl(j), escapeHtml(who), `${escapeHtml(last.drying||last.visit||'—')}<div class="sm">Drying day ${dryingDay(j)||'—'}</div>`, escapeHtml(eqOf(j)), sent ? `✓ ${new Date(sent.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})} (${escapeHtml(sent.by)})` : '<span class="sm">not yet</span>']))), 'No mitigation visits planned for today.');
+  h += sec('Needs to be scheduled', toSchedule.length, table(['Job','Why','Since','Assigned','Next step'], toSchedule.map(x=>tr([jl(x.j), x.why, `${x.since?fmtDate(x.since):'—'}<div class="sm">${ago(x.since)}</div>`, escapeHtml(x.j.assignedTo||'—'), escapeHtml(phaseNext(x.j,'Mitigation')||'—')], x.pr===0?'row-red':''))), 'Nothing waiting to be scheduled.');
+  h += sec('Ready to invoice (dry / signed off, invoice not sent)', toInvoice.length, table(['Job','Why it’s ready','Assigned','Equipment still on site'], toInvoice.map(j=>{ const sc = j.scopes.mitigation, u = mitLog(j)[0]; return tr([jl(j), sc.phases.certOfSatisfaction ? `Certificate signed ${fmtDate(dateOnly(sc.phases.certOfSatisfaction))}` : (u && u.drying===MIT_DRYING[2] ? `Equipment pulled ${fmtDate(u.date)}` : 'Work marked complete'), escapeHtml(j.assignedTo||'—'), escapeHtml(eqOf(j))]); })), 'Nothing waiting to be invoiced.');
+  h += sec('Open mitigation jobs &mdash; next step (oldest first)', mitOpenJobs.length, table(['Job','Next step','Last movement','Assigned','Equipment on site'], mitOpenJobs.map(({j,next,last})=>tr([jl(j), `<b>${escapeHtml(next)}</b>`, `${last?fmtDate(last):'—'}<div class="sm ${last && daysBetween(last,today)>7?'red':''}">${ago(last)}</div>`, escapeHtml(j.assignedTo||'—'), escapeHtml(eqOf(j))]))), 'No open mitigation jobs.');
+
+  h += `<div class="mr-group">Collections &mdash; go after these today</div>`;
+  h += `<div class="rpt-note"><b>Total outstanding${person?' (assigned to '+escapeHtml(person)+')':''}:</b> ${fmtMoney(owingTot)} across ${accts.length} account${accts.length===1?'':'s'} &middot; <b>Due today / overdue:</b> ${fmtMoney(dueTot)} &middot; Priority: escalations first, then most days late, then largest balance. Full details: Daily Collections Report.</div>`;
+  h += sec('Priority list', dueColl.length, table(['#','Customer','Scope','Payer','Step','Days out','Owed','Next action','Assigned'], dueColl.map((a,i)=>{ const c = a.sc.collections, na = c.nextAction||{};
+    return tr([String(i+1), `<b>${escapeHtml(a.job.customerName)}</b>${a.job.phone?`<div class="sm">${escapeHtml(a.job.phone)}</div>`:''}`, a.type==='Mitigation'?'MIT':'RECON', a.ct.path==='insurance' ? escapeHtml(a.sc.insuranceCompany||'Insurance') : 'Customer', `${collStepLabel(a.sc, c.step)}${c.escalate?'<div class="sm red"><b>ESCALATE</b></div>':''}`, `<span class="${a.ct.daysOut>60?'red':''}">${a.ct.daysOut==null?'—':a.ct.daysOut}</span>`, `<b>${fmtMoney(a.ct.outstanding)}</b>${a.ct.path==='insurance'?`<div class="sm">Ins ${fmtMoney(a.ct.insNet)} &middot; Cust ${fmtMoney(a.ct.custNet)}</div>`:''}`, `${na.text?escapeHtml(na.text):'<span class="red">No next action set</span>'}${na.due?`<div class="sm ${a.na.overdue?'red':''}">${a.na.overdue?a.na.days+'d late':'due today'}</div>`:''}`, escapeHtml(na.assignee||a.job.assignedTo||'—')], a.na.overdue?'row-red':'row-amber'); })), 'Nothing due or overdue in collections today.');
+  if(soon.length) h += sec('Coming up in the next 2 days', soon.length, table(['Customer','Scope','Owed','Next action','Due','Assigned'], soon.map(a=>{ const na = a.sc.collections.nextAction||{}; return tr([`<b>${escapeHtml(a.job.customerName)}</b>`, a.type==='Mitigation'?'MIT':'RECON', fmtMoney(a.ct.outstanding), escapeHtml(na.text||''), fmtDate(na.due), escapeHtml(na.assignee||a.job.assignedTo||'—')]); })), '');
+  if(abate.length) h += sec('Abatement finder’s fees due', abate.length, table(['Job','Company','Fee owed','Due'], abate.map(({j,ab,due})=>tr([jl(j), escapeHtml(ab.company||'Abatement co.'), fmtMoney(ab.balance), `${fmtDate(due.dueDate)}<div class="sm ${due.daysPastDue>0?'red':''}">${due.daysPastDue>0?due.daysPastDue+' days past due':due.daysPastDue===0?'due today':'in '+(-due.daysPastDue)+' days'}</div>`], due.daysPastDue>0?'row-red':''))), '');
+  if(toClose.length) h += `<div class="rpt-note">${toClose.length} account${toClose.length===1?' is':'s are'} paid in full and ready to close: ${toClose.map(a=>escapeHtml(a.job.customerName)+' ('+(a.type==='Mitigation'?'MIT':'RECON')+')').join(', ')}.</div>`;
+
+  h += `<div class="mr-group">Reconstruction</div>`;
+  h += sec(`Sub visits today &mdash; ${dayShort(today)}`, subVisits.length, table(['Time','Job','Sub','Planned work','Est. complete','Update sent?'], subVisits.map(({j,who,nv,u,sent})=>tr([escapeHtml(nv.window||'—'), jl(j), escapeHtml(who), escapeHtml(u.todo||'—'), latestEst(j)?fmtDate(latestEst(j)):'—', sent ? `✓ ${new Date(sent.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})}` : '<span class="sm">not yet</span>']))), 'No sub visits planned for today.');
+  h += sec('Final walks to book', walks.length, table(['Job','Sub(s) ready','Since'], walks.map(j=>{ const st = walkPending(j); return tr([jl(j), st.map(x=>`${escapeHtml(x.by)} &mdash; ${subStatusLabel(x.status)}`).join('<br>'), fmtDate(st.map(x=>x.date).sort().pop())]); })), 'No final walks waiting.');
+  h += sec('Starts &amp; jobs needing a sub', starts.length, table(['Job','What’s needed','Start date','Sub(s)','Next step'], starts.map(x=>tr([jl(x.j), x.why, x.est?fmtDate(x.est):'—', escapeHtml((x.subs||[]).join(', ')||'—'), escapeHtml(phaseNext(x.j,'Reconstruction')||'—')], x.est && x.est<today ? 'row-red' : ''))), 'Every landed reconstruction job has a sub and is moving.');
+  if(late.length) h += sec('Past estimated completion', late.length, table(['Job','Est. complete','Days late','Last update'], late.map(j=>{ const u = latestSubUpdate(j); return tr([jl(j), fmtDate(latestEst(j)), String(daysBetween(latestEst(j), today)), u?`${fmtDate(u.date)} (${escapeHtml(u.by)})`:'—'], 'row-red'); })), '');
+  if(reconUnsched.length) h += sec('Sub’s next visit not scheduled', reconUnsched.length, table(['Job','Sub','Why','Last update'], reconUnsched.map(j=>{ const u = latestSubUpdate(j); return tr([jl(j), escapeHtml(u.by), `${escapeHtml(u.nextVisit.reason||'')}${u.nextVisit.reasonNote?' — '+escapeHtml(u.nextVisit.reasonNote):''}`, fmtDate(u.date)]); })), '');
+  h += sec('Schedule &mdash; next 7 days', week.length, table(['Day','Time','Job','Sub','Planned work'], (()=>{ let lastDay=''; return week.map(({j,who,nv,u})=>{ const first = nv.date!==lastDay; lastDay = nv.date; return tr([first?`<b>${dayShort(nv.date)}</b>`:'', escapeHtml(nv.window||'—'), jl(j), escapeHtml(who), escapeHtml(u.todo||'—')]); }); })()), 'No sub visits scheduled in the next 7 days.');
+  h += sec('Open reconstruction jobs &mdash; next step (oldest first)', reconOpen.length, table(['Job','Next step','Last movement','Assigned','Sub(s)'], reconOpen.map(({j,next,last})=>tr([jl(j), `<b>${escapeHtml(next)}</b>`, `${last?fmtDate(last):'—'}<div class="sm ${last && daysBetween(last,today)>7?'red':''}">${ago(last)}</div>`, escapeHtml(j.assignedTo||'—'), escapeHtml(jobSubs(j).filter(isSub).join(', ')||'—')]))), 'No open reconstruction jobs.');
+  if(reconPipe.length) h += sec('Reconstruction estimates waiting to land', reconPipe.length, table(['Job','Next step','Received','Assigned'], reconPipe.map(j=>tr([jl(j), escapeHtml(phaseNext(j,'Reconstruction')||'—'), `${fmtDate(j.dateReceived)}<div class="sm">${ago(j.dateReceived)}</div>`, escapeHtml(j.assignedTo||'—')]))), '');
+  h += `<div class="report-footer">Voda Job Tracker &middot; Morning Report &middot; ${fmtDate(today)} &middot; Check off each line as it's handled.</div>`;
+  return h;
 }
 
 /* ---------- Home: today's sub updates + who hasn't sent one ---------- */
