@@ -2416,6 +2416,7 @@ async function loadData(silent){
     checkNewSubUpdates();
     if(pinUser) setTimeout(checkMyMessages, 400);
     renderEquipmentSyncBanner();
+    if(!pinUser && !subPreviewOnly()) reconcileMitigationToEquipment();
   }catch(e){
     if(e instanceof AuthError){ setSyncing(false); showSignedOut(e.roster); return; }
     console.error('load failed', e);
@@ -4123,6 +4124,45 @@ function renderEquipmentSyncBanner(){
   banner.innerHTML = `
     <span>&#9888; <b>Equipment Tracker sync failed</b> for: ${names}. The job landed fine here in Job Tracker, but the customer name never made it over to Equipment Tracker — you may want to add it there by hand. This stays up until you confirm you've seen it.</span>
     <button onclick="dismissEquipmentSyncBanner()" style="flex-shrink:0;background:#D6455B;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:700;cursor:pointer;">Got it</button>`;
+}
+// Safety net: every few minutes, make sure every recently landed, still-open Mitigation job is known to the
+// Equipment Tracker. Catches jobs that landed while offline, on another device, or before this link existed.
+// Only adds missing customers / fills blank addresses; never overwrites an address Equipment staff set.
+// If it succeeds for a job that had the red "sync failed" banner, the banner clears itself.
+let _lastEquipReconcile = 0;
+async function reconcileMitigationToEquipment(){
+  if(!EQUIPMENT_SYNC_READY || Date.now() - _lastEquipReconcile < 5*60*1000) return;
+  _lastEquipReconcile = Date.now();
+  const cutoff = Date.now() - 60*86400000;
+  const pending = jobs.filter(j=>{
+    const sc = j.scopes && j.scopes.mitigation;
+    if(!sc || j.mitigationNA || j.completed || !(sc.probability>=100) || !j.customerName || !j.customerName.trim()) return false;
+    const t = Date.parse(sc.landedAt || j.updatedAt || j.createdAt || '') || 0;
+    return t >= cutoff;
+  });
+  if(!pending.length) return;
+  try{
+    const getRes = await fetch(`${EQUIPMENT_API_URL}?action=getAll`);
+    const getData = await getRes.json();
+    const clients = (getData.clients || []).slice();
+    let changed = false;
+    pending.forEach(job=>{
+      const nm = job.customerName.trim().toLowerCase();
+      const idx = clients.findIndex(c => c.name && c.name.trim().toLowerCase() === nm);
+      if(idx >= 0){ if(job.address && !clients[idx].address){ clients[idx].address = job.address; changed = true; } }
+      else { clients.push({ name: job.customerName.trim(), address: job.address || '' }); changed = true; }
+    });
+    if(changed){
+      const postRes = await fetch(EQUIPMENT_API_URL, { method:'POST', body: JSON.stringify({ action:'saveClientInfo', data: clients }) });
+      if(!postRes.ok) throw new Error('Equipment Tracker rejected the update');
+    }
+    let cleared = false;
+    pending.forEach(j=>{ if(j.scopes.mitigation.equipmentSyncFailed){ j.scopes.mitigation.equipmentSyncFailed = false; cleared = true; } });
+    if(cleared){ saveJobs(); renderEquipmentSyncBanner(); }
+  }catch(e){
+    console.error('Equipment Tracker reconcile failed; will retry', e);
+    _lastEquipReconcile = 0;
+  }
 }
 function dismissEquipmentSyncBanner(){
   if(!confirm("Confirm you've seen this and dealt with it (checked or manually added the customer in Equipment Tracker)?")) return;
