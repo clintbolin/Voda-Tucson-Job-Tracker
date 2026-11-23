@@ -745,6 +745,22 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
 }
 .phase-report-row.critical{ border-color:#F0B4A8; background:var(--red-bg); }
 .phase-report-row.no-estimate{ border:2px solid var(--red); background:var(--red-bg); }
+.phase-report-row.at-vendor{ border:1.5px solid #93C5FD; background:rgba(59,130,246,.08); }
+.crit-badge.vendor-badge{ background:#1D4ED8; color:#fff; }
+.est-vendor-head{ font-size:12px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:#1D4ED8; margin:16px 0 6px; border-bottom:2px solid #93C5FD; padding-bottom:3px; }
+.est-vendor-hint{ background:rgba(59,130,246,.12); color:#1D4ED8; font-weight:700; margin-bottom:10px; }
+[data-theme="dark"] .est-vendor-head, [data-theme="dark"] .est-vendor-hint{ color:#93C5FD; }
+.est-quick{ margin-top:6px; border:1.5px solid #1D4ED8; color:#1D4ED8; background:var(--card); border-radius:8px; padding:4px 10px; font-size:12px; font-weight:800; cursor:pointer; }
+[data-theme="dark"] .est-quick{ color:#93C5FD; border-color:#93C5FD; }
+.est-by{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:6px; font-weight:600; }
+.est-by-l{ font-size:11.5px; color:var(--muted); }
+.est-seg{ display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.est-seg button{ border:none; background:var(--card); color:var(--ink); padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer; }
+.est-seg button.on{ background:#0FA3B1; color:#fff; }
+.est-seg button.on.micon{ background:#1D4ED8; }
+.est-by-info{ font-size:11.5px; color:#1D4ED8; }
+.est-by-info a{ cursor:pointer; text-decoration:underline; margin-left:4px; color:inherit; }
+[data-theme="dark"] .est-by-info{ color:#93C5FD; }
 .phase-report-row .top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .phase-report-row .nm{font-weight:700;font-size:13.5px;}
 .phase-report-row .status{font-size:12px;font-weight:700;color:var(--navy);margin-top:4px;}
@@ -1035,7 +1051,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover{ background:rgba(15,
           <span>Daily phase status &mdash; open jobs</span>
           <button class="export-btn" style="background:var(--gray-bg);color:var(--muted);" onclick="setPhaseStatusType(phaseStatusType==='Mitigation'?'Reconstruction':'Mitigation')" id="phaseStatusToggle">Mitigation</button>
         </div>
-        <div class="hint" style="margin-bottom:10px;">Covers every job still in Pipeline or already Active. Any job missing its estimate is redlined and sorted to the top, above everything else — no estimate, no way to land it.</div>
+        <div class="hint" style="margin-bottom:10px;">Covers every job still in Pipeline or already Active. Any job missing its estimate is redlined and sorted to the top, above everything else — no estimate, no way to land it. Estimates sent out to Micon Consulting come off the redline and are listed at the bottom.</div>
         <div id="reportPhaseStatusCombined"></div>
         <div id="reportPhaseStatus"></div>
       </div>
@@ -1653,7 +1669,7 @@ const CONFIG = {
 };
 const BACKEND_READY = CONFIG.API_URL && CONFIG.API_URL.indexOf('REPLACE_WITH') !== 0;
 const REFRESH_INTERVAL_MS = 20000;
-const APP_VERSION = 'Nov 14, 2026 \u00b7 9:00 AM';
+const APP_VERSION = 'Nov 23, 2026 \u00b7 10:00 AM';
 
 /* Cross-app link to the Equipment Tracker's own Google Sheets backend (a
    different Sheet, different Apps Script deployment). When a Mitigation
@@ -3684,11 +3700,13 @@ function scopeSectionHtml(job, type){
   const mitActive = !!job.scopes.mitigation;
   const phases = getEffectivePhases(job, type);
 
+  const estKey = estimateKeyFor(job, type);
   const phasesHtml = phases.map((p,idx)=>{
     const done = !!sc.phases[p.key];
     const na = !!sc.phaseNA[p.key];
-    const row = `<div class="phase-row">
-      <div class="lbl ${done?'done':''} ${na?'na':''}">${p.label}${p.hint?`<span class="phase-hint">${p.hint}</span>`:''}${done?`<span class="phase-date">${fmtDate(sc.phases[p.key])}</span>`:''}${na?`<span class="phase-date">N/A for this job</span>`:''}</div>
+    const isEst = p.key===estKey;
+    const row = `<div class="phase-row ${isEst && !done && !na ? 'has-est-by' : ''}">
+      <div class="lbl ${done?'done':''} ${na?'na':''}">${p.label}${p.hint?`<span class="phase-hint">${p.hint}</span>`:''}${done?`<span class="phase-date">${fmtDate(sc.phases[p.key])}${isEst && estimateOut(sc) ? ' &middot; by '+escapeHtml(estimateOut(sc).vendor) : ''}</span>`:''}${na?`<span class="phase-date">N/A for this job</span>`:''}${isEst && !done && !na ? estimateByHtml(job, type, sc) : ''}</div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <div class="phase-check ${done?'done':''} ${na?'disabled':''}" onclick="${na?'':`togglePhase('${type}','${p.key}')`}">
           ${done? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
@@ -7429,6 +7447,15 @@ function morningReportHtml(person){
     .map(j=>({ j, next: phaseNext(j,'Mitigation'), last: lastMoveDate(j,'Mitigation') })).filter(x=>x.next)
     .sort((a,b)=>(a.last||'').localeCompare(b.last||''));
 
+  /* estimates: in-house redline vs. out at Micon */
+  const estRows = [];
+  jobs.forEach(j=>{ if(j.completed || j.archived) return;
+    [['mitigation','Mitigation'],['reconstruction','Reconstruction']].forEach(([k,type])=>{ const sc = j.scopes[k]; if(!sc) return; const st = scopeStatus(sc); if(st!=='Landed' && st!=='Pipeline') return;
+      const ek = estimateKeyFor(j, type); if(sc.phases[ek] || (sc.phaseNA||{})[ek]) return;
+      estRows.push({ j, type, sc, out: estimateOut(sc), since: dateOnly(st==='Pipeline' ? (sc.createdAt||j.dateReceived||'') : (sc.landedAt||j.dateReceived||'')) }); }); });
+  const estIn = estRows.filter(x=>!x.out).sort((a,b)=>(a.since||'').localeCompare(b.since||''));
+  const estOut = estRows.filter(x=>x.out).sort((a,b)=>(a.out.sentAt||'').localeCompare(b.out.sentAt||''));
+
   /* ---------- 3. collections, in priority order ---------- */
   const who = a => (a.sc.collections.nextAction && a.sc.collections.nextAction.assignee) || a.job.assignedTo || '';
   let accts = allCollAccounts().filter(a=>collNeedsNextAction(a.sc));
@@ -7494,6 +7521,9 @@ function morningReportHtml(person){
   h += sec('Planned visits that were missed', missed.length, table(['Job','Side','Who','Was planned','Days since'], missed.map(({j,who,nv,kind})=>tr([jl(j), kind, escapeHtml(who||'—'), `${dayShort(nv.date)} ${escapeHtml(nv.window||'')}`, ago(nv.date)], 'row-red'))), 'No missed visits.');
   if(unseen.length) h += sec('Crew notes not seen yet', unseen.length, table(['To','Job','Note','Sent'], unseen.map(m=>tr([escapeHtml(m.to), escapeHtml(m.jobName||'General'), escapeHtml(m.text.slice(0,140))+(m.text.length>140?'…':''), fmtStamp(m.at)]))), '');
 
+  h += `<div class="mr-group">Estimates</div>`;
+  h += sec('No estimate yet &mdash; in-house', estIn.length, table(['Job','Scope','Stage','Waiting','Assigned'], estIn.map(x=>tr([jl(x.j), x.type, scopeStatus(x.sc)==='Pipeline' ? 'Lead' : 'Landed', `${x.since?fmtDate(x.since):'—'}<div class="sm">${ago(x.since)}</div>`, escapeHtml(x.j.assignedTo||'—')], 'row-red'))), 'Every open job has an estimate (or it\u2019s out at ' + ESTIMATE_VENDOR + ').');
+  h += sec(`Out at ${ESTIMATE_VENDOR}`, estOut.length, table(['Job','Scope','Sent','Waiting','Sent by'], estOut.map(x=>{ const d = daysBetween(x.out.sentAt, today); return tr([jl(x.j), x.type, fmtDate(x.out.sentAt), `<span class="${d>7?'red':''}">${d} day${d===1?'':'s'}</span>`, escapeHtml(x.out.by||'—')], d>7?'row-amber':''); })), `Nothing out at ${ESTIMATE_VENDOR} right now.`);
   h += `<div class="mr-group">Mitigation</div>`;
   h += sec(`Visits today &mdash; ${dayShort(today)}`, mitVisits.length, table(['Time','Job','Tech (last visit)','Status','Equipment on site','Update sent?'], mitVisits.map(({j,who,nv,last,sent})=>tr([escapeHtml(nv.window||'—'), jl(j), escapeHtml(who), `${escapeHtml(last.drying||last.visit||'—')}<div class="sm">Drying day ${dryingDay(j)||'—'}</div>`, escapeHtml(eqOf(j)), sent ? `✓ ${new Date(sent.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:BUSINESS_TZ})} (${escapeHtml(sent.by)})` : '<span class="sm">not yet</span>']))), 'No mitigation visits planned for today.');
   h += sec('Needs to be scheduled', toSchedule.length, table(['Job','Why','Since','Assigned','Next step'], toSchedule.map(x=>tr([jl(x.j), x.why, `${x.since?fmtDate(x.since):'—'}<div class="sm">${ago(x.since)}</div>`, escapeHtml(x.j.assignedTo||'—'), escapeHtml(phaseNext(x.j,'Mitigation')||'—')], x.pr===0?'row-red':''))), 'Nothing waiting to be scheduled.');
@@ -7937,6 +7967,45 @@ function setPhaseStatusType(type){
   renderPhaseStatus();
 }
 const CRITICAL_PHASE_KEYS = { Mitigation: ['workAuth'], Reconstruction: [] };
+/* Estimates can be written in-house or sent out to Micon Consulting (Phoenix).
+   A job whose estimate is out at Micon is NOT redlined on the in-house list;
+   it shows in its own "At Micon Consulting" group with how long it's been out. */
+const ESTIMATE_VENDOR = 'Micon Consulting';
+function estimateKeyFor(job, type){ return type==='Mitigation' ? 'estimate' : (job.scopes.mitigation ? 'reconEst' : 'estimate'); }
+function estimateOut(sc){ return sc && sc.estimateBy && sc.estimateBy.vendor ? sc.estimateBy : null; }
+function setEstimateBy(type, who, jobId){
+  const job = getJob(jobId || currentJobId); if(!job) return;
+  const sc = getScope(job, type); if(!sc) return;
+  if(who==='inhouse'){
+    if(!estimateOut(sc)) return;
+    sc.estimateBy = null;
+    logActivity(job, `${type} estimate moved back to in-house`);
+  } else {
+    if(estimateOut(sc)) return;
+    sc.estimateBy = { vendor: ESTIMATE_VENDOR, sentAt: todayStr(), by: pinUser || '' };
+    logActivity(job, `${type} estimate sent to ${ESTIMATE_VENDOR}`);
+  }
+  job.updatedAt = new Date().toISOString();
+  saveJobs(who==='inhouse' ? 'Estimate is in-house' : `Estimate sent to ${ESTIMATE_VENDOR}`);
+  if(document.getElementById('modalJobDetail').classList.contains('active') && currentJobId===job.id) renderJobDetail();
+  renderPhaseStatus(); renderAll();
+}
+function setEstimateSentDate(type){
+  const job = getJob(currentJobId); const sc = job && getScope(job, type); const e = estimateOut(sc); if(!e) return;
+  const v = prompt(`Date the estimate was sent to ${e.vendor} (YYYY-MM-DD):`, e.sentAt || todayStr());
+  if(v===null) return;
+  if(!dateReady(v.trim())){ showToast('Use the format 2026-11-23', true); return; }
+  e.sentAt = v.trim(); job.updatedAt = new Date().toISOString();
+  saveJobs('Sent date updated'); renderJobDetail();
+}
+function estimateByHtml(job, type, sc){
+  const e = estimateOut(sc);
+  return `<div class="est-by">
+    <span class="est-by-l">Estimate by:</span>
+    <span class="est-seg"><button class="${e?'':'on'}" onclick="setEstimateBy('${type}','inhouse')">In-house</button><button class="${e?'on micon':''}" onclick="setEstimateBy('${type}','micon')">${ESTIMATE_VENDOR}</button></span>
+    ${e ? `<span class="est-by-info">Sent ${fmtDate(e.sentAt)} &middot; ${ageDays(e.sentAt)}d <a onclick="setEstimateSentDate('${type}')">change date</a></span>` : ''}
+  </div>`;
+}
 function countMissingEstimates(type){
   const key = type==='Mitigation' ? 'mitigation' : 'reconstruction';
   const openJobs = visibleJobs().filter(j=>{
@@ -7949,7 +8018,7 @@ function countMissingEstimates(type){
   openJobs.forEach(j=>{
     const sc = j.scopes[key];
     const estimateKey = type==='Mitigation' ? 'estimate' : (j.scopes.mitigation ? 'reconEst' : 'estimate');
-    if(!sc.phases[estimateKey] && !sc.phaseNA[estimateKey]) count++;
+    if(!sc.phases[estimateKey] && !sc.phaseNA[estimateKey] && !estimateOut(sc)) count++; // out at Micon doesn't count
   });
   return count;
 }
@@ -7995,14 +8064,17 @@ function renderPhaseStatus(){
     // reconstruction-only jobs, which fold it in) — for a normal Reconstruction
     // scope that already has its own Mitigation, it's the Recon. Estimate.
     const estimateKey = phaseStatusType==='Mitigation' ? 'estimate' : (j.scopes.mitigation ? 'reconEst' : 'estimate');
-    const estimateMissing = !sc.phases[estimateKey] && !sc.phaseNA[estimateKey];
-    const isCritical = !estimateMissing && !isPipeline && nextPhase && critKeys.includes(nextPhase.key);
+    const noEst = !sc.phases[estimateKey] && !sc.phaseNA[estimateKey];
+    const atVendor = noEst ? estimateOut(sc) : null;     // estimate is out at Micon: not on the in-house redline
+    const estimateMissing = noEst && !atVendor;
+    const isCritical = !estimateMissing && !atVendor && !isPipeline && nextPhase && critKeys.includes(nextPhase.key);
     const refDate = isPipeline ? (sc.createdAt || j.dateReceived) : sc.landedAt;
     const days = ageDays(refDate);
     const prog = phaseProgress(sc, phases);
-    return { j, sc, st, isPipeline, nextPhase, isCritical, estimateMissing, refDate, days, doneCount: prog.done, phaseTotal: prog.total };
+    return { j, sc, st, isPipeline, nextPhase, isCritical, estimateMissing, atVendor, refDate, days, doneCount: prog.done, phaseTotal: prog.total };
   }).sort((a,b)=>{
     if(a.estimateMissing !== b.estimateMissing) return a.estimateMissing ? -1 : 1;
+    if(!!a.atVendor !== !!b.atVendor) return a.atVendor ? 1 : -1;  // Micon group goes to the bottom
     if(a.isCritical !== b.isCritical) return a.isCritical ? -1 : 1;
     return b.days - a.days;
   });
@@ -8010,6 +8082,7 @@ function renderPhaseStatus(){
   const noEstimateCount = rows.filter(r=>r.estimateMissing).length;
   const noEstimatePipelineCount = rows.filter(r=>r.estimateMissing && r.isPipeline).length;
   const criticalCount = rows.filter(r=>r.isCritical).length;
+  const vendorCount = rows.filter(r=>r.atVendor).length;
 
   let banner = '';
   if(noEstimateCount>0){
@@ -8018,22 +8091,31 @@ function renderPhaseStatus(){
   if(criticalCount>0){
     banner += `<div class="hint" style="background:var(--red-bg);color:var(--red);font-weight:700;margin-bottom:10px;">${criticalCount} more job${criticalCount!==1?'s':''} flagged critical.</div>`;
   }
+  if(vendorCount>0){
+    banner += `<div class="hint est-vendor-hint">${vendorCount} estimate${vendorCount!==1?'s are':' is'} out at ${ESTIMATE_VENDOR} &mdash; listed at the bottom, off the in-house list.</div>`;
+  }
 
+  let vendorHeadDone = false;
   wrap.innerHTML = banner + rows.map(r=>{
     const statusLabel = r.nextPhase ? r.nextPhase.label : 'All phases done';
-    const rowClass = r.estimateMissing ? 'no-estimate' : (r.isCritical ? 'critical' : '');
-    const badge = r.estimateMissing ? '<span class="crit-badge no-est-badge">No Estimate</span>' : (r.isCritical ? '<span class="crit-badge">Critical</span>' : '');
+    const rowClass = r.estimateMissing ? 'no-estimate' : r.atVendor ? 'at-vendor' : (r.isCritical ? 'critical' : '');
+    const badge = r.estimateMissing ? '<span class="crit-badge no-est-badge">No Estimate</span>' : r.atVendor ? `<span class="crit-badge vendor-badge">At ${escapeHtml(r.atVendor.vendor)}</span>` : (r.isCritical ? '<span class="crit-badge">Critical</span>' : '');
+    const groupHead = r.atVendor && !vendorHeadDone ? (vendorHeadDone = true, `<div class="est-vendor-head">Estimates at ${ESTIMATE_VENDOR} (${vendorCount})</div>`) : '';
+    const quick = r.estimateMissing ? `<button class="est-quick" onclick="event.stopPropagation(); setEstimateBy('${phaseStatusType}','micon','${r.j.id}')">Send to ${ESTIMATE_VENDOR}</button>`
+      : r.atVendor ? `<button class="est-quick" onclick="event.stopPropagation(); setEstimateBy('${phaseStatusType}','inhouse','${r.j.id}')">Back to in-house</button>` : '';
     const stageChip = r.isPipeline
       ? `<span class="chip-sm" style="background:var(--blue-bg);color:var(--blue);margin-left:6px;">Pipeline &middot; ${r.sc.probability}%</span>`
       : `<span class="chip-sm chip-landed" style="margin-left:6px;">Active</span>`;
-    return `<div class="phase-report-row ${rowClass}" onclick="openJobDetail('${r.j.id}')" style="cursor:pointer;">
+    return groupHead + `<div class="phase-report-row ${rowClass}" onclick="openJobDetail('${r.j.id}')" style="cursor:pointer;">
       <div class="top">
         <div class="nm">${r.j.customerName}${stageChip}${badge? ' '+badge : ''}</div>
         <div class="meta">${r.doneCount}/${r.phaseTotal} done</div>
       </div>
       ${r.estimateMissing ? `<div class="status" style="color:var(--red);">NO ESTIMATE ON FILE</div>` : ''}
+      ${r.atVendor ? `<div class="status" style="color:#1D4ED8;">Estimate sent to ${escapeHtml(r.atVendor.vendor)} ${fmtDate(r.atVendor.sentAt)} &middot; waiting ${ageDays(r.atVendor.sentAt)}d</div>` : ''}
       <div class="status" style="${r.estimateMissing?'font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;':''}">${r.estimateMissing?'Progression: ':'Current status: '}${statusLabel}</div>
       <div class="meta">${r.isPipeline?'Lead since':'Job start'}: ${fmtDate(r.refDate)} &middot; ${r.days}d &middot; ${r.j.assignedTo||'Unassigned'}</div>
+      ${quick}
     </div>`;
   }).join('');
 }
